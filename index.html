@@ -5,82 +5,84 @@
     <title>Entreprise Test</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- Firebase -->
+    <!-- Firebase (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
-<header>
-    <h1>Entreprise Test</h1>
-    <nav>
-        <ul>
-            <li><a href="#" onclick="showCategory('services')">Services</a></li>
-            <li><a href="#" onclick="showCategory('produits')">Produits</a></li>
-            <li><a href="#" onclick="showCategory('equipe')">Équipe</a></li>
-            <li><a href="#" onclick="showCategory('rh')">RH</a></li>
-            <li><a href="#" onclick="showCategory('contact')">Contact</a></li>
-            <li><a href="#" onclick="showCategory('admin')">Admin 🔐</a></li>
-        </ul>
-    </nav>
-</header>
-
-<main>
-
-<section id="services" class="category">
-    <h2>Nos Services</h2>
-    <p>Consulting, développement, solutions premium.</p>
+<!-- PAGE DE BIENVENUE -->
+<section id="welcome" class="category visible">
+    <div class="welcome-container">
+        <h1>Bienvenue sur Entreprise Test</h1>
+        <p>Découvrez nos services, produits et notre équipe.</p>
+        <button onclick="showCategory('main')">Entrer</button>
+    </div>
 </section>
 
-<section id="produits" class="category">
-    <h2>Nos Produits</h2>
-    <p>Applications, plateformes digitales.</p>
-</section>
-
-<section id="equipe" class="category">
-    <h2>Notre Équipe</h2>
-    <p>Experts passionnés.</p>
-</section>
-
-<section id="rh" class="category">
-    <h2>Ressources Humaines</h2>
-    <p>Recrutement, formation, talents.</p>
-</section>
-
-<section id="contact" class="category">
-    <h2>Contact</h2>
-    <p>contact@entreprise-test.com</p>
-</section>
-
-<!-- ADMIN -->
-<section id="admin" class="category">
-
-    <div id="adminLogin">
-        <h2>Admin Login 🔐</h2>
-        <input id="email" type="email" placeholder="Email">
-        <input id="password" type="password" placeholder="Mot de passe">
-        <button onclick="login()">Connexion</button>
+<!-- MENU BURGER + SECTIONS -->
+<div id="main" class="category" style="display:none;">
+    <!-- BURGER -->
+    <div class="sidebar">
+        <div class="burger" onclick="toggleMenu()">☰</div>
+        <nav id="menu">
+            <ul>
+                <li><a href="#" onclick="showSection('services')">Services</a></li>
+                <li><a href="#" onclick="showSection('produits')">Produits</a></li>
+                <li><a href="#" onclick="showSection('equipe')">Équipe</a></li>
+                <li><a href="#" onclick="showSection('rh')">RH</a></li>
+                <li><a href="#" onclick="showSection('contact')">Contact</a></li>
+                <li><a href="#" onclick="showSection('admin')">Admin 🔐</a></li>
+            </ul>
+        </nav>
     </div>
 
-    <div id="adminPanel" style="display:none;">
-        <h2>Dashboard Admin 📊</h2>
+    <!-- CONTENU SECTIONS -->
+    <div class="content">
+        <section id="services" class="section">
+            <h2>Nos Services</h2>
+            <p>Consulting, développement, solutions premium.</p>
+        </section>
 
-        <div class="dashboard">
-            <div class="card">👥 Utilisateurs<br><strong>128</strong></div>
-            <div class="card">📦 Produits<br><strong>24</strong></div>
-            <div class="card">📈 Visites<br><strong>4 560</strong></div>
-        </div>
+        <section id="produits" class="section">
+            <h2>Nos Produits</h2>
+            <p>Applications, plateformes digitales.</p>
+        </section>
 
-        <button onclick="logout()">Déconnexion</button>
+        <section id="equipe" class="section">
+            <h2>Notre Équipe</h2>
+            <p>Experts passionnés et talentueux.</p>
+        </section>
+
+        <section id="rh" class="section">
+            <h2>Ressources Humaines</h2>
+            <p>Recrutement, formation et gestion du personnel.</p>
+        </section>
+
+        <section id="contact" class="section">
+            <h2>Contact</h2>
+            <p>Email : contact@entreprise-test.com</p>
+        </section>
+
+        <section id="admin" class="section">
+            <div id="adminLogin">
+                <h2>Admin Login 🔐</h2>
+                <input id="email" type="email" placeholder="Email">
+                <input id="password" type="password" placeholder="Mot de passe">
+                <button onclick="login()">Connexion</button>
+            </div>
+            <div id="adminPanel" style="display:none;">
+                <h2>Dashboard Admin 📊</h2>
+                <div class="dashboard">
+                    <div class="card">👥 Utilisateurs<br><strong>128</strong></div>
+                    <div class="card">📦 Produits<br><strong>24</strong></div>
+                    <div class="card">📈 Visites<br><strong>4 560</strong></div>
+                </div>
+                <button onclick="logout()">Déconnexion</button>
+            </div>
+        </section>
     </div>
-
-</section>
-
-</main>
-
-<footer>
-    <p>© 2026 Entreprise Test</p>
-</footer>
+</div>
 
 <script src="script.js"></script>
 </body>
