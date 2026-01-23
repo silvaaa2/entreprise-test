@@ -14,32 +14,59 @@
             <li><a href="#" onclick="showCategory('services')">Services</a></li>
             <li><a href="#" onclick="showCategory('produits')">Produits</a></li>
             <li><a href="#" onclick="showCategory('equipe')">Équipe</a></li>
-            <li><a href="#" onclick="showCategory('equipe')">Ressources Humaines</a></li>
+            <li><a href="#" onclick="showCategory('rh')">RH</a></li>
             <li><a href="#" onclick="showCategory('contact')">Contact</a></li>
+            <li><a href="#" onclick="showCategory('admin')">Admin 🔐</a></li>
         </ul>
     </nav>
 </header>
 
 <main>
+
     <section id="services" class="category">
         <h2>Nos Services</h2>
-        <p>Consulting, Développement, Maintenance</p>
+        <p>Consulting, développement web, solutions sur mesure.</p>
     </section>
 
     <section id="produits" class="category">
         <h2>Nos Produits</h2>
-        <p>Solutions digitales, logiciels sur mesure</p>
+        <p>Applications, plateformes digitales, logiciels premium.</p>
     </section>
 
     <section id="equipe" class="category">
         <h2>Notre Équipe</h2>
-        <p>Experts qualifiés et passionnés</p>
+        <p>Experts passionnés, designers, développeurs et stratèges.</p>
+    </section>
+
+    <section id="rh" class="category">
+        <h2>Ressources Humaines</h2>
+        <p>Recrutement, formation, gestion des talents.</p>
     </section>
 
     <section id="contact" class="category">
         <h2>Contact</h2>
         <p>Email : contact@entreprise-test.com</p>
     </section>
+
+    <section id="admin" class="category">
+        <div id="adminLogin">
+            <h2>Zone Admin 🔐</h2>
+            <input id="adminUser" placeholder="Username">
+            <input id="adminPass" type="password" placeholder="Password">
+            <button onclick="loginAdmin()">Connexion</button>
+        </div>
+
+        <div id="adminPanel" style="display:none;">
+            <h2>Dashboard Admin 🚀</h2>
+            <p>Accès autorisé.</p>
+            <ul>
+                <li>📊 Gestion contenu</li>
+                <li>👥 Gestion RH</li>
+                <li>📢 Publications</li>
+            </ul>
+        </div>
+    </section>
+
 </main>
 
 <footer>
