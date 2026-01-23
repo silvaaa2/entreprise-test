@@ -1,14 +1,15 @@
 /* FIREBASE CONFIG — REMPLACE PAR LA TIENNE */
 const firebaseConfig = {
-    apiKey: "TA_CLE_API",
-    authDomain: "TON_PROJET.firebaseapp.com",
-    projectId: "TON_PROJET",
-    storageBucket: "TON_PROJET.appspot.com",
-    messagingSenderId: "123456",
-    appId: "1:123:web:abc"
+  apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
+  authDomain: "entreprise-test-admin.firebaseapp.com",
+  projectId: "entreprise-test-admin",
+  storageBucket: "entreprise-test-admin.firebasestorage.app",
+  messagingSenderId: "785617328418",
+  appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const db = firebase.firestore();
 
 /* PAGE DE BIENVENUE → MAIN */
 function showCategory(id) {
@@ -34,33 +35,6 @@ function login() {
     const email = document.getElementById("email").value;
     const pass = document.getElementById("password").value;
     auth.signInWithEmailAndPassword(email, pass)
-        .then(() => {
+        .then(() => { 
             document.getElementById("adminLogin").style.display="none";
             document.getElementById("adminPanel").style.display="block";
-        })
-        .catch(err=>alert(err.message));
-}
-
-function logout() {
-    auth.signOut().then(()=>{
-        document.getElementById("adminPanel").style.display="none";
-        document.getElementById("adminLogin").style.display="block";
-    });
-}
-
-/* SESSION FIREBASE */
-auth.onAuthStateChanged(user=>{
-    if(user){
-        document.getElementById("adminLogin").style.display="none";
-        document.getElementById("adminPanel").style.display="block";
-    }
-});
-
-/* ANIMATIONS AU SCROLL */
-const observer = new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{
-        if(entry.isIntersecting){ entry.target.classList.add("visible"); }
-    });
-},{threshold:0.2});
-
-document.querySelectorAll(".section").forEach(section=>observer.observe(section));
