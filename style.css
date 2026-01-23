@@ -5,58 +5,36 @@
 }
 
 body {
-    font-family: 'Segoe UI', sans-serif;
     background: #0b0b0b;
     color: #f1f1f1;
+    font-family: 'Segoe UI', sans-serif;
 }
 
 /* HEADER */
 header {
-    position: sticky;
-    top: 0;
     background: rgba(15,15,15,0.9);
     backdrop-filter: blur(10px);
     padding: 20px;
-    z-index: 100;
 }
 
 header h1 {
     text-align: center;
-    font-size: 2.5rem;
-    letter-spacing: 2px;
     color: #00ffee;
-    text-shadow: 0 0 25px rgba(0,255,238,0.8);
+    text-shadow: 0 0 25px #00ffee;
 }
 
 /* NAV */
 nav ul {
-    list-style: none;
     display: flex;
     justify-content: center;
-    gap: 30px;
+    gap: 25px;
+    list-style: none;
     margin-top: 15px;
 }
 
 nav a {
     color: #ccc;
     text-decoration: none;
-    font-weight: bold;
-    position: relative;
-}
-
-nav a::after {
-    content: "";
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: #00ffee;
-    transition: 0.4s;
-}
-
-nav a:hover::after {
-    width: 100%;
 }
 
 /* SECTIONS */
@@ -65,12 +43,11 @@ nav a:hover::after {
     width: 80%;
     margin: 60px auto;
     padding: 50px;
-    background: linear-gradient(145deg, #111, #1c1c1c);
+    background: linear-gradient(145deg,#111,#1c1c1c);
     border-radius: 20px;
     opacity: 0;
     transform: translateY(60px);
-    transition: all 0.8s ease;
-    perspective: 1000px;
+    transition: 0.8s;
 }
 
 .category.visible {
@@ -78,19 +55,12 @@ nav a:hover::after {
     transform: translateY(0);
 }
 
-.category:hover {
-    transform: rotateX(5deg) rotateY(-5deg) scale(1.03);
-    box-shadow: 0 40px 80px rgba(0,255,238,0.25);
-}
-
-/* TITRES */
 h2 {
-    margin-bottom: 15px;
     color: #00ffee;
-    text-shadow: 0 0 15px rgba(0,255,238,0.7);
+    margin-bottom: 20px;
 }
 
-/* INPUTS */
+/* INPUT */
 input {
     width: 100%;
     padding: 12px;
@@ -101,21 +71,37 @@ input {
     border-radius: 8px;
 }
 
-/* BUTTONS */
+/* BUTTON */
 button {
-    background: transparent;
     border: 2px solid #00ffee;
+    background: transparent;
     color: #00ffee;
     padding: 12px 25px;
-    cursor: pointer;
     border-radius: 8px;
-    transition: 0.4s;
+    cursor: pointer;
 }
 
 button:hover {
     background: #00ffee;
-    color: #000;
-    box-shadow: 0 0 25px #00ffee;
+    color: black;
+    box-shadow: 0 0 20px #00ffee;
+}
+
+/* DASHBOARD */
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap: 25px;
+    margin: 30px 0;
+}
+
+.card {
+    background: #111;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,255,238,0.3);
+    font-size: 1.2rem;
 }
 
 /* FOOTER */
