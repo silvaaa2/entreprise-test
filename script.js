@@ -1,11 +1,11 @@
 /* FIREBASE CONFIG — REMPLACE PAR LA TIENNE */
 const firebaseConfig = {
-  apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
-  authDomain: "entreprise-test-admin.firebaseapp.com",
-  projectId: "entreprise-test-admin",
-  storageBucket: "entreprise-test-admin.firebasestorage.app",
-  messagingSenderId: "785617328418",
-  appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
+   apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
+   authDomain: "entreprise-test-admin.firebaseapp.com",
+   projectId: "entreprise-test-admin",
+   storageBucket: "entreprise-test-admin.firebasestorage.app",
+   messagingSenderId: "785617328418",
+   appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
