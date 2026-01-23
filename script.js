@@ -12,39 +12,38 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 /* PAGE DE BIENVENUE → MAIN */
-function showCategory(id) {
-    document.querySelectorAll('.category').forEach(c => c.style.display='none');
+function showCategory(id){
+    document.querySelectorAll('.category').forEach(c=>c.style.display='none');
     const el = document.getElementById(id);
     el.style.display='flex';
     setTimeout(()=>el.classList.add("visible"),50);
 }
 
-/* SECTIONS DU MENU */
-function showSection(id) {
-    document.querySelectorAll('.section').forEach(s => { s.style.display='none'; s.classList.remove("visible"); });
+/* SECTIONS MENU */
+function showSection(id){
+    document.querySelectorAll('.section').forEach(s=>{ s.style.display='none'; s.classList.remove("visible"); });
     const sec = document.getElementById(id);
     sec.style.display='block';
     setTimeout(()=>sec.classList.add("visible"),50);
 }
 
 /* BURGER */
-function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); }
+function toggleMenu(){ document.querySelector('.sidebar').classList.toggle('open'); }
 
 /* ADMIN LOGIN */
-function login() {
-    const email = document.getElementById("email").value;
-    const pass = document.getElementById("password").value;
-    auth.signInWithEmailAndPassword(email, pass)
-        .then(() => { 
-            document.getElementById("adminLogin").style.display="none";
-            document.getElementById("adminPanel").style.display="block";
-            loadStats();
-            populateSectionSelector();
-        })
-        .catch(err => alert(err.message));
+function login(){
+    const email=document.getElementById("email").value;
+    const pass=document.getElementById("password").value;
+    auth.signInWithEmailAndPassword(email,pass)
+    .then(()=>{
+        document.getElementById("adminLogin").style.display="none";
+        document.getElementById("adminPanel").style.display="block";
+        loadStats();
+        populateSectionSelector();
+    })
+    .catch(err=>alert(err.message));
 }
-
-function logout() {
+function logout(){
     auth.signOut().then(()=>{
         document.getElementById("adminPanel").style.display="none";
         document.getElementById("adminLogin").style.display="block";
@@ -62,7 +61,7 @@ auth.onAuthStateChanged(user=>{
 });
 
 /* ANIMATIONS AU SCROLL */
-const observer = new IntersectionObserver(entries=>{
+const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{
         if(entry.isIntersecting){ entry.target.classList.add("visible"); }
     });
@@ -70,32 +69,29 @@ const observer = new IntersectionObserver(entries=>{
 document.querySelectorAll(".section").forEach(section=>observer.observe(section));
 
 /* STATS FIRESTORE SIMPLIFIÉES */
-function loadStats() {
-    // Exemple stat fictive, peut être remplacé par des collections Firestore réelles
-    document.getElementById("stat-users").innerText = "128";
-    document.getElementById("stat-produits").innerText = "24";
-    document.getElementById("stat-visites").innerText = "4 560";
+function loadStats(){
+    document.getElementById("stat-users").innerText="128";
+    document.getElementById("stat-produits").innerText="24";
+    document.getElementById("stat-visites").innerText="4 560";
 }
 
 /* EDIT CONTENT */
-function populateSectionSelector() {
-    const select = document.getElementById("section-select");
+function populateSectionSelector(){
+    const select=document.getElementById("section-select");
     select.innerHTML="";
     document.querySelectorAll(".section[data-id]").forEach(s=>{
-        const opt = document.createElement("option");
-        opt.value = s.dataset.id;
-        opt.innerText = s.dataset.id.charAt(0).toUpperCase() + s.dataset.id.slice(1);
+        const opt=document.createElement("option");
+        opt.value=s.dataset.id;
+        opt.innerText=s.dataset.id.charAt(0).toUpperCase()+s.dataset.id.slice(1);
         select.appendChild(opt);
     });
 }
+function updateContent(){
+    const sectionId=document.getElementById("section-select").value;
+    const content=document.getElementById("section-content").value;
+    const el=document.getElementById("content-"+sectionId);
+    el.innerText=content;
 
-function updateContent() {
-    const sectionId = document.getElementById("section-select").value;
-    const content = document.getElementById("section-content").value;
-    const el = document.getElementById("content-"+sectionId);
-    el.innerText = content;
-
-    // Optionnel: sauvegarder dans Firestore
     db.collection("sections").doc(sectionId).set({content:content});
     alert("Contenu mis à jour !");
 }
