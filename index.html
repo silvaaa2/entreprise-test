@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Entreprise Test</title>
     <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -23,49 +27,54 @@
 
 <main>
 
-    <section id="services" class="category">
-        <h2>Nos Services</h2>
-        <p>Consulting, développement web, solutions sur mesure.</p>
-    </section>
+<section id="services" class="category">
+    <h2>Nos Services</h2>
+    <p>Consulting, développement, solutions premium.</p>
+</section>
 
-    <section id="produits" class="category">
-        <h2>Nos Produits</h2>
-        <p>Applications, plateformes digitales, logiciels premium.</p>
-    </section>
+<section id="produits" class="category">
+    <h2>Nos Produits</h2>
+    <p>Applications, plateformes digitales.</p>
+</section>
 
-    <section id="equipe" class="category">
-        <h2>Notre Équipe</h2>
-        <p>Experts passionnés, designers, développeurs et stratèges.</p>
-    </section>
+<section id="equipe" class="category">
+    <h2>Notre Équipe</h2>
+    <p>Experts passionnés.</p>
+</section>
 
-    <section id="rh" class="category">
-        <h2>Ressources Humaines</h2>
-        <p>Recrutement, formation, gestion des talents.</p>
-    </section>
+<section id="rh" class="category">
+    <h2>Ressources Humaines</h2>
+    <p>Recrutement, formation, talents.</p>
+</section>
 
-    <section id="contact" class="category">
-        <h2>Contact</h2>
-        <p>Email : contact@entreprise-test.com</p>
-    </section>
+<section id="contact" class="category">
+    <h2>Contact</h2>
+    <p>contact@entreprise-test.com</p>
+</section>
 
-    <section id="admin" class="category">
-        <div id="adminLogin">
-            <h2>Zone Admin 🔐</h2>
-            <input id="adminUser" placeholder="Username">
-            <input id="adminPass" type="password" placeholder="Password">
-            <button onclick="loginAdmin()">Connexion</button>
+<!-- ADMIN -->
+<section id="admin" class="category">
+
+    <div id="adminLogin">
+        <h2>Admin Login 🔐</h2>
+        <input id="email" type="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Mot de passe">
+        <button onclick="login()">Connexion</button>
+    </div>
+
+    <div id="adminPanel" style="display:none;">
+        <h2>Dashboard Admin 📊</h2>
+
+        <div class="dashboard">
+            <div class="card">👥 Utilisateurs<br><strong>128</strong></div>
+            <div class="card">📦 Produits<br><strong>24</strong></div>
+            <div class="card">📈 Visites<br><strong>4 560</strong></div>
         </div>
 
-        <div id="adminPanel" style="display:none;">
-            <h2>Dashboard Admin 🚀</h2>
-            <p>Accès autorisé.</p>
-            <ul>
-                <li>📊 Gestion contenu</li>
-                <li>👥 Gestion RH</li>
-                <li>📢 Publications</li>
-            </ul>
-        </div>
-    </section>
+        <button onclick="logout()">Déconnexion</button>
+    </div>
+
+</section>
 
 </main>
 
