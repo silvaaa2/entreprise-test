@@ -1,49 +1,85 @@
-<main id="content">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enterprise Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <section id="welcome" class="section active">
-    <h1>👋 Bienvenue</h1>
-    <p>Sélectionnez une section dans le menu</p>
-  </section>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
-  <section id="services" class="section">
-    <h1>Nos Services</h1>
-    <p>Consulting, développement, solutions premium.</p>
-  </section>
+  <!-- MENU LATÉRAL -->
+  <aside class="sidebar">
+    <h2 class="logo">Enterprise</h2>
+    <a onclick="showSection('welcome')">🏠 Accueil</a>
+    <a onclick="showSection('services')">Services</a>
+    <a onclick="showSection('produits')">Produits</a>
+    <a onclick="showSection('equipe')">Équipe</a>
+    <a onclick="showSection('rh')">RH</a>
+    <a onclick="showSection('contact')">Contact</a>
+    <a onclick="showSection('comptabilite')">💰 Comptabilité</a>
+    <a onclick="showSection('admin')">🔐 Admin</a>
+  </aside>
 
-  <section id="produits" class="section">
-    <h1>Nos Produits</h1>
-    <p>Applications, plateformes digitales.</p>
-  </section>
+  <!-- CONTENU -->
+  <main id="content">
 
-  <section id="equipe" class="section">
-    <h1>Notre Équipe</h1>
-    <p>Experts passionnés et talentueux.</p>
-  </section>
+    <section id="welcome" class="section active">
+      <h1>👋 Bienvenue</h1>
+      <p>Sélectionnez une section dans le menu.</p>
+    </section>
 
-  <section id="rh" class="section">
-    <h1>Ressources Humaines</h1>
-    <p>Recrutement, formation et gestion du personnel.</p>
-  </section>
+    <section id="services" class="section">
+      <h1>Nos Services</h1>
+      <p>Consulting, développement, solutions premium.</p>
+    </section>
 
-  <section id="contact" class="section">
-    <h1>Contact</h1>
-    <p>Email : contact@entreprise-test.com</p>
-  </section>
+    <section id="produits" class="section">
+      <h1>Nos Produits</h1>
+      <p>Applications, plateformes digitales.</p>
+    </section>
 
-  <section id="comptabilite" class="section">
-    <h1>💰 Comptabilité</h1>
+    <section id="equipe" class="section">
+      <h1>Notre Équipe</h1>
+      <p>Experts passionnés et talentueux.</p>
+    </section>
 
-    <iframe 
-      src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/preview"
-      width="100%"
-      height="600"
-      style="border-radius:12px;"
-    ></iframe>
-  </section>
+    <section id="rh" class="section">
+      <h1>Ressources Humaines</h1>
+      <p>Recrutement, formation et gestion du personnel.</p>
+    </section>
 
-  <section id="admin" class="section">
-    <h1>🔐 Admin</h1>
-    <div id="adminContent"></div>
-  </section>
+    <section id="contact" class="section">
+      <h1>Contact</h1>
+      <p>Email : contact@entreprise-test.com</p>
+    </section>
 
-</main>
+    <section id="comptabilite" class="section">
+      <h1>💰 Comptabilité</h1>
+      <p>Données synchronisées avec Google Sheets</p>
+
+      <iframe
+        src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/preview"
+        width="100%"
+        height="600"
+        frameborder="0"
+      ></iframe>
+    </section>
+
+    <section id="admin" class="section">
+      <h1>🔐 Admin</h1>
+      <p>Zone administrateur sécurisée (Firebase)</p>
+
+      <div class="admin-box">
+        <input type="email" placeholder="Email admin" />
+        <input type="password" placeholder="Mot de passe" />
+        <button>Connexion</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
