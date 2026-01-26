@@ -2,97 +2,68 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Entreprise Test</title>
+    <title>Admin Panel</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- Firebase Compat -->
+    <!-- Firebase compat (IMPORTANT) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-<!-- PAGE DE BIENVENUE -->
-<section id="welcome" class="category visible">
-    <div class="welcome-container">
-        <h1>Bienvenue sur Entreprise Test</h1>
-        <p>Découvrez nos services, produits et notre équipe.</p>
-        <button onclick="showCategory('main')">Entrer</button>
-    </div>
-</section>
+<!-- LOGIN -->
+<div id="adminLogin" class="login">
+    <h2>Connexion Admin 🔐</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Mot de passe">
+    <button onclick="login()">Connexion</button>
+</div>
 
-<!-- MAIN LAYOUT -->
-<div id="main" class="category" style="display:none;">
+<!-- APP -->
+<div id="adminPanel" style="display:none">
 
-    <!-- MENU BURGER -->
+    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="burger" onclick="toggleMenu()">☰</div>
-        <nav id="menu">
-            <ul>
-                <li><a href="#" onclick="showSection('services')">Services</a></li>
-                <li><a href="#" onclick="showSection('produits')">Produits</a></li>
-                <li><a href="#" onclick="showSection('equipe')">Équipe</a></li>
-                <li><a href="#" onclick="showSection('rh')">RH</a></li>
-                <li><a href="#" onclick="showSection('contact')">Contact</a></li>
-                <li><a href="#" onclick="showSection('admin')">Admin 🔐</a></li>
-            </ul>
-        </nav>
+        <ul>
+            <li><a href="#" onclick="showCategory('welcome')">Accueil</a></li>
+            <li><a href="#" onclick="showCategory('dashboard')">Dashboard</a></li>
+            <li><a href="#" onclick="showCategory('compta')">Comptabilité 💰</a></li>
+            <li><a href="#" onclick="logout()">Déconnexion</a></li>
+        </ul>
     </div>
 
-    <!-- CONTENU SECTIONS -->
+    <!-- CONTENT -->
     <div class="content">
-        <section id="services" class="section" data-id="services">
-            <h2>Nos Services</h2>
-            <p id="content-services">Consulting, développement, solutions premium.</p>
+
+        <!-- BIENVENUE -->
+        <section id="welcome" class="category visible">
+            <h1>Bienvenue 👋</h1>
+            <p>Interface d’administration sécurisée</p>
         </section>
 
-        <section id="produits" class="section" data-id="produits">
-            <h2>Nos Produits</h2>
-            <p id="content-produits">Applications, plateformes digitales.</p>
-        </section>
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="category">
+            <h2>Dashboard 📊</h2>
 
-        <section id="equipe" class="section" data-id="equipe">
-            <h2>Notre Équipe</h2>
-            <p id="content-equipe">Experts passionnés et talentueux.</p>
-        </section>
-
-        <section id="rh" class="section" data-id="rh">
-            <h2>Ressources Humaines</h2>
-            <p id="content-rh">Recrutement, formation et gestion du personnel.</p>
-        </section>
-
-        <section id="contact" class="section" data-id="contact">
-            <h2>Contact</h2>
-            <p id="content-contact">Email : contact@entreprise-test.com</p>
-        </section>
-
-        <!-- ADMIN -->
-        <section id="admin" class="section">
-            <div id="adminLogin">
-                <h2>Admin Login 🔐</h2>
-                <input id="email" type="email" placeholder="Email">
-                <input id="password" type="password" placeholder="Mot de passe">
-                <button onclick="login()">Connexion</button>
-            </div>
-
-            <div id="adminPanel" style="display:none;">
-                <h2>Dashboard Admin 📊</h2>
-                <div class="dashboard">
-                    <div class="card">👥 Utilisateurs<br><strong id="stat-users">0</strong></div>
-                    <div class="card">📦 Produits<br><strong id="stat-produits">0</strong></div>
-                    <div class="card">📈 Visites<br><strong id="stat-visites">0</strong></div>
-                </div>
-
-                <h3>Modifier contenu des sections</h3>
-                <div class="edit-section">
-                    <select id="section-select"></select>
-                    <textarea id="section-content" rows="4"></textarea>
-                    <button onclick="updateContent()">Mettre à jour</button>
-                </div>
-
-                <button onclick="logout()">Déconnexion</button>
+            <div class="cards">
+                <div class="card">Utilisateurs<br><span id="stat-users">0</span></div>
+                <div class="card">Produits<br><span id="stat-produits">0</span></div>
+                <div class="card">Visites<br><span id="stat-visites">0</span></div>
             </div>
         </section>
+
+        <!-- COMPTABILITÉ -->
+        <section id="compta" class="category">
+            <h2>Comptabilité 💰</h2>
+            <p>Données synchronisées avec Google Sheets</p>
+
+            <div class="sheet-container">
+                <iframe id="comptaSheet" frameborder="0"></iframe>
+            </div>
+        </section>
+
     </div>
 </div>
 
