@@ -1,114 +1,49 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Entreprise Test</title>
-    <link rel="stylesheet" href="style.css">
+<main id="content">
 
-    <!-- Firebase Compat -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-</head>
-<body>
+  <section id="welcome" class="section active">
+    <h1>👋 Bienvenue</h1>
+    <p>Sélectionnez une section dans le menu</p>
+  </section>
 
-<!-- PAGE DE BIENVENUE -->
-<section id="welcome" class="category visible">
-    <div class="welcome-container">
-        <h1>Bienvenue sur Entreprise Test</h1>
-        <p>Découvrez nos services, produits et notre équipe.</p>
-        <button onclick="showCategory('main')">Entrer</button>
-    </div>
-</section>
+  <section id="services" class="section">
+    <h1>Nos Services</h1>
+    <p>Consulting, développement, solutions premium.</p>
+  </section>
 
-<!-- MAIN -->
-<div id="main" class="category" style="display:none;">
+  <section id="produits" class="section">
+    <h1>Nos Produits</h1>
+    <p>Applications, plateformes digitales.</p>
+  </section>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="burger" onclick="toggleMenu()">☰</div>
-        <nav>
-            <ul>
-                <li><a onclick="showSection('services')">Services</a></li>
-                <li><a onclick="showSection('produits')">Produits</a></li>
-                <li><a onclick="showSection('equipe')">Équipe</a></li>
-                <li><a onclick="showSection('rh')">RH</a></li>
-                <li><a onclick="showSection('contact')">Contact</a></li>
-                <li><a onclick="showSection('compta')">Comptabilité 💰</a></li>
-                <li><a onclick="showSection('admin')">Admin 🔐</a></li>
-            </ul>
-        </nav>
-    </div>
+  <section id="equipe" class="section">
+    <h1>Notre Équipe</h1>
+    <p>Experts passionnés et talentueux.</p>
+  </section>
 
-    <!-- CONTENT -->
-    <div class="content">
+  <section id="rh" class="section">
+    <h1>Ressources Humaines</h1>
+    <p>Recrutement, formation et gestion du personnel.</p>
+  </section>
 
-        <section id="services" class="section" data-id="services">
-            <h2>Nos Services</h2>
-            <p id="content-services">Consulting, développement, solutions premium.</p>
-        </section>
+  <section id="contact" class="section">
+    <h1>Contact</h1>
+    <p>Email : contact@entreprise-test.com</p>
+  </section>
 
-        <section id="produits" class="section" data-id="produits">
-            <h2>Nos Produits</h2>
-            <p id="content-produits">Applications, plateformes digitales.</p>
-        </section>
+  <section id="comptabilite" class="section">
+    <h1>💰 Comptabilité</h1>
 
-        <section id="equipe" class="section" data-id="equipe">
-            <h2>Notre Équipe</h2>
-            <p id="content-equipe">Experts passionnés et talentueux.</p>
-        </section>
+    <iframe 
+      src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/preview"
+      width="100%"
+      height="600"
+      style="border-radius:12px;"
+    ></iframe>
+  </section>
 
-        <section id="rh" class="section" data-id="rh">
-            <h2>Ressources Humaines</h2>
-            <p id="content-rh">Recrutement, formation et gestion du personnel.</p>
-        </section>
+  <section id="admin" class="section">
+    <h1>🔐 Admin</h1>
+    <div id="adminContent"></div>
+  </section>
 
-        <section id="contact" class="section" data-id="contact">
-            <h2>Contact</h2>
-            <p id="content-contact">Email : contact@entreprise-test.com</p>
-        </section>
-
-        <!-- 🆕 COMPTABILITÉ -->
-        <section id="compta" class="section">
-            <h2>Comptabilité 💰</h2>
-            <p>Données synchronisées avec Google Sheets</p>
-
-            <div class="sheet-container">
-                <iframe id="comptaSheet" frameborder="0"></iframe>
-            </div>
-        </section>
-
-        <!-- ADMIN -->
-        <section id="admin" class="section">
-            <div id="adminLogin">
-                <h2>Admin Login 🔐</h2>
-                <input id="email" type="email" placeholder="Email">
-                <input id="password" type="password" placeholder="Mot de passe">
-                <button onclick="login()">Connexion</button>
-            </div>
-
-            <div id="adminPanel" style="display:none;">
-                <h2>Dashboard Admin 📊</h2>
-                <div class="dashboard">
-                    <div class="card">👥 Utilisateurs<br><strong id="stat-users">0</strong></div>
-                    <div class="card">📦 Produits<br><strong id="stat-produits">0</strong></div>
-                    <div class="card">📈 Visites<br><strong id="stat-visites">0</strong></div>
-                </div>
-
-                <h3>Modifier contenu des sections</h3>
-                <div class="edit-section">
-                    <select id="section-select"></select>
-                    <textarea id="section-content" rows="4"></textarea>
-                    <button onclick="updateContent()">Mettre à jour</button>
-                </div>
-
-                <button onclick="logout()">Déconnexion</button>
-            </div>
-        </section>
-
-    </div>
-</div>
-
-<script src="script.js"></script>
-</body>
-</html>
+</main>
