@@ -98,23 +98,23 @@
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
       <div class="compta-controls">
-        <button onclick="toggleCompta('iframe')" class="small-btn">Vue Google Sheet</button>
-        <button onclick="loadSheetData()" class="small-btn action-btn">🔄 Importer Données (Live)</button>
+        <button onclick="toggleCompta('iframe')" class="small-btn action-btn">Vue Google Sheet</button>
+        <button onclick="toggleCompta('data')" class="small-btn">Vue Tableau Simplifié</button>
       </div>
       
-      <div id="sheetFrame" class="iframe-container hidden">
+      <div id="sheetFrame" class="iframe-container">
          <iframe
-          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pubhtml?gid=1852400448&single=true"
+          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pubhtml?widget=true&headers=false"
           width="100%"
-          height="600"
+          height="700"
           style="border:none;">
         </iframe>
       </div>
 
-      <div id="nativeTableContainer" class="">
+      <div id="nativeTableContainer" class="hidden">
         <div class="table-wrapper">
           <table id="sheetTable" class="cyber-table">
-            <tr><td style="padding:20px; text-align:center">Clique sur "Importer" pour voir les chiffres.</td></tr>
+            <tr><td style="padding:20px; text-align:center">Chargement...</td></tr>
           </table>
         </div>
       </div>
