@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-// Ajout de 'updateDoc' dans les imports Firestore
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+// Note : J'utilise setDoc partout maintenant pour éviter les plantages
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -17,10 +17,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* 2. LIEN MAGIQUE (ONGLET 2002987340) */
+/* 2. LIEN TABLEAU (Ton lien fonctionnel) */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
-/* 3. NAVIGATION & LOGIN */
+/* 3. NAVIGATION */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
@@ -55,7 +55,7 @@ onAuthStateChanged(auth, async (user) => {
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
     
-    // >>> ON CHARGE LE PROFIL ICI <<<
+    // Chargement du profil connecté
     await loadUserProfile(user.uid);
     window.fetchUsers();
   } else {
@@ -65,10 +65,10 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 /* ==================================================================
-   NOUVEAU : GESTION DU PROFIL (Paramètres & Sidebar)
+   GESTION DU PROFIL (CORRIGÉE ET SÉCURISÉE)
    ================================================================== */
 
-// Fonction A : Charger le profil depuis Firestore et l'afficher dans la sidebar
+// A. CHARGER
 async function loadUserProfile(uid) {
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
@@ -79,56 +79,70 @@ async function loadUserProfile(uid) {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // On met à jour la sidebar si les données existent, sinon valeurs par défaut
+            // Mise à jour de la sidebar
             sidebarName.innerText = data.displayName || "Utilisateur";
-            sidebarImg.src = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            if(data.photoURL) sidebarImg.src = data.photoURL;
             
-            // On pré-remplit aussi les champs dans les paramètres pour que ce soit plus sympa
-            document.getElementById("settingsDisplayName").value = data.displayName || "";
-            document.getElementById("settingsPhotoURL").value = data.photoURL || "";
-        } else {
-            console.log("Aucun document utilisateur trouvé pour cet ID.");
+            // Pré-remplissage des inputs Paramètres
+            const nameInput = document.getElementById("settingsDisplayName");
+            const photoInput = document.getElementById("settingsPhotoURL");
+            
+            if(nameInput) nameInput.value = data.displayName || "";
+            if(photoInput) photoInput.value = data.photoURL || "";
         }
     } catch (error) {
-        console.error("Erreur chargement profil:", error);
+        console.error("Erreur profil:", error);
     }
 }
 
-// Fonction B : Sauvegarder les modifications depuis l'onglet Paramètres
+// B. SAUVEGARDER (C'est ici qu'on a réparé !)
 window.saveProfileSettings = async function() {
     const newName = document.getElementById("settingsDisplayName").value;
     const newPhotoURL = document.getElementById("settingsPhotoURL").value;
     const msg = document.getElementById("settingsMsg");
     const user = auth.currentUser;
 
-    if (!user) return;
+    if (!user) {
+        msg.innerText = "❌ Erreur : Tu n'es pas connecté.";
+        return;
+    }
+
+    // 1. SECURITE : On vérifie que le champ n'est pas vide
+    if (!newName || newName.trim() === "") {
+        msg.innerText = "⚠️ Le nom d'affichage est obligatoire !";
+        msg.style.color = "orange";
+        return; // On arrête tout ici
+    }
 
     msg.innerText = "Sauvegarde en cours...";
     msg.style.color = "white";
 
     try {
         const userRef = doc(db, "users", user.uid);
-        // updateDoc permet de modifier seulement certains champs sans écraser le reste (comme le rôle ou la date)
-        await updateDoc(userRef, {
+        
+        // 2. ROBUSTESSE : On utilise setDoc avec {merge: true}
+        // Ça permet de créer le document s'il n'existe pas encore (ce qui causait ton bug)
+        await setDoc(userRef, {
             displayName: newName,
-            photoURL: newPhotoURL
-        });
+            photoURL: newPhotoURL || "" // Si vide, on met une chaîne vide
+        }, { merge: true });
 
-        msg.innerText = "✅ Profil mis à jour avec succès !";
+        msg.innerText = "✅ Profil mis à jour !";
         msg.style.color = "#00ff88";
         
-        // On recharge immédiatement la sidebar pour voir le changement
-        loadUserProfile(user.uid);
+        // Mise à jour immédiate de la sidebar sans recharger
+        document.getElementById("sidebarUserName").innerText = newName;
+        if(newPhotoURL) document.getElementById("sidebarUserImg").src = newPhotoURL;
 
     } catch (error) {
         console.error(error);
-        msg.innerText = "❌ Erreur lors de la sauvegarde.";
+        msg.innerText = "❌ Erreur technique : " + error.message;
         msg.style.color = "red";
     }
 };
 
 
-/* 5. USERS (Création) */
+/* 5. GESTION UTILISATEURS */
 window.createNewUser = async function() {
   const email = document.getElementById("newEmail").value;
   const password = document.getElementById("newPassword").value;
@@ -143,13 +157,12 @@ window.createNewUser = async function() {
     const secondaryAuth = getAuth(secondaryApp);
     const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     
-    // On ajoute des champs vides displayName et photoURL à la création
     await setDoc(doc(db, "users", cred.user.uid), {
       email: email, 
       role: role, 
       createdAt: new Date().toISOString().split('T')[0],
-      displayName: "", // Nom vide par défaut
-      photoURL: ""     // Photo vide par défaut
+      displayName: "", 
+      photoURL: ""
     });
     await signOut(secondaryAuth);
     msg.innerText = `✅ Ajouté : ${email}`;
@@ -171,8 +184,7 @@ window.fetchUsers = async function() {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       let color = data.role === 'admin' ? '#ff4f4f' : (data.role === 'rh' ? '#facc15' : '#3b82f6');
-      // J'ai ajouté l'affichage du Nom si disponible
-      const nameDisplay = data.displayName ? `${data.displayName} (${data.email})` : data.email;
+      const nameDisplay = data.displayName ? `${data.displayName}` : data.email;
       html += `<tr><td>${nameDisplay}</td><td><span style="color:${color};font-weight:bold">${data.role}</span></td><td>${data.createdAt || "-"}</td></tr>`;
     });
     tbody.innerHTML = html || "<tr><td colspan='3' style='text-align:center'>Aucun utilisateur.</td></tr>";
@@ -181,7 +193,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 6. IMPORT TABLEAU (COMPTA) - Ton code qui marche */
+/* 6. IMPORT TABLEAU (COMPTA) */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -207,9 +219,9 @@ window.loadSheetData = async function() {
 
   try {
     const response = await fetch(SHEET_CSV_URL);
-    if (!response.ok) throw new Error("Erreur lien (Vérifie Public)");
+    if (!response.ok) throw new Error("Erreur lien");
     let data = await response.text();
-    if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé. Mets le sheet en Public.");
+    if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé.");
 
     const rows = data.split(/\r?\n/).map(row => {
         return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
@@ -219,7 +231,7 @@ window.loadSheetData = async function() {
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
         if(lineStr.includes("achats") && lineStr.includes("farm")) {
-           throw new Error("⚠️ Google envoie le mauvais onglet (Farm).");
+           throw new Error("⚠️ Mauvais onglet détecté.");
         }
         if(lineStr.includes("nom du") || lineStr.includes("grade")) {
             headerIndex = i; break;
