@@ -16,7 +16,7 @@ const auth = getAuth(app);
 
 /* ===========================================================
    2. TON LIEN CSV OFFICIEL
-   C'est le lien que tu viens de m'envoyer. Il est parfait.
+   C'est le lien public que tu viens de me donner.
    =========================================================== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?output=csv";
 
@@ -62,7 +62,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ===========================================================
-   7. IMPORTATION DES DONNÉES
+   7. IMPORTATION DES DONNÉES (MOTEUR)
    =========================================================== */
 
 window.toggleCompta = function(mode) {
@@ -73,6 +73,7 @@ window.toggleCompta = function(mode) {
     frame.classList.remove("hidden");
     table.classList.add("hidden");
   } else {
+    // Lance l'importation
     window.loadSheetData();
   }
 };
@@ -82,6 +83,7 @@ window.loadSheetData = async function() {
   const sheetFrame = document.getElementById("sheetFrame");
   const table = document.getElementById("sheetTable");
 
+  // Affiche la zone du tableau
   sheetFrame.classList.add("hidden");
   tableContainer.classList.remove("hidden");
   table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Récupération des données...</td></tr>";
@@ -95,50 +97,51 @@ window.loadSheetData = async function() {
 
     const data = await response.text();
     
-    // Vérification de sécurité (au cas où)
+    // Vérification : si on reçoit du HTML, c'est que le lien n'est pas bon (mais le tien est bon !)
     if(data.trim().startsWith("<!DOCTYPE html>")) {
-        throw new Error("⚠️ Lien incorrect (Format HTML détecté).");
+        throw new Error("⚠️ Erreur de format. Vérifie que le document est bien publié en CSV.");
     }
 
+    // Découpage des lignes
     const rows = data.split("\n").map(row => row.split(","));
     
-    // --- RECHERCHE INTELLIGENTE DU DEBUT DU TABLEAU ---
-    // On scanne les lignes pour trouver où commence ton tableau (Ligne 8 environ)
+    // --- INTELLIGENCE : Trouver le début du tableau ---
+    // On scanne pour trouver la ligne qui contient "Nom du salarié" ou "Grade"
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
-        // On cherche des mots clés présents dans tes colonnes
+        // Mots clés basés sur ton image
         if(lineStr.includes("nom du") || lineStr.includes("grade") || lineStr.includes("facture")) {
             headerIndex = i;
             break;
         }
     }
 
-    // Si on ne trouve pas automatiquement, on prend la ligne 7 par sécurité
+    // Si on ne trouve pas automatiquement, on prend la ligne 7 (index 7 = ligne 8 sur Excel)
     if (headerIndex === -1) headerIndex = 7;
 
-    // On garde uniquement les lignes à partir de l'en-tête
+    // On ne garde que les lignes à partir de l'en-tête
     const cleanRows = rows.slice(headerIndex); 
 
-    // --- CONSTRUCTION DU TABLEAU HTML ---
+    // --- CONSTRUCTION DU HTML ---
     let html = "<thead><tr>";
     
-    // 1. En-têtes (Header)
+    // 1. En-têtes
     cleanRows[0].forEach(cell => {
-      const cleanCell = cell.replace(/^"|"$/g, '').trim(); 
+      const cleanCell = cell.replace(/^"|"$/g, '').trim(); // Enlève les guillemets CSV
       if(cleanCell) html += `<th>${cleanCell}</th>`;
     });
     html += "</tr></thead><tbody>";
 
-    // 2. Données (Body)
+    // 2. Données
     for (let i = 1; i < cleanRows.length; i++) {
       const row = cleanRows[i];
-      // On affiche la ligne seulement si la colonne A (Nom) contient quelque chose
+      // On affiche la ligne seulement si la colonne A (Nom) n'est pas vide
       if (row[0] && row[0].replace(/^"|"$/g, '').trim().length > 0) {
         html += "<tr>";
         // On remplit les cellules
         for(let j=0; j < cleanRows[0].length; j++) {
-            // Si la colonne a un titre, on affiche la cellule correspondante
+            // Si la colonne a un titre, on affiche la cellule
             if(cleanRows[0][j].replace(/^"|"$/g, '').trim()) {
                 let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
                 html += `<td>${cellData}</td>`;
