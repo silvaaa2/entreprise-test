@@ -7,15 +7,15 @@
 
 body {
   display: flex;
+  min-height: 100vh;
   background: radial-gradient(circle at top, #0f2027, #000);
   color: #fff;
-  min-height: 100vh;
 }
 
 /* SIDEBAR */
 .sidebar {
   width: 240px;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.85);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -35,11 +35,6 @@ body {
   padding: 10px;
   border-radius: 8px;
   transition: 0.3s;
-}
-
-.sidebar a:hover {
-  background: rgba(0,255,225,0.15);
-  box-shadow: 0 0 12px rgba(0,255,225,0.6);
 }
 
 /* CONTENU */
@@ -85,4 +80,41 @@ body {
 .admin-box input {
   padding: 10px;
   border-radius: 6px;
-  border
+  border: none;
+}
+
+.admin-box button {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #00ffe1;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 15px #00ffe1;
+}
+
+/* ===== 3D + GLOW EFFECT ===== */
+.tilt {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tilt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    rgba(0,255,225,0.35),
+    transparent 60%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.tilt:hover::before {
+  opacity: 1;
+}
