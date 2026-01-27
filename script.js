@@ -17,19 +17,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ==================================================================
-   2. LE LIEN UNIQUE (A REMPLACER)
-   Colle ici le lien que tu viens de copier dans "Publier sur le web".
-   Il doit finir par "output=csv"
+   2. LIEN D'EXPORTATION (Onglet Compta ID: 1852400448)
    ================================================================== */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv"; 
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/export?format=csv&gid=1852400448";
 
-
-/* 3. VARIABLES DOM */
+/* 3. NAVIGATION */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
-/* 4. LOGIN & NAVIGATION */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -41,15 +37,13 @@ window.login = async function() {
   }
 };
 
-window.logout = function() {
-  signOut(auth).then(() => window.location.reload());
-};
+window.logout = function() { signOut(auth); };
 
 window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
   if(id === 'users') window.fetchUsers();
-  // On ne charge pas la compta auto pour laisser le choix
+  if(id === 'compta') window.toggleCompta('data'); // On force le tableau direct
 };
 
 onAuthStateChanged(auth, (user) => {
@@ -64,7 +58,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-/* 5. GESTION UTILISATEURS */
+/* 4. USERS */
 window.createNewUser = async function() {
   const email = document.getElementById("newEmail").value;
   const password = document.getElementById("newPassword").value;
@@ -110,7 +104,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 6. IMPORT TABLEAU (BOUTONS) */
+/* 5. TABLEAU COMPTA (IMPORTATION PROPRE) */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -132,61 +126,64 @@ window.toggleCompta = function(mode) {
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Importation des données...</td></tr>";
-
-  // Petite sécurité si tu as oublié de changer le lien
-  if(SHEET_CSV_URL.includes("https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv")) {
-     table.innerHTML = `<tr><td style='color:orange; text-align:center;'>⚠️ Tu as oublié de coller ton lien CSV dans le fichier script.js !</td></tr>`;
-     return;
-  }
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Lecture des données...</td></tr>";
 
   try {
     const response = await fetch(SHEET_CSV_URL);
-    if (!response.ok) throw new Error("Erreur lien (Vérifie 'Publier sur le web')");
+    if (!response.ok) throw new Error("Erreur lien (Vérifie Partage Public)");
     
     let data = await response.text();
     
-    // Si c'est du HTML, c'est pas bon
-    if(data.trim().startsWith("<!DOCTYPE html>")) {
-        throw new Error("⚠️ Lien incorrect. Tu dois choisir 'CSV' dans les options de publication.");
-    }
+    if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé. Mets le sheet en Public.");
 
-    // Parseur CSV
-    const rows = parseCSV(data);
+    // --- NOUVEAU PARSEUR (Simple et Efficace) ---
+    // 1. On détecte le séparateur (Virgule ou Point-Virgule)
+    const delimiter = data.indexOf(";") !== -1 ? ";" : ",";
+    
+    // 2. On découpe ligne par ligne
+    const rows = data.split(/\r?\n/).map(line => {
+      // 3. On découpe chaque ligne par le séparateur (en respectant les guillemets)
+      // Regex magique pour CSV
+      return line.split(new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`))
+                 .map(cell => cell.replace(/^"|"$/g, '').trim()); // Nettoyage
+    });
 
-    // Recherche de l'en-tête "Nom du salarié"
+    // --- RECHERCHE INTELLIGENTE ---
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
-        const line = JSON.stringify(rows[i]).toLowerCase();
+        const lineStr = JSON.stringify(rows[i]).toLowerCase();
         
-        // Si on trouve "Dépenses déductibles", c'est le mauvais onglet !
-        if(line.includes("dépenses") && line.includes("déductibles")) {
-           throw new Error("⚠️ Tu importes l'onglet 'Dépenses'.<br>Refais la manip 'Publier sur le web' en sélectionnant l'onglet 'Compta'.");
+        // Sécurité : Si on voit "Farm", on prévient
+        if(lineStr.includes("achats") && lineStr.includes("farm")) {
+           throw new Error("⚠️ Google envoie le mauvais onglet (Farm). Utilise le lien Export spécifique.");
         }
-
-        if(line.includes("nom du") && line.includes("grade")) {
+        // On cherche la vraie ligne de titre
+        if(lineStr.includes("nom du") || lineStr.includes("grade") || lineStr.includes("poste")) {
             headerIndex = i; break;
         }
     }
     
-    if (headerIndex === -1) headerIndex = 7; // Fallback
+    // Si on ne trouve pas les titres, on prend le début par défaut
+    if (headerIndex === -1) headerIndex = 0;
 
     const cleanRows = rows.slice(headerIndex);
     
-    // HTML
+    // CONSTRUCTION HTML
     let html = "<thead><tr>";
+    // En-têtes
     cleanRows[0].forEach(cell => { 
-        html += `<th>${cell.replace(/^"|"$/g, '').trim() || "."}</th>`; 
+        html += `<th>${cell || "."}</th>`; 
     });
     html += "</tr></thead><tbody>";
 
+    // Données
     for (let i = 1; i < cleanRows.length; i++) {
         const row = cleanRows[i];
-        if (row.length > 1 && row[0].replace(/^"|"$/g, '').trim() !== "") {
+        // On affiche seulement si la colonne A est remplie
+        if (row.length > 1 && row[0] !== "") {
             html += "<tr>";
             for(let j=0; j < cleanRows[0].length; j++) {
-                let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
-                html += `<td>${cellData}</td>`;
+                html += `<td>${row[j] || ""}</td>`;
             }
             html += "</tr>";
         }
@@ -199,27 +196,3 @@ window.loadSheetData = async function() {
     table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
   }
 };
-
-// Fonction Parseur CSV
-function parseCSV(str) {
-    const arr = [];
-    let quote = false;
-    let col = 0, c = 0;
-    // Détection auto séparateur
-    const delimiter = (str.indexOf(";") > -1 && str.indexOf(";") < str.indexOf(",")) ? ";" : ",";
-
-    for (; c < str.length; c++) {
-        let cc = str[c], nc = str[c + 1];
-        arr[col] = arr[col] || [];
-        arr[col][arr[col].length] = arr[col][arr[col].length] || "";
-        
-        if (cc == '"' && quote && nc == '"') { arr[col][arr[col].length - 1] += cc; ++c; continue; }
-        if (cc == '"') { quote = !quote; continue; }
-        if (cc == delimiter && !quote) { ++arr[col].length; continue; }
-        if (cc == '\r' && nc == '\n' && !quote) { ++col; ++c; continue; }
-        if (cc == '\n' && !quote) { ++col; continue; }
-        if (cc == '\r' && !quote) { ++col; continue; }
-        arr[col][arr[col].length - 1] += cc;
-    }
-    return arr;
-}
