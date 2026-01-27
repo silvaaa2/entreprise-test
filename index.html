@@ -35,7 +35,13 @@
     <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button onclick="showSection('compta')">📊 Comptabilité</button>
     <button onclick="showSection('settings')">⚙️ Paramètres</button>
+    
     <div class="spacer"></div>
+
+    <div class="user-profile-section">
+        <img id="sidebarUserImg" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Profile">
+        <span id="sidebarUserName">Utilisateur</span>
+    </div>
     <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
   </aside>
 
@@ -99,7 +105,7 @@
       
       <div id="sheetFrame" class="iframe-container" style="height: 750px;">
          <iframe
-          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=1852400448#gid=1852400448"
+          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340"
           width="100%"
           height="100%"
           style="border:none;">
@@ -116,8 +122,25 @@
     </section>
 
     <section id="settings" class="section">
-      <h1>Paramètres</h1>
-      <p>Configuration générale.</p>
+      <h1>Paramètres du Profil</h1>
+      
+      <div class="create-user-box" style="max-width: 500px;">
+        <h3>👤 Mon Profil</h3>
+        <p style="color:#64748b; font-size: 0.9em; margin-bottom: 20px;">Modifie ton nom d'affichage et ta photo (lien URL).</p>
+        
+        <div class="input-group">
+          <input id="settingsDisplayName" type="text" required>
+          <label>Nom d'affichage (ex: Jean-Pierre)</label>
+        </div>
+
+        <div class="input-group" style="margin-top: 20px;">
+          <input id="settingsPhotoURL" type="url" required>
+          <label>URL de l'image de profil (https://...)</label>
+        </div>
+        
+        <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder le Profil</button>
+        <p id="settingsMsg"></p>
+      </div>
     </section>
 
   </main>
