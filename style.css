@@ -36,7 +36,7 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .spacer { flex: 1; }
 
-/* CREATE USER */
+/* CREATE USER & SETTINGS BOX */
 .create-user-box {
   background: rgba(255, 255, 255, 0.03);
   padding: 25px;
@@ -46,7 +46,7 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
 .cyber-select { width: 100%; padding: 10px; background: #1e293b; border: none; border-bottom: 2px solid #334155; color: white; outline: none; }
-#userMsg { margin-top: 15px; font-weight: bold; min-height: 20px; }
+#userMsg, #settingsMsg { margin-top: 15px; font-weight: bold; min-height: 20px; }
 
 /* TABLES & COMPTA */
 .compta-controls { display: flex; gap: 15px; margin-bottom: 20px; }
@@ -58,6 +58,30 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .cyber-table th { padding: 15px; text-align: left; background: rgba(59, 130, 246, 0.2); color: var(--accent-hover); border-bottom: 2px solid var(--accent); white-space: nowrap; }
 .cyber-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; white-space: nowrap; }
 .cyber-table tr:hover { background: rgba(255,255,255,0.05); }
-
-/* Iframe blanc pour voir comme un vrai fichier */
 .iframe-container { border-radius: 15px; overflow: hidden; border: 1px solid #334155; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+/* --- NOUVEAU STYLE PROFIL SIDEBAR --- */
+.user-profile-section {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-profile-section img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%; /* Le rond magique */
+    object-fit: cover;
+    margin-right: 15px;
+    border: 2px solid var(--accent);
+}
+
+.user-profile-section span {
+    font-weight: 600;
+    color: white;
+    font-size: 0.95em;
+}
