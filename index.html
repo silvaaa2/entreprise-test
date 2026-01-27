@@ -33,9 +33,7 @@
     <h3>Dashboard</h3>
     <button onclick="showSection('home')">🏠 Accueil</button>
     <button onclick="showSection('users')">👤 Utilisateurs</button>
-    
-    <button onclick="showSection('rh')">🤝 Ressources Humaines</button>
-    
+    <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button onclick="showSection('compta')">📊 Comptabilité</button>
     <button onclick="showSection('settings')">⚙️ Paramètres</button>
     
@@ -52,17 +50,23 @@
 
     <section id="users" class="section">
       <h1>Utilisateurs</h1>
-      <p>Gestion de l'équipe et des permissions.</p>
+      <p>Gestion de l'équipe.</p>
     </section>
 
     <section id="rh" class="section">
       <h1>Ressources Humaines</h1>
-      <p>Gestion des contrats, congés et recrutements.</p>
-      </section>
+      <p>Gestion RH.</p>
+    </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      <div class="iframe-container">
+      
+      <div class="compta-controls">
+        <button onclick="toggleCompta('iframe')" class="small-btn">Vue Google Sheet</button>
+        <button onclick="loadSheetData()" class="small-btn action-btn">🔄 Importer Données (Live)</button>
+      </div>
+
+      <div id="sheetFrame" class="iframe-container">
         <iframe
           src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=1852400448"
           width="100%"
@@ -70,11 +74,19 @@
           style="border:none;">
         </iframe>
       </div>
+
+      <div id="nativeTableContainer" class="hidden">
+        <p class="info-text">Données extraites en temps réel du Sheet :</p>
+        <div class="table-wrapper">
+          <table id="sheetTable" class="cyber-table">
+            </table>
+        </div>
+      </div>
     </section>
 
     <section id="settings" class="section">
       <h1>Paramètres</h1>
-      <p>Configuration du système.</p>
+      <p>Configuration.</p>
     </section>
 
   </main>
