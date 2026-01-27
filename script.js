@@ -21,7 +21,7 @@ const db = getFirestore(app);
    Colle ici le lien que tu viens de copier dans "Publier sur le web".
    Il doit finir par "output=csv"
    ================================================================== */
-const SHEET_CSV_URL = "TON_LIEN_ICI_ENTRE_LES_GUILLEMETS"; 
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv"; 
 
 
 /* 3. VARIABLES DOM */
