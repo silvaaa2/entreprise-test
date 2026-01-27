@@ -1,83 +1,164 @@
 :root {
-  --bg: #0b0f1a;
-  --panel: #11172a;
-  --accent: #4f8cff;
-  --glow: rgba(79,140,255,.6);
-  --text: #ffffff;
+  --bg: #05070a;
+  --panel: #0f172a;
+  --accent: #3b82f6; /* Bleu électrique */
+  --accent-hover: #60a5fa;
+  --glow: rgba(59, 130, 246, 0.5);
+  --text: #e2e8f0;
+  --error: #ff4f4f;
 }
 
 * {
   box-sizing: border-box;
-  font-family: Arial, sans-serif;
+  font-family: 'Poppins', sans-serif; /* Police plus moderne */
 }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: radial-gradient(circle at top, #1e293b, var(--bg));
   color: var(--text);
+  height: 100vh;
+  overflow: hidden;
 }
 
 .hidden {
-  display: none !important; /* Force le masquage */
+  display: none !important;
 }
 
-/* LOGIN */
+/* --- ANIMATIONS --- */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- LOGIN PAGE --- */
 #loginBox {
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  backdrop-filter: blur(5px);
 }
 
 .login-card {
-  width: 320px;
-  background: var(--panel);
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 0 40px #000;
+  width: 350px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: float 6s ease-in-out infinite; /* Ça flotte ! */
 }
 
 .login-card h2 {
-  text-align: center;
-  margin-top: 0;
+  margin-bottom: 30px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--glow);
 }
 
-.login-card input {
+/* INPUTS STYLÉS */
+.input-group {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.input-group input {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 8px;
-  border: none;
-  background: #1a2140; /* Petit ajout pour la lisibilité */
+  padding: 10px 0;
+  font-size: 16px;
   color: white;
+  border: none;
+  border-bottom: 2px solid #334155;
+  background: transparent;
+  outline: none;
+  transition: 0.3s;
 }
 
-.login-card button {
+.input-group label {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  color: #64748b;
+  pointer-events: none;
+  transition: 0.3s ease;
+}
+
+/* Animation Input Focus */
+.input-group input:focus ~ label,
+.input-group input:valid ~ label {
+  top: -20px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.input-group input:focus {
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 10px 20px -10px var(--glow);
+}
+
+/* BOUTON ÉNERVÉ */
+button {
   width: 100%;
-  padding: 10px;
+  padding: 15px;
   background: var(--accent);
   color: white;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
-  transition: .25s;
+  font-size: 16px;
   font-weight: bold;
-  margin-top: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  z-index: 1;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.login-card button:hover {
-  box-shadow: 0 0 15px var(--glow);
+/* L'effet de lumière qui traverse le bouton */
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: 0.5s;
+  z-index: -1;
+}
+
+button:hover::before {
+  left: 100%;
+}
+
+button:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 0 25px var(--glow);
+  background: var(--accent-hover);
+}
+
+button:active {
+  transform: scale(0.95);
 }
 
 #error {
-  color: #ff4f4f;
-  text-align: center;
-  margin-top: 10px;
+  color: var(--error);
+  margin-top: 15px;
   font-size: 0.9em;
   min-height: 20px;
 }
 
-/* DASHBOARD */
+/* --- DASHBOARD --- */
 #adminDashboard {
   display: flex;
   height: 100vh;
@@ -85,56 +166,87 @@ body {
 
 /* SIDEBAR */
 .sidebar {
-  width: 220px;
+  width: 260px;
   background: var(--panel);
-  padding: 20px;
+  padding: 30px 20px;
   display: flex;
   flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 5px 0 30px rgba(0,0,0,0.3);
 }
 
 .sidebar h3 {
   text-align: center;
-  margin-bottom: 20px;
-  color: var(--accent);
+  color: var(--text);
+  margin-bottom: 40px;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 .sidebar button {
-  width: 100%;
-  margin: 8px 0;
-  padding: 12px;
-  background: #1a2140;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
   text-align: left;
-  padding-left: 20px;
-  transition: .25s;
+  margin-bottom: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid transparent;
 }
 
 .sidebar button:hover {
-  transform: translateX(5px);
-  background: var(--accent);
-  box-shadow: 0 0 15px var(--glow);
+  background: rgba(59, 130, 246, 0.1);
+  color: white;
+  border: 1px solid var(--glow);
+  transform: translateX(10px); /* Glisse vers la droite */
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.logout-btn {
+  background: rgba(255, 79, 79, 0.1) !important;
+  color: #ff4f4f !important;
+  border: 1px solid rgba(255, 79, 79, 0.2) !important;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 79, 79, 0.8) !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(255, 79, 79, 0.4) !important;
 }
 
 /* CONTENT */
 .content {
   flex: 1;
-  padding: 30px;
+  padding: 40px;
   overflow-y: auto;
+  background: radial-gradient(circle at bottom right, #172033, var(--bg));
 }
 
 .section {
   display: none;
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Effet rebond */
 }
 
 .section.active {
   display: block;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #fff, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Iframe Container style */
+.iframe-container {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
 }
