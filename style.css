@@ -48,10 +48,16 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .cyber-select { width: 100%; padding: 10px; background: #1e293b; border: none; border-bottom: 2px solid #334155; color: white; outline: none; }
 #userMsg { margin-top: 15px; font-weight: bold; min-height: 20px; }
 
-/* TABLES & IFRAME */
+/* TABLEAUX & COMPTA */
+.compta-controls { display: flex; gap: 15px; margin-bottom: 20px; }
+.small-btn { width: auto; padding: 10px 20px; font-size: 14px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 5px; cursor: pointer; }
+.action-btn { background: var(--accent); border: none; box-shadow: 0 0 10px var(--glow); }
+
 .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.3); background: var(--panel); }
 .cyber-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-.cyber-table th { padding: 15px; text-align: left; background: rgba(59, 130, 246, 0.2); color: var(--accent-hover); border-bottom: 2px solid var(--accent); }
-.cyber-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; }
+.cyber-table th { padding: 15px; text-align: left; background: rgba(59, 130, 246, 0.2); color: var(--accent-hover); border-bottom: 2px solid var(--accent); white-space: nowrap; }
+.cyber-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; white-space: nowrap; }
 .cyber-table tr:hover { background: rgba(255,255,255,0.05); }
+
+/* Iframe */
 .iframe-container { border-radius: 15px; overflow: hidden; border: 1px solid #334155; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
