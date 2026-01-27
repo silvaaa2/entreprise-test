@@ -1,13 +1,3 @@
-// ===== NAVIGATION (OBLIGATOIRE POUR onclick) =====
-window.showSection = function (id) {
-  document.querySelectorAll('.section')
-    .forEach(s => s.classList.remove('active'));
-
-  const target = document.getElementById(id);
-  if (target) target.classList.add('active');
-};
-
-// ===== FIREBASE CDN UNIQUEMENT =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
   getAuth,
@@ -16,7 +6,7 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// ✅ TA CONFIG (CORRECTE)
+/* ===== FIREBASE CONFIG ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
   authDomain: "entreprise-test-admin.firebaseapp.com",
@@ -29,27 +19,45 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// ===== LOGIN =====
-window.login = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+/* ===== ROLES ===== */
+const ADMINS = ["admin@gmail.com"];
+const MANAGERS = ["manager@gmail.com"];
 
-  signInWithEmailAndPassword(auth, email, password)
-    .catch(err => {
-      document.getElementById("loginError").innerText = err.message;
-    });
+/* ===== NAVIGATION ===== */
+window.showSection = function (id) {
+  document.querySelectorAll(".section")
+    .forEach(s => s.classList.remove("active"));
+  document.getElementById(id)?.classList.add("active");
 };
 
-// ===== LOGOUT =====
+/* ===== LOGIN ===== */
+window.login = function () {
+  signInWithEmailAndPassword(
+    auth,
+    email.value,
+    password.value
+  ).catch(err => error.innerText = err.message);
+};
+
+/* ===== LOGOUT ===== */
 window.logout = function () {
   signOut(auth);
 };
 
-// ===== AUTH STATE =====
+/* ===== AUTH STATE ===== */
 onAuthStateChanged(auth, user => {
-  document.getElementById("loginBox")
-    .classList.toggle("hidden", !!user);
+  if (!user) {
+    loginBox.classList.remove("hidden");
+    adminDashboard.classList.add("hidden");
+    return;
+  }
 
-  document.getElementById("adminDashboard")
-    .classList.toggle("hidden", !user);
+  if (![...ADMINS, ...MANAGERS].includes(user.email)) {
+    alert("Accès refusé");
+    signOut(auth);
+    return;
+  }
+
+  loginBox.classList.add("hidden");
+  adminDashboard.classList.remove("hidden");
 });
