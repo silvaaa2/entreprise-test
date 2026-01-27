@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Admin Dashboard Ultra</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
@@ -32,11 +31,9 @@
   <aside class="sidebar">
     <h3>Dashboard</h3>
     <button onclick="showSection('home')">🏠 Accueil</button>
-    <button onclick="showSection('users')">👤 Utilisateurs</button>
-    <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
+    <button onclick="showSection('users')">👤 Gestion Équipe</button> <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button onclick="showSection('compta')">📊 Comptabilité</button>
     <button onclick="showSection('settings')">⚙️ Paramètres</button>
-    
     <div class="spacer"></div>
     <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
   </aside>
@@ -45,48 +42,65 @@
 
     <section id="home" class="section active">
       <h1>Bienvenue, Boss.</h1>
-      <p>Système opérationnel et sécurisé.</p>
+      <p>Système opérationnel. Sélectionne un module à gauche.</p>
     </section>
 
     <section id="users" class="section">
-      <h1>Utilisateurs</h1>
-      <p>Gestion de l'équipe.</p>
+      <h1>Gestion des Accès</h1>
+      
+      <div class="create-user-box">
+        <h3>✨ Créer un nouvel accès</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <input id="newEmail" type="email" required>
+            <label>Email du collaborateur</label>
+          </div>
+          <div class="input-group">
+            <input id="newPassword" type="password" required>
+            <label>Mot de passe provisoire</label>
+          </div>
+          <div class="input-group">
+            <select id="newRole" class="cyber-select">
+              <option value="admin">Administrateur (Tout voir)</option>
+              <option value="rh">Ressources Humaines (RH uniquement)</option>
+              <option value="compta">Comptable (Compta uniquement)</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="createNewUser()">Créer l'utilisateur (+)</button>
+        <p id="userMsg"></p>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <h3>Liste des comptes actifs</h3>
+        <p style="color:#64748b;">La liste s'affichera ici prochainement...</p>
+      </div>
     </section>
 
     <section id="rh" class="section">
       <h1>Ressources Humaines</h1>
-      <p>Gestion RH.</p>
+      <p>Gestion des contrats et du personnel.</p>
     </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      
       <div class="compta-controls">
         <button onclick="toggleCompta('iframe')" class="small-btn">Vue Google Sheet</button>
         <button onclick="loadSheetData()" class="small-btn action-btn">🔄 Importer Données (Live)</button>
       </div>
-
       <div id="sheetFrame" class="iframe-container">
-        <iframe
-          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=1852400448"
-          width="100%"
-          height="600"
-          style="border:none;">
-        </iframe>
+        <p style="padding:20px; text-align:center;">Clique sur Importer pour voir les données</p>
       </div>
-
       <div id="nativeTableContainer" class="hidden">
-        <p class="info-text">Données extraites en temps réel du Sheet :</p>
         <div class="table-wrapper">
-          <table id="sheetTable" class="cyber-table">
-            </table>
+          <table id="sheetTable" class="cyber-table"></table>
         </div>
       </div>
     </section>
 
     <section id="settings" class="section">
       <h1>Paramètres</h1>
-      <p>Configuration.</p>
+      <p>Configuration générale.</p>
     </section>
 
   </main>
