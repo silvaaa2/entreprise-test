@@ -12,57 +12,61 @@ const firebaseConfig = {
   appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
 };
 
+// Initialisation sécurisée
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ==================================================================
-   2. LIEN API GOOGLE VIZ (L'ARME ULTIME)
-   On utilise 'gviz/tq' qui est fait pour les développeurs.
-   tqx=out:csv -> Force la sortie en CSV propre.
-   gid=1852400448 -> C'est ton onglet Compta.
-   ================================================================== */
+/* 2. LIEN API GOOGLE VIZ (Onglet Compta ID: 1852400448) */
 const SHEET_API_URL = "https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/gviz/tq?tqx=out:csv&gid=1852400448";
 
-
-/* 3. LOGIN & NAVIGATION */
+/* 3. VARIABLES DOM */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
+/* 4. LOGIN & NAVIGATION */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-  errorMsg.innerText = "Connexion...";
+  
+  if(errorMsg) errorMsg.innerText = "Connexion...";
+
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
-    errorMsg.innerText = "❌ Login incorrect.";
+    console.error("Erreur login:", error);
+    if(errorMsg) errorMsg.innerText = "❌ Email ou mot de passe incorrect.";
   }
 };
 
-window.logout = function() { signOut(auth); };
+window.logout = function() {
+  signOut(auth).then(() => window.location.reload());
+};
 
 window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
+  
+  // Chargement automatique selon l'onglet
   if(id === 'users') window.fetchUsers();
-  if(id === 'compta') window.toggleCompta('data'); // Charge auto la compta
+  if(id === 'compta') window.toggleCompta('data');
 };
 
-onAuthStateChanged(auth, async (user) => {
+/* 5. GESTION DE L'ÉTAT (Auth Listener) */
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    loginBox.classList.add("hidden");
-    adminDashboard.classList.remove("hidden");
+    if(loginBox) loginBox.classList.add("hidden");
+    if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
-    window.fetchUsers();
+    window.fetchUsers(); // Pré-chargement
   } else {
-    loginBox.classList.remove("hidden");
-    adminDashboard.classList.add("hidden");
+    if(loginBox) loginBox.classList.remove("hidden");
+    if(adminDashboard) adminDashboard.classList.add("hidden");
   }
 });
 
-/* 4. GESTION UTILISATEURS */
+/* 6. GESTION UTILISATEURS */
 window.createNewUser = async function() {
   const email = document.getElementById("newEmail").value;
   const password = document.getElementById("newPassword").value;
@@ -92,6 +96,7 @@ window.createNewUser = async function() {
 
 window.fetchUsers = async function() {
   const tbody = document.getElementById("userListBody");
+  if(!tbody) return;
   tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Chargement...</td></tr>";
   try {
     const querySnapshot = await getDocs(collection(db, "users"));
@@ -107,9 +112,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* ==================================================================
-   5. IMPORTATION TABLEAU (CORRECTION DU BUG DE LETTRES)
-   ================================================================== */
+/* 7. IMPORT TABLEAU (API Google Viz) */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -118,71 +121,102 @@ window.toggleCompta = function(mode) {
   if(mode === 'iframe') {
     frame.classList.remove("hidden");
     table.classList.add("hidden");
-    btns[0].classList.add("action-btn");
-    btns[1].classList.remove("action-btn");
+    if(btns[0]) btns[0].classList.add("action-btn");
+    if(btns[1]) btns[1].classList.remove("action-btn");
   } else {
     frame.classList.add("hidden");
     table.classList.remove("hidden");
-    btns[0].classList.remove("action-btn");
-    btns[1].classList.add("action-btn");
+    if(btns[0]) btns[0].classList.remove("action-btn");
+    if(btns[1]) btns[1].classList.add("action-btn");
     window.loadSheetData();
   }
 };
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Connexion à la Compta...</td></tr>";
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Connexion Compta...</td></tr>";
 
   try {
     const response = await fetch(SHEET_API_URL);
-    if (!response.ok) throw new Error("Erreur accès (Code " + response.status + ")");
+    if (!response.ok) throw new Error("Erreur HTTP: " + response.status);
     
     let data = await response.text();
     
-    // Si on reçoit du HTML au lieu du CSV, c'est que c'est privé ou mauvais lien
     if(data.trim().startsWith("<!DOCTYPE html>") || data.includes("<html")) {
-        throw new Error("⚠️ Accès Bloqué par Google.<br>Va dans ton Sheet > Partager > 'Tous les utilisateurs disposant du lien'.");
+        throw new Error("⚠️ Accès Bloqué. Mets le Sheet en 'Public' (Partager > Tous les utilisateurs).");
     }
 
-    // --- CORRECTION BUG "LETTRE PAR LETTRE" ---
-    // Google renvoie parfois des guillemets autour de tout. On nettoie.
-    // On détecte le séparateur : Virgule ou Point-Virgule ?
-    // En France, Google Sheets exporte souvent avec ";"
-    
-    // Petit nettoyage des guillemets inutiles de l'API Viz
-    // L'API Viz met parfois des " autour des chiffres, on va gérer ça dans le parseur.
-
+    // Utilisation du parseur corrigé
     const rows = parseCSVRefined(data);
 
-    // --- RECHERCHE INTELLIGENTE ---
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const line = JSON.stringify(rows[i]).toLowerCase();
         
-        // Sécurité : Si on voit "Farm", on arrête tout
+        // Sécurité Farm
         if(line.includes("achats") && line.includes("farm")) {
-           throw new Error("⚠️ Erreur : Google envoie encore l'onglet 'Farm'.<br>Solution : Utilise le lien 'Partager' (Share) et mets-le en Public.");
+           throw new Error("⚠️ Mauvais onglet (Farm). Vérifie le partage du Sheet.");
         }
-
         if(line.includes("nom du") && line.includes("grade")) {
             headerIndex = i; break;
         }
     }
     
-    if (headerIndex === -1) headerIndex = 0; // Par défaut on prend le début si on trouve pas
+    if (headerIndex === -1) headerIndex = 0;
 
     const cleanRows = rows.slice(headerIndex);
     
-    // Construction du tableau
+    // HTML
     let html = "<thead><tr>";
-    
-    // En-têtes
     cleanRows[0].forEach(cell => { 
-        // On enlève les guillemets qui traînent
         let text = cell.replace(/^"|"$/g, '').trim();
         html += `<th>${text || "."}</th>`; 
     });
     html += "</tr></thead><tbody>";
 
-    // Données
-    for (let i = 1; i < cleanRows.length; i
+    for (let i = 1; i < cleanRows.length; i++) {
+        const row = cleanRows[i];
+        if (row.length > 1 && row[0].replace(/^"|"$/g, '').trim() !== "") {
+            html += "<tr>";
+            for(let j=0; j < cleanRows[0].length; j++) {
+                let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
+                html += `<td>${cellData}</td>`;
+            }
+            html += "</tr>";
+        }
+    }
+    html += "</tbody>";
+    table.innerHTML = html;
+
+  } catch (error) {
+    console.error(error);
+    table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
+  }
+};
+
+// --- FONCTION PARSEUR (Ne pas oublier cette accolade à la fin !) ---
+function parseCSVRefined(str) {
+    const arr = [];
+    let quote = false;
+    let col = 0, c = 0;
+    
+    // Détection auto : , ou ; ?
+    const sample = str.substring(0, 500);
+    const delimiter = (sample.match(/;/g) || []).length > (sample.match(/,/g) || []).length ? ';' : ','; 
+
+    for (; c < str.length; c++) {
+        let cc = str[c], nc = str[c + 1];
+        arr[col] = arr[col] || [];
+        arr[col][arr[col].length] = arr[col][arr[col].length] || "";
+        
+        if (cc == '"' && quote && nc == '"') { arr[col][arr[col].length - 1] += cc; ++c; continue; }
+        if (cc == '"') { quote = !quote; continue; }
+        if (cc == delimiter && !quote) { ++arr[col].length; continue; }
+        if (cc == '\r' && nc == '\n' && !quote) { ++col; ++c; continue; }
+        if (cc == '\n' && !quote) { ++col; continue; }
+        if (cc == '\r' && !quote) { ++col; continue; }
+        arr[col][arr[col].length - 1] += cc;
+    }
+    return arr;
+}
+// FIN DU SCRIPT (Assure-toi d'avoir copié jusqu'ici)
