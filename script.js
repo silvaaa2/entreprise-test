@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+// Ajout de 'updateDoc' dans les imports Firestore
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -16,12 +17,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ==================================================================
-   2. LIEN MAGIQUE (ONGLET 2002987340)
-   ================================================================== */
+/* 2. LIEN MAGIQUE (ONGLET 2002987340) */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
-/* 3. NAVIGATION */
+/* 3. NAVIGATION & LOGIN */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
@@ -49,12 +48,15 @@ window.showSection = function(id) {
   if(id === 'compta') window.toggleCompta('data');
 };
 
-/* 4. AUTH STATE */
-onAuthStateChanged(auth, (user) => {
+/* 4. AUTH STATE & CHARGEMENT PROFIL */
+onAuthStateChanged(auth, async (user) => {
   if (user) {
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
+    
+    // >>> ON CHARGE LE PROFIL ICI <<<
+    await loadUserProfile(user.uid);
     window.fetchUsers();
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
@@ -62,7 +64,71 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-/* 5. USERS */
+/* ==================================================================
+   NOUVEAU : GESTION DU PROFIL (Paramètres & Sidebar)
+   ================================================================== */
+
+// Fonction A : Charger le profil depuis Firestore et l'afficher dans la sidebar
+async function loadUserProfile(uid) {
+    const sidebarName = document.getElementById("sidebarUserName");
+    const sidebarImg = document.getElementById("sidebarUserImg");
+    
+    try {
+        const docRef = doc(db, "users", uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // On met à jour la sidebar si les données existent, sinon valeurs par défaut
+            sidebarName.innerText = data.displayName || "Utilisateur";
+            sidebarImg.src = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            
+            // On pré-remplit aussi les champs dans les paramètres pour que ce soit plus sympa
+            document.getElementById("settingsDisplayName").value = data.displayName || "";
+            document.getElementById("settingsPhotoURL").value = data.photoURL || "";
+        } else {
+            console.log("Aucun document utilisateur trouvé pour cet ID.");
+        }
+    } catch (error) {
+        console.error("Erreur chargement profil:", error);
+    }
+}
+
+// Fonction B : Sauvegarder les modifications depuis l'onglet Paramètres
+window.saveProfileSettings = async function() {
+    const newName = document.getElementById("settingsDisplayName").value;
+    const newPhotoURL = document.getElementById("settingsPhotoURL").value;
+    const msg = document.getElementById("settingsMsg");
+    const user = auth.currentUser;
+
+    if (!user) return;
+
+    msg.innerText = "Sauvegarde en cours...";
+    msg.style.color = "white";
+
+    try {
+        const userRef = doc(db, "users", user.uid);
+        // updateDoc permet de modifier seulement certains champs sans écraser le reste (comme le rôle ou la date)
+        await updateDoc(userRef, {
+            displayName: newName,
+            photoURL: newPhotoURL
+        });
+
+        msg.innerText = "✅ Profil mis à jour avec succès !";
+        msg.style.color = "#00ff88";
+        
+        // On recharge immédiatement la sidebar pour voir le changement
+        loadUserProfile(user.uid);
+
+    } catch (error) {
+        console.error(error);
+        msg.innerText = "❌ Erreur lors de la sauvegarde.";
+        msg.style.color = "red";
+    }
+};
+
+
+/* 5. USERS (Création) */
 window.createNewUser = async function() {
   const email = document.getElementById("newEmail").value;
   const password = document.getElementById("newPassword").value;
@@ -77,8 +143,13 @@ window.createNewUser = async function() {
     const secondaryAuth = getAuth(secondaryApp);
     const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     
+    // On ajoute des champs vides displayName et photoURL à la création
     await setDoc(doc(db, "users", cred.user.uid), {
-      email: email, role: role, createdAt: new Date().toISOString().split('T')[0]
+      email: email, 
+      role: role, 
+      createdAt: new Date().toISOString().split('T')[0],
+      displayName: "", // Nom vide par défaut
+      photoURL: ""     // Photo vide par défaut
     });
     await signOut(secondaryAuth);
     msg.innerText = `✅ Ajouté : ${email}`;
@@ -100,7 +171,9 @@ window.fetchUsers = async function() {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       let color = data.role === 'admin' ? '#ff4f4f' : (data.role === 'rh' ? '#facc15' : '#3b82f6');
-      html += `<tr><td>${data.email}</td><td><span style="color:${color};font-weight:bold">${data.role}</span></td><td>${data.createdAt || "-"}</td></tr>`;
+      // J'ai ajouté l'affichage du Nom si disponible
+      const nameDisplay = data.displayName ? `${data.displayName} (${data.email})` : data.email;
+      html += `<tr><td>${nameDisplay}</td><td><span style="color:${color};font-weight:bold">${data.role}</span></td><td>${data.createdAt || "-"}</td></tr>`;
     });
     tbody.innerHTML = html || "<tr><td colspan='3' style='text-align:center'>Aucun utilisateur.</td></tr>";
   } catch (error) {
@@ -108,7 +181,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 6. IMPORT TABLEAU (CORRIGÉ) */
+/* 6. IMPORT TABLEAU (COMPTA) - Ton code qui marche */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -135,50 +208,32 @@ window.loadSheetData = async function() {
   try {
     const response = await fetch(SHEET_CSV_URL);
     if (!response.ok) throw new Error("Erreur lien (Vérifie Public)");
-    
     let data = await response.text();
     if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé. Mets le sheet en Public.");
 
-    // --- LE CŒUR DU PROBLEME REGLE ---
-    // On utilise split avec Regex pour couper proprement les lignes et colonnes
     const rows = data.split(/\r?\n/).map(row => {
-        // Cette regex détecte les virgules MAIS ignore celles dans les guillemets (ex: "1,200$")
         return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
     });
 
-    // --- RECHERCHE INTELLIGENTE ---
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
-        
-        // Si c'est l'onglet Farm, on prévient
         if(lineStr.includes("achats") && lineStr.includes("farm")) {
            throw new Error("⚠️ Google envoie le mauvais onglet (Farm).");
         }
-        // On cherche les titres
         if(lineStr.includes("nom du") || lineStr.includes("grade")) {
             headerIndex = i; break;
         }
     }
-    
-    // Si on trouve pas, on prend la ligne 0 (car ton lien gid est précis)
     if (headerIndex === -1) headerIndex = 0;
 
     const cleanRows = rows.slice(headerIndex);
-    
-    // CONSTRUCTION HTML
     let html = "<thead><tr>";
-    
-    // En-têtes
-    cleanRows[0].forEach(cell => { 
-        html += `<th>${cell || "."}</th>`; 
-    });
+    cleanRows[0].forEach(cell => { html += `<th>${cell || "."}</th>`; });
     html += "</tr></thead><tbody>";
 
-    // Données
     for (let i = 1; i < cleanRows.length; i++) {
         const row = cleanRows[i];
-        // On affiche seulement si la ligne a des données (colonne A remplie)
         if (row.length > 1 && row[0] !== "") {
             html += "<tr>";
             for(let j=0; j < cleanRows[0].length; j++) {
@@ -189,7 +244,6 @@ window.loadSheetData = async function() {
     }
     html += "</tbody>";
     table.innerHTML = html;
-
   } catch (error) {
     console.error(error);
     table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
