@@ -12,7 +12,6 @@ body {
   color: #fff;
 }
 
-/* SIDEBAR */
 .sidebar {
   width: 240px;
   background: rgba(0,0,0,0.85);
@@ -20,36 +19,32 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  border-right: 1px solid rgba(255,255,255,0.1);
 }
 
 .logo {
   text-align: center;
-  margin-bottom: 20px;
   color: #00ffe1;
-  text-shadow: 0 0 15px #00ffe1;
+  margin-bottom: 20px;
+  text-shadow: 0 0 12px #00ffe1;
 }
 
 .sidebar a {
-  cursor: pointer;
   padding: 10px;
   border-radius: 10px;
-  transition: all 0.25s ease;
+  cursor: pointer;
+  transition: 0.25s;
 }
 
-/* CONTENU */
 #content {
   flex: 1;
   padding: 40px;
-  overflow-y: auto;
 }
 
-/* SECTIONS */
 .section {
   display: none;
   opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.4s ease;
+  transform: translateY(15px);
+  transition: 0.4s;
 }
 
 .section.active {
@@ -58,18 +53,21 @@ body {
   transform: translateY(0);
 }
 
-.section h1 {
-  margin-bottom: 10px;
-  color: #00ffe1;
-  text-shadow: 0 0 10px #00ffe1;
+.hover:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(0,255,225,0.6);
 }
 
-.section p {
-  margin-bottom: 20px;
-  opacity: 0.85;
+.hover-box {
+  padding: 20px;
+  border-radius: 16px;
+  transition: 0.25s;
 }
 
-/* ADMIN */
+.hover-box:hover {
+  box-shadow: 0 0 25px rgba(0,255,225,0.3);
+}
+
 .admin-box {
   max-width: 300px;
   display: flex;
@@ -77,41 +75,17 @@ body {
   gap: 10px;
 }
 
-.admin-box input {
+.admin-box input, button {
   padding: 10px;
-  border-radius: 6px;
-  border: none;
-}
-
-.admin-box button {
-  padding: 10px;
-  border: none;
   border-radius: 8px;
-  background: #00ffe1;
-  font-weight: bold;
-  cursor: pointer;
+  border: none;
 }
 
-/* ===== MINI ZOOM + GLOW EFFECT ===== */
-
-.hover {
-  position: relative;
+.hidden {
+  display: none;
 }
 
-.hover:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 18px rgba(0,255,225,0.6);
-}
-
-.hover-box {
-  border-radius: 16px;
-  padding: 20px;
-  transition: all 0.25s ease;
-}
-
-.hover-box:hover {
-  transform: scale(1.015);
-  box-shadow:
-    0 0 25px rgba(0,255,225,0.25),
-    inset 0 0 15px rgba(0,255,225,0.15);
+#loginError {
+  color: red;
+  font-size: 14px;
 }
