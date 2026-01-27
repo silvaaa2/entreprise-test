@@ -135,7 +135,7 @@ window.loadSheetData = async function() {
   table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Importation des données...</td></tr>";
 
   // Petite sécurité si tu as oublié de changer le lien
-  if(SHEET_CSV_URL.includes("TON_LIEN_ICI")) {
+  if(SHEET_CSV_URL.includes("https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv")) {
      table.innerHTML = `<tr><td style='color:orange; text-align:center;'>⚠️ Tu as oublié de coller ton lien CSV dans le fichier script.js !</td></tr>`;
      return;
   }
