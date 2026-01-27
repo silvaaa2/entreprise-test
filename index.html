@@ -1,82 +1,97 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Enterprise Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<title>Enterprise Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar tilt">
-    <h2 class="logo">Enterprise</h2>
-    <a class="tilt" onclick="showSection('welcome')">🏠 Accueil</a>
-    <a class="tilt" onclick="showSection('services')">Services</a>
-    <a class="tilt" onclick="showSection('produits')">Produits</a>
-    <a class="tilt" onclick="showSection('equipe')">Équipe</a>
-    <a class="tilt" onclick="showSection('rh')">RH</a>
-    <a class="tilt" onclick="showSection('contact')">Contact</a>
-    <a class="tilt" onclick="showSection('comptabilite')">💰 Comptabilité</a>
-    <a class="tilt" onclick="showSection('admin')">🔐 Admin</a>
-  </aside>
 
-  <!-- CONTENU -->
-  <main id="content">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+<h2 class="logo">Enterprise</h2>
+<a class="hover" onclick="showSection('welcome')">🏠 Accueil</a>
+<a class="hover" onclick="showSection('services')">Services</a>
+<a class="hover" onclick="showSection('produits')">Produits</a>
+<a class="hover" onclick="showSection('equipe')">Équipe</a>
+<a class="hover" onclick="showSection('rh')">RH</a>
+<a class="hover" onclick="showSection('contact')">Contact</a>
+<a class="hover" onclick="showSection('comptabilite')">💰 Comptabilité</a>
+<a class="hover" onclick="showSection('admin')">🔐 Admin</a>
+</aside>
 
-    <section id="welcome" class="section tilt active">
-      <h1>👋 Bienvenue</h1>
-      <p>Sélectionnez une section dans le menu.</p>
-    </section>
 
-    <section id="services" class="section tilt">
-      <h1>Nos Services</h1>
-      <p>Consulting, développement, solutions premium.</p>
-    </section>
+<!-- CONTENU -->
+<main id="content">
 
-    <section id="produits" class="section tilt">
-      <h1>Nos Produits</h1>
-      <p>Applications, plateformes digitales.</p>
-    </section>
 
-    <section id="equipe" class="section tilt">
-      <h1>Notre Équipe</h1>
-      <p>Experts passionnés et talentueux.</p>
-    </section>
+<section id="welcome" class="section active hover-box">
+<h1>👋 Bienvenue</h1>
+<p>Sélectionnez une section dans le menu.</p>
+</section>
 
-    <section id="rh" class="section tilt">
-      <h1>Ressources Humaines</h1>
-      <p>Recrutement, formation et gestion du personnel.</p>
-    </section>
 
-    <section id="contact" class="section tilt">
-      <h1>Contact</h1>
-      <p>Email : contact@entreprise-test.com</p>
-    </section>
+<section id="services" class="section hover-box">
+<h1>Nos Services</h1>
+<p>Consulting, développement, solutions premium.</p>
+</section>
 
-    <section id="comptabilite" class="section tilt">
-      <h1>💰 Comptabilité</h1>
-      <p>Données synchronisées avec Google Sheets</p>
 
-      <iframe
-        src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/preview"
-        width="100%"
-        height="600"
-        frameborder="0"
-      ></iframe>
-    </section>
+<section id="produits" class="section hover-box">
+<h1>Nos Produits</h1>
+<p>Applications, plateformes digitales.</p>
+</section>
 
-    <section id="admin" class="section tilt">
-      <h1>🔐 Admin</h1>
-      <div class="admin-box tilt">
-        <input type="email" placeholder="Email admin" />
-        <input type="password" placeholder="Mot de passe" />
-        <button class="tilt">Connexion</button>
-      </div>
-    </section>
 
-  </main>
+<section id="equipe" class="section hover-box">
+<h1>Notre Équipe</h1>
+<p>Experts passionnés et talentueux.</p>
+</section>
 
-  <script src="script.js"></script>
+
+<section id="rh" class="section hover-box">
+<h1>Ressources Humaines</h1>
+<p>Recrutement, formation et gestion du personnel.</p>
+</section>
+
+
+<section id="contact" class="section hover-box">
+<h1>Contact</h1>
+<p>Email : contact@entreprise-test.com</p>
+</section>
+
+
+<section id="comptabilite" class="section hover-box">
+<h1>💰 Comptabilité</h1>
+<p>Données synchronisées avec Google Sheets</p>
+
+
+<iframe
+src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/preview"
+width="100%"
+height="600"
+frameborder="0"
+></iframe>
+</section>
+
+
+<section id="admin" class="section hover-box">
+<h1>🔐 Admin</h1>
+
+
+<div class="admin-box">
+<input type="email" placeholder="Email admin" />
+<input type="password" placeholder="Mot de passe" />
+<button class="hover">Connexion</button>
+</div>
+</section>
+
+
+</main>
+
+
+<script src="script.js"></script>
 </body>
 </html>
