@@ -6,7 +6,7 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* 1. CONFIGURATION FIREBASE */
+/* 1. CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
   authDomain: "entreprise-test-admin.firebaseapp.com",
@@ -16,64 +16,52 @@ const firebaseConfig = {
   appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
 };
 
-// Initialisation
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-/* 2. ÉLÉMENTS DU DOM */
+/* 2. DOM ELEMENTS */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
-/* 3. FONCTION LOGIN (Attachée à window pour le HTML) */
+/* 3. LOGIN */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
   
-  errorMsg.innerText = "Chargement...";
+  errorMsg.innerText = "Connexion en cours...";
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-    // Le onAuthStateChanged fera la redirection
   } catch (error) {
     console.error(error);
-    errorMsg.innerText = "Erreur : Email ou mot de passe incorrect.";
+    errorMsg.innerText = "❌ Email ou mot de passe incorrect.";
   }
 };
 
-/* 4. FONCTION LOGOUT */
+/* 4. LOGOUT */
 window.logout = function() {
-  signOut(auth).then(() => {
-    console.log("Déconnecté !");
-  }).catch((error) => {
-    console.error("Erreur déconnexion", error);
-  });
+  signOut(auth);
 };
 
-/* 5. NAVIGATION DASHBOARD */
+/* 5. NAVIGATION */
 window.showSection = function(id) {
-  // Enlève la classe active de toutes les sections
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  // Ajoute la classe active à la section cible
   const target = document.getElementById(id);
-  if (target) {
-    target.classList.add("active");
-  }
+  if (target) target.classList.add("active");
 };
 
-/* 6. SURVEILLANCE DE L'ÉTAT (Connecté ou Pas ?) */
+/* 6. STATE OBSERVER */
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    // === L'UTILISATEUR EST CONNECTÉ ===
-    console.log("Utilisateur connecté :", user.email);
-    loginBox.classList.add("hidden");        // Cache le login
-    adminDashboard.classList.remove("hidden"); // Montre le dashboard
-    window.showSection('home');              // Va sur l'accueil
+    console.log("Connecté :", user.email);
+    loginBox.classList.add("hidden");
+    adminDashboard.classList.remove("hidden");
+    window.showSection('home');
   } else {
-    // === PERSONNE N'EST CONNECTÉ ===
-    console.log("Pas d'utilisateur");
-    loginBox.classList.remove("hidden");     // Montre le login
-    adminDashboard.classList.add("hidden");    // Cache le dashboard
-    errorMsg.innerText = "";                 // Reset les erreurs
+    console.log("Déconnecté");
+    loginBox.classList.remove("hidden");
+    adminDashboard.classList.add("hidden");
+    errorMsg.innerText = "";
   }
 });
