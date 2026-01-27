@@ -19,7 +19,7 @@ const db = getFirestore(app);
 /* ==================================================================
    2. LIEN D'EXPORTATION (Onglet Compta ID: 1852400448)
    ================================================================== */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/export?format=csv&gid=1852400448";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
 /* 3. NAVIGATION */
 const loginBox = document.getElementById("loginBox");
@@ -129,7 +129,7 @@ window.loadSheetData = async function() {
   table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Lecture des données...</td></tr>";
 
   try {
-    const response = await fetch(SHEET_CSV_URL);
+    const response = await fetch(https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv);
     if (!response.ok) throw new Error("Erreur lien (Vérifie Partage Public)");
     
     let data = await response.text();
