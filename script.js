@@ -20,7 +20,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /* ===== ROLES ===== */
-const ADMINS = ["admin@gmail.com"];
+const ADMINS = ["dr947695@gmail.com"];
 const MANAGERS = ["manager@gmail.com"];
 
 /* ===== NAVIGATION ===== */
