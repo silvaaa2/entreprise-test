@@ -31,7 +31,8 @@
   <aside class="sidebar">
     <h3>Dashboard</h3>
     <button onclick="showSection('home')">🏠 Accueil</button>
-    <button onclick="showSection('users')">👤 Gestion Équipe</button> <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
+    <button onclick="showSection('users')">👤 Gestion Équipe</button>
+    <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button onclick="showSection('compta')">📊 Comptabilité</button>
     <button onclick="showSection('settings')">⚙️ Paramètres</button>
     <div class="spacer"></div>
@@ -61,19 +62,31 @@
           </div>
           <div class="input-group">
             <select id="newRole" class="cyber-select">
-              <option value="admin">Administrateur (Tout voir)</option>
-              <option value="rh">Ressources Humaines (RH uniquement)</option>
-              <option value="compta">Comptable (Compta uniquement)</option>
+              <option value="admin">Administrateur</option>
+              <option value="rh">Ressources Humaines</option>
+              <option value="compta">Comptable</option>
             </select>
           </div>
         </div>
-        <button onclick="createNewUser()">Créer l'utilisateur (+)</button>
+        <button onclick="createNewUser()">Ajouter l'utilisateur (+)</button>
         <p id="userMsg"></p>
       </div>
 
       <div style="margin-top: 40px;">
         <h3>Liste des comptes actifs</h3>
-        <p style="color:#64748b;">La liste s'affichera ici prochainement...</p>
+        <div class="table-wrapper">
+          <table class="cyber-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Date Création</th>
+              </tr>
+            </thead>
+            <tbody id="userListBody">
+              </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -88,12 +101,21 @@
         <button onclick="toggleCompta('iframe')" class="small-btn">Vue Google Sheet</button>
         <button onclick="loadSheetData()" class="small-btn action-btn">🔄 Importer Données (Live)</button>
       </div>
-      <div id="sheetFrame" class="iframe-container">
-        <p style="padding:20px; text-align:center;">Clique sur Importer pour voir les données</p>
+      
+      <div id="sheetFrame" class="iframe-container hidden">
+         <iframe
+          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pubhtml?gid=1852400448&single=true"
+          width="100%"
+          height="600"
+          style="border:none;">
+        </iframe>
       </div>
-      <div id="nativeTableContainer" class="hidden">
+
+      <div id="nativeTableContainer" class="">
         <div class="table-wrapper">
-          <table id="sheetTable" class="cyber-table"></table>
+          <table id="sheetTable" class="cyber-table">
+            <tr><td style="padding:20px; text-align:center">Clique sur "Importer" pour voir les chiffres.</td></tr>
+          </table>
         </div>
       </div>
     </section>
