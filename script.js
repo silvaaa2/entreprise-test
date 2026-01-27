@@ -19,10 +19,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-/* ===== ROLES ===== */
-const ADMINS = ["dr947695@gmail.com"];
-const MANAGERS = ["manager@gmail.com"];
-
 /* ===== NAVIGATION ===== */
 window.showSection = function (id) {
   document.querySelectorAll(".section")
