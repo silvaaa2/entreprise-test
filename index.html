@@ -65,26 +65,32 @@
 
 <section id="comptabilite" class="section hover-box">
 <h1>💰 Comptabilité</h1>
-<p>Données synchronisées avec Google Sheets</p>
-
-
 <iframe
 src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/preview"
 width="100%"
 height="600"
-frameborder="0"
 ></iframe>
 </section>
 
 
+<!-- ADMIN -->
 <section id="admin" class="section hover-box">
 <h1>🔐 Admin</h1>
 
 
-<div class="admin-box">
-<input type="email" placeholder="Email admin" />
-<input type="password" placeholder="Mot de passe" />
-<button class="hover">Connexion</button>
+<!-- LOGIN -->
+<div id="loginBox" class="admin-box">
+<input id="email" type="email" placeholder="Email admin" />
+<input id="password" type="password" placeholder="Mot de passe" />
+<button class="hover" onclick="login()">Connexion</button>
+<p id="loginError"></p>
+</div>
+
+
+<!-- DASHBOARD -->
+<div id="adminDashboard" class="admin-box hidden">
+<p>✅ Connecté en tant qu’admin</p>
+<button class="hover" onclick="logout()">Déconnexion</button>
 </div>
 </section>
 
@@ -92,6 +98,7 @@ frameborder="0"
 </main>
 
 
-<script src="script.js"></script>
+<!-- FIREBASE -->
+<script type="module" src="script.js"></script>
 </body>
 </html>
