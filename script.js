@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-// Note : J'utilise setDoc partout maintenant pour éviter les plantages
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
@@ -17,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* 2. LIEN TABLEAU (Ton lien fonctionnel) */
+/* 2. LIEN TABLEAU */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
 /* 3. NAVIGATION */
@@ -48,96 +47,113 @@ window.showSection = function(id) {
   if(id === 'compta') window.toggleCompta('data');
 };
 
-/* 4. AUTH STATE & CHARGEMENT PROFIL */
+/* 4. AUTH STATE (C'EST ICI QUE CA SE JOUE) */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    // >>> CONNEXION <<<
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
     
-    // Chargement du profil connecté
+    // On charge le profil spécifique de CELUI qui vient de se connecter
     await loadUserProfile(user.uid);
     window.fetchUsers();
   } else {
+    // >>> DÉCONNEXION (NETTOYAGE) <<<
     if(loginBox) loginBox.classList.remove("hidden");
     if(adminDashboard) adminDashboard.classList.add("hidden");
+
+    // ON REMET A ZERO L'AFFICHAGE pour éviter que le prochain voie le profil d'avant
+    document.getElementById("sidebarUserName").innerText = "Utilisateur";
+    document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    document.getElementById("settingsDisplayName").value = "";
+    document.getElementById("settingsPhotoURL").value = "";
   }
 });
 
 /* ==================================================================
-   GESTION DU PROFIL (CORRIGÉE ET SÉCURISÉE)
+   GESTION DU PROFIL (LOGIQUE AMÉLIORÉE)
    ================================================================== */
 
-// A. CHARGER
 async function loadUserProfile(uid) {
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
+    const nameInput = document.getElementById("settingsDisplayName");
+    const photoInput = document.getElementById("settingsPhotoURL");
     
+    // IMAGE PAR DÉFAUT (Si l'utilisateur n'a rien mis)
+    const defaultImg = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+
     try {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // Mise à jour de la sidebar
-            sidebarName.innerText = data.displayName || "Utilisateur";
-            if(data.photoURL) sidebarImg.src = data.photoURL;
             
-            // Pré-remplissage des inputs Paramètres
-            const nameInput = document.getElementById("settingsDisplayName");
-            const photoInput = document.getElementById("settingsPhotoURL");
+            // Si data.displayName existe on le met, sinon on met "Utilisateur"
+            const realName = data.displayName && data.displayName !== "" ? data.displayName : "Utilisateur";
             
+            // Si data.photoURL existe on la met, sinon image par défaut
+            const realPhoto = data.photoURL && data.photoURL !== "" ? data.photoURL : defaultImg;
+
+            // Mise à jour Sidebar
+            sidebarName.innerText = realName;
+            sidebarImg.src = realPhoto;
+            
+            // Mise à jour Inputs Paramètres
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
+            
+        } else {
+            // C'est un nouvel utilisateur qui n'a pas encore de doc dans la base
+            // On force l'affichage par défaut pour effacer les traces du précédent
+            sidebarName.innerText = "Utilisateur";
+            sidebarImg.src = defaultImg;
+            if(nameInput) nameInput.value = "";
+            if(photoInput) photoInput.value = "";
         }
     } catch (error) {
         console.error("Erreur profil:", error);
     }
 }
 
-// B. SAUVEGARDER (C'est ici qu'on a réparé !)
 window.saveProfileSettings = async function() {
     const newName = document.getElementById("settingsDisplayName").value;
     const newPhotoURL = document.getElementById("settingsPhotoURL").value;
     const msg = document.getElementById("settingsMsg");
     const user = auth.currentUser;
 
-    if (!user) {
-        msg.innerText = "❌ Erreur : Tu n'es pas connecté.";
+    if (!user) { alert("Erreur : Non connecté !"); return; }
+    if (!newName || newName.trim() === "") {
+        msg.innerText = "⚠️ Le nom est obligatoire !";
+        msg.style.color = "orange";
         return;
     }
 
-    // 1. SECURITE : On vérifie que le champ n'est pas vide
-    if (!newName || newName.trim() === "") {
-        msg.innerText = "⚠️ Le nom d'affichage est obligatoire !";
-        msg.style.color = "orange";
-        return; // On arrête tout ici
-    }
-
-    msg.innerText = "Sauvegarde en cours...";
+    msg.innerText = "Sauvegarde...";
     msg.style.color = "white";
 
     try {
         const userRef = doc(db, "users", user.uid);
         
-        // 2. ROBUSTESSE : On utilise setDoc avec {merge: true}
-        // Ça permet de créer le document s'il n'existe pas encore (ce qui causait ton bug)
         await setDoc(userRef, {
             displayName: newName,
-            photoURL: newPhotoURL || "" // Si vide, on met une chaîne vide
+            photoURL: newPhotoURL || ""
         }, { merge: true });
 
         msg.innerText = "✅ Profil mis à jour !";
         msg.style.color = "#00ff88";
         
-        // Mise à jour immédiate de la sidebar sans recharger
+        // Mise à jour visuelle immédiate
         document.getElementById("sidebarUserName").innerText = newName;
-        if(newPhotoURL) document.getElementById("sidebarUserImg").src = newPhotoURL;
+        document.getElementById("sidebarUserImg").src = newPhotoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
     } catch (error) {
         console.error(error);
-        msg.innerText = "❌ Erreur technique : " + error.message;
+        msg.innerText = "❌ Erreur (Voir pop-up)";
         msg.style.color = "red";
+        alert("ERREUR :\n" + error.message);
     }
 };
 
@@ -158,11 +174,8 @@ window.createNewUser = async function() {
     const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     
     await setDoc(doc(db, "users", cred.user.uid), {
-      email: email, 
-      role: role, 
-      createdAt: new Date().toISOString().split('T')[0],
-      displayName: "", 
-      photoURL: ""
+      email: email, role: role, createdAt: new Date().toISOString().split('T')[0],
+      displayName: "", photoURL: ""
     });
     await signOut(secondaryAuth);
     msg.innerText = `✅ Ajouté : ${email}`;
@@ -193,12 +206,11 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 6. IMPORT TABLEAU (COMPTA) */
+/* 6. IMPORT TABLEAU */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
   const btns = document.querySelectorAll(".compta-controls button");
-
   if(mode === 'iframe') {
     frame.classList.remove("hidden");
     table.classList.add("hidden");
@@ -230,12 +242,8 @@ window.loadSheetData = async function() {
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
-        if(lineStr.includes("achats") && lineStr.includes("farm")) {
-           throw new Error("⚠️ Mauvais onglet détecté.");
-        }
-        if(lineStr.includes("nom du") || lineStr.includes("grade")) {
-            headerIndex = i; break;
-        }
+        if(lineStr.includes("achats") && lineStr.includes("farm")) throw new Error("⚠️ Mauvais onglet.");
+        if(lineStr.includes("nom du") || lineStr.includes("grade")) { headerIndex = i; break; }
     }
     if (headerIndex === -1) headerIndex = 0;
 
@@ -248,16 +256,13 @@ window.loadSheetData = async function() {
         const row = cleanRows[i];
         if (row.length > 1 && row[0] !== "") {
             html += "<tr>";
-            for(let j=0; j < cleanRows[0].length; j++) {
-                html += `<td>${row[j] || ""}</td>`;
-            }
+            cleanRows[0].forEach((_, j) => { html += `<td>${row[j] || ""}</td>`; });
             html += "</tr>";
         }
     }
     html += "</tbody>";
     table.innerHTML = html;
   } catch (error) {
-    console.error(error);
     table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
   }
 };
