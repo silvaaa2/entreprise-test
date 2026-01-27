@@ -17,11 +17,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ==================================================================
-   2. LIEN MAGIQUE (FORCE L'ONGLET 1852400448)
-   On utilise le lien "export" au lieu de "pub" pour viser juste.
+   2. LIEN MAGIQUE CIBLÉ (ONGLET COMPTA)
+   Nécessite que le Sheet soit en "Tous les utilisateurs disposant du lien"
    ================================================================== */
 const SHEET_ID = "1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU";
-const GID = "1852400448"; // C'est l'ID de ton onglet Compta
+const GID = "1852400448"; // L'ID de l'onglet Compta
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
 
@@ -126,83 +126,3 @@ window.toggleCompta = function(mode) {
     btns[1].classList.add("action-btn");
     window.loadSheetData();
   }
-};
-
-window.loadSheetData = async function() {
-  const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Récupération des données...</td></tr>";
-
-  try {
-    const response = await fetch(SHEET_CSV_URL);
-    if (!response.ok) throw new Error("Erreur lien (Vérifie que le sheet est 'Public avec le lien')");
-    
-    const data = await response.text();
-    
-    // Parser CSV robuste (gère les guillemets Google)
-    const rows = parseCSV(data);
-
-    // --- DETECTION INTELLIGENTE ---
-    // On cherche la ligne qui contient "Nom du salarié"
-    let headerIndex = -1;
-    for(let i=0; i < rows.length; i++) {
-        const line = JSON.stringify(rows[i]).toLowerCase();
-        if(line.includes("nom du") && line.includes("grade")) {
-            headerIndex = i; break;
-        }
-    }
-    
-    // Si on ne trouve pas, on prend la ligne 7 (souvent le cas dans ton fichier)
-    if (headerIndex === -1) headerIndex = 7;
-
-    const cleanRows = rows.slice(headerIndex);
-    
-    // Construction HTML
-    let html = "<thead><tr>";
-    
-    // En-têtes
-    cleanRows[0].forEach(cell => { 
-        html += `<th>${cell.trim() || "."}</th>`; 
-    });
-    html += "</tr></thead><tbody>";
-
-    // Données
-    for (let i = 1; i < cleanRows.length; i++) {
-        const row = cleanRows[i];
-        // On affiche seulement si la colonne NOM (index 0) est remplie
-        if (row[0] && row[0].trim().length > 0) {
-            html += "<tr>";
-            // On s'assure d'avoir autant de cellules que d'en-têtes
-            for(let j=0; j < cleanRows[0].length; j++) {
-                html += `<td>${row[j] || ""}</td>`;
-            }
-            html += "</tr>";
-        }
-    }
-    html += "</tbody>";
-    table.innerHTML = html;
-
-  } catch (error) {
-    console.error(error);
-    table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center;'>❌ Erreur : ${error.message}</td></tr>`;
-  }
-};
-
-// Fonction utilitaire pour bien lire le CSV de Google
-function parseCSV(str) {
-    const arr = [];
-    let quote = false;
-    let col = 0, c = 0;
-    for (; c < str.length; c++) {
-        let cc = str[c], nc = str[c + 1];
-        arr[col] = arr[col] || [];
-        arr[col][arr[col].length] = arr[col][arr[col].length] || "";
-        if (cc == '"' && quote && nc == '"') { arr[col][arr[col].length - 1] += cc; ++c; continue; }
-        if (cc == '"') { quote = !quote; continue; }
-        if (cc == ',' && !quote) { ++arr[col].length; continue; }
-        if (cc == '\r' && nc == '\n' && !quote) { ++col; ++c; continue; }
-        if (cc == '\n' && !quote) { ++col; continue; }
-        if (cc == '\r' && !quote) { ++col; continue; }
-        arr[col][arr[col].length - 1] += cc;
-    }
-    return arr;
-}
