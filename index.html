@@ -30,11 +30,15 @@
 <div id="adminDashboard" class="hidden">
 
   <aside class="sidebar">
-    <h3>Entreprise</h3>
+    <h3>Dashboard</h3>
     <button onclick="showSection('home')">🏠 Accueil</button>
     <button onclick="showSection('users')">👤 Utilisateurs</button>
+    
+    <button onclick="showSection('rh')">🤝 Ressources Humaines</button>
+    
     <button onclick="showSection('compta')">📊 Comptabilité</button>
     <button onclick="showSection('settings')">⚙️ Paramètres</button>
+    
     <div class="spacer"></div>
     <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
   </aside>
@@ -48,8 +52,13 @@
 
     <section id="users" class="section">
       <h1>Utilisateurs</h1>
-      <p>Gestion de l'équipe</p>
+      <p>Gestion de l'équipe et des permissions.</p>
     </section>
+
+    <section id="rh" class="section">
+      <h1>Ressources Humaines</h1>
+      <p>Gestion des contrats, congés et recrutements.</p>
+      </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
@@ -65,7 +74,7 @@
 
     <section id="settings" class="section">
       <h1>Paramètres</h1>
-      <p>Configuration du système</p>
+      <p>Configuration du système.</p>
     </section>
 
   </main>
