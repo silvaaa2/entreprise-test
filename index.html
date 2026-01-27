@@ -30,11 +30,11 @@
 
   <aside class="sidebar">
     <h3>Dashboard</h3>
-    <button onclick="showSection('home')">🏠 Accueil</button>
-    <button onclick="showSection('users')">👤 Gestion Équipe</button>
-    <button onclick="showSection('rh')">🤝 Ress. Humaines</button>
-    <button onclick="showSection('compta')">📊 Comptabilité</button>
-    <button onclick="showSection('settings')">⚙️ Paramètres</button>
+    <button id="btn-home" onclick="showSection('home')">🏠 Accueil</button>
+    <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
+    <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
+    <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
+    <button id="btn-settings" onclick="showSection('settings')">⚙️ Paramètres</button>
     
     <div class="spacer"></div>
 
@@ -42,6 +42,7 @@
         <img id="sidebarUserImg" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Profile">
         <span id="sidebarUserName">Utilisateur</span>
     </div>
+
     <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
   </aside>
 
@@ -54,8 +55,9 @@
 
     <section id="users" class="section">
       <h1>Gestion des Accès</h1>
+      
       <div class="create-user-box">
-        <h3>✨ Créer un nouvel accès</h3>
+        <h3>✨ Ajouter un collaborateur</h3>
         <div class="form-grid">
           <div class="input-group">
             <input id="newEmail" type="email" required>
@@ -67,22 +69,25 @@
           </div>
           <div class="input-group">
             <select id="newRole" class="cyber-select">
-              <option value="admin">Administrateur</option>
-              <option value="rh">Ressources Humaines</option>
-              <option value="compta">Comptable</option>
+              <option value="admin">Admin (Accès Total)</option>
+              <option value="rh">RH (Accès RH)</option>
+              <option value="compta">Compta (Accès Compta)</option>
             </select>
           </div>
         </div>
-        <button onclick="createNewUser()">Ajouter l'utilisateur (+)</button>
+        <button onclick="createNewUser()">Ajouter (+)</button>
         <p id="userMsg"></p>
       </div>
 
       <div style="margin-top: 40px;">
-        <h3>Liste des comptes actifs</h3>
+        <h3>L'Équipe</h3>
         <div class="table-wrapper">
           <table class="cyber-table">
             <thead>
-              <tr><th>Email</th><th>Rôle</th><th>Date Création</th></tr>
+              <tr>
+                <th>Profil</th> <th>Rôle (Modifier)</th>
+                <th>Date Arrivée</th>
+              </tr>
             </thead>
             <tbody id="userListBody"></tbody>
           </table>
@@ -92,53 +97,30 @@
 
     <section id="rh" class="section">
       <h1>Ressources Humaines</h1>
-      <p>Gestion RH.</p>
+      <p>Espace réservé aux RH et Admins.</p>
     </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      
       <div class="compta-controls">
-        <button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier Classique</button>
-        <button onclick="toggleCompta('data')" class="small-btn">📊 Exporter en Tableau Site</button>
+        <button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier</button>
+        <button onclick="toggleCompta('data')" class="small-btn">📊 Vue Tableau</button>
       </div>
-      
       <div id="sheetFrame" class="iframe-container" style="height: 750px;">
-         <iframe
-          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340"
-          width="100%"
-          height="100%"
-          style="border:none;">
-        </iframe>
+         <iframe src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340" width="100%" height="100%" style="border:none;"></iframe>
       </div>
-
       <div id="nativeTableContainer" class="hidden">
-        <div class="table-wrapper">
-          <table id="sheetTable" class="cyber-table">
-            <tr><td style="padding:20px; text-align:center">Clique sur "Exporter" pour charger les données.</td></tr>
-          </table>
-        </div>
+        <div class="table-wrapper"><table id="sheetTable" class="cyber-table"><tr><td>Chargement...</td></tr></table></div>
       </div>
     </section>
 
     <section id="settings" class="section">
-      <h1>Paramètres du Profil</h1>
-      
+      <h1>Paramètres</h1>
       <div class="create-user-box" style="max-width: 500px;">
         <h3>👤 Mon Profil</h3>
-        <p style="color:#64748b; font-size: 0.9em; margin-bottom: 20px;">Modifie ton nom d'affichage et ta photo (lien URL).</p>
-        
-        <div class="input-group">
-          <input id="settingsDisplayName" type="text" required>
-          <label>Nom d'affichage (ex: Jean-Pierre)</label>
-        </div>
-
-        <div class="input-group" style="margin-top: 20px;">
-          <input id="settingsPhotoURL" type="url" required>
-          <label>URL de l'image de profil (https://...)</label>
-        </div>
-        
-        <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder le Profil</button>
+        <div class="input-group"><input id="settingsDisplayName" type="text"><label>Nom d'affichage</label></div>
+        <div class="input-group" style="margin-top: 20px;"><input id="settingsPhotoURL" type="url"><label>URL Photo</label></div>
+        <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
         <p id="settingsMsg"></p>
       </div>
     </section>
