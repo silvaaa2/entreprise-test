@@ -83,8 +83,7 @@
                 <th>Date Création</th>
               </tr>
             </thead>
-            <tbody id="userListBody">
-              </tbody>
+            <tbody id="userListBody"></tbody>
           </table>
         </div>
       </div>
@@ -97,26 +96,16 @@
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      <div class="compta-controls">
-        <button onclick="toggleCompta('iframe')" class="small-btn action-btn">Vue Google Sheet</button>
-        <button onclick="toggleCompta('data')" class="small-btn">Vue Tableau Simplifié</button>
-      </div>
+      <p>Vue directe sur le fichier Maître.</p>
       
-      <div id="sheetFrame" class="iframe-container">
+      <div class="iframe-container" style="height: 80vh;">
          <iframe
-          src="https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pubhtml?widget=true&headers=false"
+          id="googleSheetFrame"
+          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/htmlembed?gid=1852400448&widget=true&chrome=false"
           width="100%"
-          height="700"
+          height="100%"
           style="border:none;">
         </iframe>
-      </div>
-
-      <div id="nativeTableContainer" class="hidden">
-        <div class="table-wrapper">
-          <table id="sheetTable" class="cyber-table">
-            <tr><td style="padding:20px; text-align:center">Chargement...</td></tr>
-          </table>
-        </div>
       </div>
     </section>
 
