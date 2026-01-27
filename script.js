@@ -39,12 +39,3 @@ onAuthStateChanged(auth, user => {
     return;
   }
 
-  if (![...ADMINS, ...MANAGERS].includes(user.email)) {
-    alert("Accès refusé");
-    signOut(auth);
-    return;
-  }
-
-  loginBox.classList.add("hidden");
-  adminDashboard.classList.remove("hidden");
-});
