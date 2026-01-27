@@ -26,15 +26,6 @@ window.showSection = function (id) {
   document.getElementById(id)?.classList.add("active");
 };
 
-/* ===== LOGIN ===== */
-window.login = function () {
-  signInWithEmailAndPassword(
-    auth,
-    email.value,
-    password.value
-  ).catch(err => error.innerText = err.message);
-};
-
 /* ===== LOGOUT ===== */
 window.logout = function () {
   signOut(auth);
