@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* 1. CONFIG FIREBASE (Touche pas à ça) */
+/* 1. CONFIG FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
   authDomain: "entreprise-test-admin.firebaseapp.com",
@@ -15,9 +15,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /* ===========================================================
-   2. LE LIEN (Celui que tu m'as donné, il est bon !)
+   2. TON NOUVEAU LIEN CSV (Colle-le ici !)
+   Assure-toi d'avoir sélectionné L'ONGLET SPECIFIQUE et pas "Document entier"
    =========================================================== */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?output=csv";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
 /* 3. ELEMENTS DOM */
 const loginBox = document.getElementById("loginBox");
@@ -61,7 +62,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ===========================================================
-   7. IMPORTATION DES DONNÉES (VERSION DEBUG)
+   7. IMPORTATION DES DONNÉES
    =========================================================== */
 
 window.toggleCompta = function(mode) {
@@ -83,69 +84,59 @@ window.loadSheetData = async function() {
 
   sheetFrame.classList.add("hidden");
   tableContainer.classList.remove("hidden");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Récupération des données...</td></tr>";
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Chargement de la Compta...</td></tr>";
 
   try {
-    console.log("Fetching URL:", SHEET_CSV_URL); // Pour le debug
     const response = await fetch(SHEET_CSV_URL);
-    
-    // VERIF 1 : Est-ce que le lien répond ?
-    if (!response.ok) {
-        throw new Error(`Erreur réseau (Code ${response.status})`);
-    }
-
-    // VERIF 2 : Est-ce qu'on reçoit bien du TEXTE (CSV) et pas une page HTML (Erreur 404) ?
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("text/html")) {
-        throw new Error("⚠️ ERREUR CRITIQUE : Le site reçoit une page web au lieu des données. <br>Si tu vois ça sur Vercel, c'est que la mise à jour du code n'est pas passée. Pense à faire 'git push' !");
-    }
+    if (!response.ok) throw new Error("Erreur lien (404/403)");
 
     const data = await response.text();
     
-    // Découpage
+    // Vérif format
+    if(data.trim().startsWith("<!DOCTYPE html>")) {
+        throw new Error("⚠️ Lien incorrect : Tu as publié en 'Page Web'. Choisis 'CSV' !");
+    }
+
     const rows = data.split("\n").map(row => row.split(","));
     
-    // RECHERCHE INTELLIGENTE DU DEBUT DU TABLEAU
-    // On cherche la ligne qui contient exactement "Nom du salarié" (ton tableau commence là)
+    // --- RECHERCHE INTELLIGENTE ---
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
         // On cherche tes colonnes spécifiques
-        if(lineStr.includes("nom du") && (lineStr.includes("grade") || lineStr.includes("run"))) {
+        if(lineStr.includes("nom du") && lineStr.includes("grade")) {
             headerIndex = i;
             break;
         }
     }
 
-    if (headerIndex === -1) {
-       // Si on ne trouve pas, on affiche les 5 premières lignes dans la console pour comprendre
-       console.log("Premières lignes reçues:", rows.slice(0, 5));
-       throw new Error("Impossible de trouver la ligne 'Nom du salarié'. Le format du Sheet a peut-être changé ?");
-    }
+    // Si on ne trouve pas, on prend la ligne 8 (index 7) par défaut
+    if (headerIndex === -1) headerIndex = 7;
 
     const cleanRows = rows.slice(headerIndex); 
 
-    // CONSTRUCTION DU HTML
+    // --- CONSTRUCTION DU HTML ---
     let html = "<thead><tr>";
     
-    // Headers
-    cleanRows[0].forEach(cell => {
+    // En-têtes (avec gestion des vides)
+    const headers = cleanRows[0];
+    headers.forEach(cell => {
       const cleanCell = cell.replace(/^"|"$/g, '').trim(); 
-      if(cleanCell) html += `<th>${cleanCell}</th>`;
+      // Si l'en-tête est vide (à cause de la fusion), on met un tiret ou un espace pour garder la colonne
+      html += `<th>${cleanCell || "-"}</th>`;
     });
     html += "</tr></thead><tbody>";
 
     // Données
     for (let i = 1; i < cleanRows.length; i++) {
       const row = cleanRows[i];
-      // On vérifie que la ligne a des données
+      // On affiche si la case "Nom" (index 0) n'est pas vide
       if (row[0] && row[0].replace(/^"|"$/g, '').trim().length > 0) {
         html += "<tr>";
-        for(let j=0; j < cleanRows[0].length; j++) {
-            if(cleanRows[0][j].replace(/^"|"$/g, '').trim()) {
-                let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
-                html += `<td>${cellData}</td>`;
-            }
+        for(let j=0; j < headers.length; j++) {
+            let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
+            // Petit fix pour l'argent : si ça contient $, on le garde
+            html += `<td>${cellData}</td>`;
         }
         html += "</tr>";
       }
@@ -157,7 +148,8 @@ window.loadSheetData = async function() {
   } catch (error) {
     console.error("Problème import:", error);
     table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>
-      ❌ <b>Oups !</b><br>${error.message}
+      ❌ <b>Erreur :</b> ${error.message}<br>
+      <i>Vérifie que tu as bien choisi l'onglet 'Copie de Compta...' dans Publier sur le web.</i>
     </td></tr>`;
   }
 };
