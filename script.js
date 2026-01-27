@@ -12,7 +12,6 @@ const firebaseConfig = {
   appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
 };
 
-// Initialisation sécurisée
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -20,7 +19,7 @@ const db = getFirestore(app);
 /* 2. LIEN API GOOGLE VIZ (Onglet Compta ID: 1852400448) */
 const SHEET_API_URL = "https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/gviz/tq?tqx=out:csv&gid=1852400448";
 
-/* 3. VARIABLES DOM */
+/* 3. ELEMENTS DOM */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
@@ -48,9 +47,8 @@ window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
   
-  // Chargement automatique selon l'onglet
   if(id === 'users') window.fetchUsers();
-  if(id === 'compta') window.toggleCompta('data');
+  // Par défaut, on ne charge pas la data pour laisser la vue "Fichier classique"
 };
 
 /* 5. GESTION DE L'ÉTAT (Auth Listener) */
@@ -59,7 +57,7 @@ onAuthStateChanged(auth, (user) => {
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
-    window.fetchUsers(); // Pré-chargement
+    window.fetchUsers();
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
     if(adminDashboard) adminDashboard.classList.add("hidden");
@@ -112,7 +110,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 7. IMPORT TABLEAU (API Google Viz) */
+/* 7. IMPORT TABLEAU (Boutons Toggle) */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -134,7 +132,7 @@ window.toggleCompta = function(mode) {
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Connexion Compta...</td></tr>";
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Extraction des données...</td></tr>";
 
   try {
     const response = await fetch(SHEET_API_URL);
@@ -146,14 +144,12 @@ window.loadSheetData = async function() {
         throw new Error("⚠️ Accès Bloqué. Mets le Sheet en 'Public' (Partager > Tous les utilisateurs).");
     }
 
-    // Utilisation du parseur corrigé
     const rows = parseCSVRefined(data);
 
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const line = JSON.stringify(rows[i]).toLowerCase();
         
-        // Sécurité Farm
         if(line.includes("achats") && line.includes("farm")) {
            throw new Error("⚠️ Mauvais onglet (Farm). Vérifie le partage du Sheet.");
         }
@@ -194,13 +190,12 @@ window.loadSheetData = async function() {
   }
 };
 
-// --- FONCTION PARSEUR (Ne pas oublier cette accolade à la fin !) ---
+// --- FONCTION PARSEUR (IMPORTANT: Tout copier) ---
 function parseCSVRefined(str) {
     const arr = [];
     let quote = false;
     let col = 0, c = 0;
     
-    // Détection auto : , ou ; ?
     const sample = str.substring(0, 500);
     const delimiter = (sample.match(/;/g) || []).length > (sample.match(/,/g) || []).length ? ';' : ','; 
 
@@ -219,4 +214,3 @@ function parseCSVRefined(str) {
     }
     return arr;
 }
-// FIN DU SCRIPT (Assure-toi d'avoir copié jusqu'ici)
