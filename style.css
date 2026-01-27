@@ -33,8 +33,8 @@ body {
 .sidebar a {
   cursor: pointer;
   padding: 10px;
-  border-radius: 8px;
-  transition: 0.3s;
+  border-radius: 10px;
+  transition: all 0.25s ease;
 }
 
 /* CONTENU */
@@ -48,14 +48,14 @@ body {
 .section {
   display: none;
   opacity: 0;
-  transform: translateY(20px) scale(0.97);
-  transition: all 0.5s ease;
+  transform: translateY(20px);
+  transition: all 0.4s ease;
 }
 
 .section.active {
   display: block;
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
 .section h1 {
@@ -86,35 +86,32 @@ body {
 .admin-box button {
   padding: 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #00ffe1;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 0 15px #00ffe1;
 }
 
-/* ===== 3D + GLOW EFFECT ===== */
-.tilt {
+/* ===== MINI ZOOM + GLOW EFFECT ===== */
+
+.hover {
   position: relative;
-  transform-style: preserve-3d;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.tilt::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle at var(--x, 50%) var(--y, 50%),
-    rgba(0,255,225,0.35),
-    transparent 60%
-  );
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
+.hover:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(0,255,225,0.6);
 }
 
-.tilt:hover::before {
-  opacity: 1;
+.hover-box {
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.25s ease;
+}
+
+.hover-box:hover {
+  transform: scale(1.015);
+  box-shadow:
+    0 0 25px rgba(0,255,225,0.25),
+    inset 0 0 15px rgba(0,255,225,0.15);
 }
