@@ -16,13 +16,20 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+/* ==================================================================
+   🚨 SÉCURITÉ SUPER ADMIN
+   Remplace par ton email exact. Si cet email se connecte, il devient Admin d'office.
+   ================================================================== */
+const SUPER_ADMIN = "dr947695@gmail.com"; 
+
+/* 2. LIEN TABLEAU */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
+/* 3. NAVIGATION */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
-/* 3. LOGIN */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -41,6 +48,7 @@ window.logout = function() {
 window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
+  
   if(id === 'users') window.fetchUsers();
   if(id === 'compta') window.toggleCompta('data');
 };
@@ -50,10 +58,10 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
-    window.showSection('home'); // Page par défaut
+    window.showSection('home');
 
     // On charge le profil et on applique les permissions
-    await loadUserProfile(user.uid);
+    await loadUserProfile(user); // Je passe l'objet user entier maintenant
     window.fetchUsers();
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
@@ -67,8 +75,11 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* 5. GESTION DU PROFIL & PERMISSIONS */
-async function loadUserProfile(uid) {
+/* 5. GESTION DU PROFIL & PERMISSIONS (C'EST ICI QUE J'AI CORRIGÉ) */
+async function loadUserProfile(user) {
+    const uid = user.uid;
+    const email = user.email;
+    
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
@@ -77,6 +88,26 @@ async function loadUserProfile(uid) {
     try {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
+
+        // --- BACKDOOR SUPER ADMIN ---
+        // Si c'est TOI et que tu n'es pas dans la base (ou pas admin), on te force Admin.
+        if (email === SUPER_ADMIN) {
+            if (!docSnap.exists() || docSnap.data().role !== 'admin') {
+                console.log("👑 Super Admin détecté : Attribution des droits...");
+                await setDoc(docRef, {
+                    email: email,
+                    role: 'admin',
+                    displayName: "Le Boss",
+                    photoURL: "",
+                    createdAt: new Date().toISOString().split('T')[0]
+                }, { merge: true });
+                
+                // On recharge la page pour appliquer les changements proprement
+                location.reload();
+                return;
+            }
+        }
+        // -----------------------------
 
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -89,11 +120,11 @@ async function loadUserProfile(uid) {
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
 
-            // >>> APPLICATION DES RÔLES <<<
+            // Application des permissions
             applyPermissions(data.role);
 
         } else {
-            // Si pas de profil, on considère que c'est un invité sans droits
+            // Invité
             applyPermissions("guest");
         }
     } catch (error) {
@@ -101,36 +132,30 @@ async function loadUserProfile(uid) {
     }
 }
 
-// FONCTION MAGIQUE : Cache les boutons selon le rôle
 function applyPermissions(role) {
-    console.log("Rôle détecté :", role);
+    console.log("Rôle appliqué :", role);
     
-    // On récupère les boutons
     const btnUsers = document.getElementById("btn-users");
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
 
-    // On montre tout par défaut
+    // Reset : On montre tout
     if(btnUsers) btnUsers.style.display = "block";
     if(btnRh) btnRh.style.display = "block";
     if(btnCompta) btnCompta.style.display = "block";
 
-    // Si ADMIN : On laisse tout (return direct)
-    if(role === 'admin') return;
+    if(role === 'admin') return; // Admin voit tout
 
-    // Si RH : Accès RH uniquement (Pas de Compta, Pas de Gestion Utilisateurs)
     if(role === 'rh') {
         if(btnCompta) btnCompta.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none"; // RH ne gère pas les admins
+        if(btnUsers) btnUsers.style.display = "none";
     }
 
-    // Si COMPTA : Accès Compta uniquement
     if(role === 'compta') {
         if(btnRh) btnRh.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
     }
 
-    // Si INVITE ou autre : On cache tout sauf l'accueil
     if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
         if(btnCompta) btnCompta.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
@@ -164,9 +189,8 @@ window.saveProfileSettings = async function() {
     }
 };
 
-/* 6. GESTION UTILISATEURS & CHANGEMENT DE RÔLE EN LIVE */
+/* 6. GESTION UTILISATEURS */
 window.createNewUser = async function() {
-    // ... (Ton code de création, identique à avant) ...
     const email = document.getElementById("newEmail").value;
     const password = document.getElementById("newPassword").value;
     const role = document.getElementById("newRole").value;
@@ -193,7 +217,6 @@ window.createNewUser = async function() {
     }
 };
 
-// AFFICHAGE LISTE AVEC SELECTEUR DE ROLE
 window.fetchUsers = async function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody) return;
@@ -208,12 +231,10 @@ window.fetchUsers = async function() {
       const uid = docSnap.id;
       const name = data.displayName || "Sans nom";
       
-      // Sélecteur de Rôle Dynamique
       const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
       const isSelectRh = data.role === 'rh' ? 'selected' : '';
       const isSelectCompta = data.role === 'compta' ? 'selected' : '';
 
-      // On crée un <select> qui déclenche updateUserRole() quand on le change
       const roleSelect = `
         <select onchange="window.updateUserRole('${uid}', this.value)" 
                 style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
@@ -240,15 +261,13 @@ window.fetchUsers = async function() {
   }
 };
 
-// FONCTION POUR METTRE A JOUR LE ROLE INSTANTANEMENT
 window.updateUserRole = async function(uid, newRole) {
     try {
         const userRef = doc(db, "users", uid);
         await updateDoc(userRef, { role: newRole });
         console.log(`Rôle mis à jour pour ${uid} -> ${newRole}`);
-        // Pas besoin d'alerte visuelle intrusive, c'est fait
     } catch (error) {
-        alert("Erreur lors du changement de rôle : " + error.message);
+        alert("Erreur rôle : " + error.message);
     }
 };
 
