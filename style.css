@@ -10,7 +10,7 @@
 
 * {
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif; /* Police plus moderne */
+  font-family: 'Poppins', sans-serif;
 }
 
 body {
@@ -54,7 +54,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
   text-align: center;
-  animation: float 6s ease-in-out infinite; /* Ça flotte ! */
+  animation: float 6s ease-in-out infinite;
 }
 
 .login-card h2 {
@@ -92,7 +92,6 @@ body {
   transition: 0.3s ease;
 }
 
-/* Animation Input Focus */
 .input-group input:focus ~ label,
 .input-group input:valid ~ label {
   top: -20px;
@@ -124,7 +123,6 @@ button {
   letter-spacing: 1px;
 }
 
-/* L'effet de lumière qui traverse le bouton */
 button::before {
   content: '';
   position: absolute;
@@ -198,7 +196,7 @@ button:active {
   background: rgba(59, 130, 246, 0.1);
   color: white;
   border: 1px solid var(--glow);
-  transform: translateX(10px); /* Glisse vers la droite */
+  transform: translateX(10px);
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
 }
 
@@ -228,7 +226,7 @@ button:active {
 
 .section {
   display: none;
-  animation: fadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Effet rebond */
+  animation: fadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .section.active {
@@ -243,7 +241,6 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
-/* Iframe Container style */
 .iframe-container {
   border-radius: 15px;
   overflow: hidden;
