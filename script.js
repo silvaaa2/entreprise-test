@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -16,14 +16,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* 2. LIEN TABLEAU */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
-/* 3. NAVIGATION */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
+/* 3. LOGIN */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -42,47 +41,38 @@ window.logout = function() {
 window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
-  
   if(id === 'users') window.fetchUsers();
   if(id === 'compta') window.toggleCompta('data');
 };
 
-/* 4. AUTH STATE (C'EST ICI QUE CA SE JOUE) */
+/* 4. AUTH STATE & PERMISSIONS */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // >>> CONNEXION <<<
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
-    window.showSection('home');
-    
-    // On charge le profil spécifique de CELUI qui vient de se connecter
+    window.showSection('home'); // Page par défaut
+
+    // On charge le profil et on applique les permissions
     await loadUserProfile(user.uid);
     window.fetchUsers();
   } else {
-    // >>> DÉCONNEXION (NETTOYAGE) <<<
     if(loginBox) loginBox.classList.remove("hidden");
     if(adminDashboard) adminDashboard.classList.add("hidden");
-
-    // ON REMET A ZERO L'AFFICHAGE pour éviter que le prochain voie le profil d'avant
-    document.getElementById("sidebarUserName").innerText = "Utilisateur";
-    document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-    document.getElementById("settingsDisplayName").value = "";
-    document.getElementById("settingsPhotoURL").value = "";
+    resetInterface();
   }
 });
 
-/* ==================================================================
-   GESTION DU PROFIL (LOGIQUE AMÉLIORÉE)
-   ================================================================== */
+function resetInterface() {
+    document.getElementById("sidebarUserName").innerText = "Utilisateur";
+    document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+}
 
+/* 5. GESTION DU PROFIL & PERMISSIONS */
 async function loadUserProfile(uid) {
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
     const photoInput = document.getElementById("settingsPhotoURL");
-    
-    // IMAGE PAR DÉFAUT (Si l'utilisateur n'a rien mis)
-    const defaultImg = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
     try {
         const docRef = doc(db, "users", uid);
@@ -90,31 +80,61 @@ async function loadUserProfile(uid) {
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
-            // Si data.displayName existe on le met, sinon on met "Utilisateur"
-            const realName = data.displayName && data.displayName !== "" ? data.displayName : "Utilisateur";
-            
-            // Si data.photoURL existe on la met, sinon image par défaut
-            const realPhoto = data.photoURL && data.photoURL !== "" ? data.photoURL : defaultImg;
+            const realName = data.displayName || "Utilisateur";
+            const realPhoto = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
-            // Mise à jour Sidebar
             sidebarName.innerText = realName;
             sidebarImg.src = realPhoto;
             
-            // Mise à jour Inputs Paramètres
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
-            
+
+            // >>> APPLICATION DES RÔLES <<<
+            applyPermissions(data.role);
+
         } else {
-            // C'est un nouvel utilisateur qui n'a pas encore de doc dans la base
-            // On force l'affichage par défaut pour effacer les traces du précédent
-            sidebarName.innerText = "Utilisateur";
-            sidebarImg.src = defaultImg;
-            if(nameInput) nameInput.value = "";
-            if(photoInput) photoInput.value = "";
+            // Si pas de profil, on considère que c'est un invité sans droits
+            applyPermissions("guest");
         }
     } catch (error) {
         console.error("Erreur profil:", error);
+    }
+}
+
+// FONCTION MAGIQUE : Cache les boutons selon le rôle
+function applyPermissions(role) {
+    console.log("Rôle détecté :", role);
+    
+    // On récupère les boutons
+    const btnUsers = document.getElementById("btn-users");
+    const btnRh = document.getElementById("btn-rh");
+    const btnCompta = document.getElementById("btn-compta");
+
+    // On montre tout par défaut
+    if(btnUsers) btnUsers.style.display = "block";
+    if(btnRh) btnRh.style.display = "block";
+    if(btnCompta) btnCompta.style.display = "block";
+
+    // Si ADMIN : On laisse tout (return direct)
+    if(role === 'admin') return;
+
+    // Si RH : Accès RH uniquement (Pas de Compta, Pas de Gestion Utilisateurs)
+    if(role === 'rh') {
+        if(btnCompta) btnCompta.style.display = "none";
+        if(btnUsers) btnUsers.style.display = "none"; // RH ne gère pas les admins
+    }
+
+    // Si COMPTA : Accès Compta uniquement
+    if(role === 'compta') {
+        if(btnRh) btnRh.style.display = "none";
+        if(btnUsers) btnUsers.style.display = "none";
+    }
+
+    // Si INVITE ou autre : On cache tout sauf l'accueil
+    if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
+        if(btnCompta) btnCompta.style.display = "none";
+        if(btnUsers) btnUsers.style.display = "none";
+        if(btnRh) btnRh.style.display = "none";
     }
 }
 
@@ -124,89 +144,115 @@ window.saveProfileSettings = async function() {
     const msg = document.getElementById("settingsMsg");
     const user = auth.currentUser;
 
-    if (!user) { alert("Erreur : Non connecté !"); return; }
-    if (!newName || newName.trim() === "") {
-        msg.innerText = "⚠️ Le nom est obligatoire !";
-        msg.style.color = "orange";
-        return;
-    }
+    if (!user) return;
+    if (!newName) { msg.innerText = "Nom obligatoire !"; return; }
 
     msg.innerText = "Sauvegarde...";
-    msg.style.color = "white";
-
     try {
-        const userRef = doc(db, "users", user.uid);
-        
-        await setDoc(userRef, {
+        await setDoc(doc(db, "users", user.uid), {
             displayName: newName,
             photoURL: newPhotoURL || ""
         }, { merge: true });
 
-        msg.innerText = "✅ Profil mis à jour !";
+        msg.innerText = "✅ Sauvegardé !";
         msg.style.color = "#00ff88";
-        
-        // Mise à jour visuelle immédiate
         document.getElementById("sidebarUserName").innerText = newName;
         document.getElementById("sidebarUserImg").src = newPhotoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-
     } catch (error) {
+        msg.innerText = "Erreur.";
         console.error(error);
-        msg.innerText = "❌ Erreur (Voir pop-up)";
-        msg.style.color = "red";
-        alert("ERREUR :\n" + error.message);
     }
 };
 
-
-/* 5. GESTION UTILISATEURS */
+/* 6. GESTION UTILISATEURS & CHANGEMENT DE RÔLE EN LIVE */
 window.createNewUser = async function() {
-  const email = document.getElementById("newEmail").value;
-  const password = document.getElementById("newPassword").value;
-  const role = document.getElementById("newRole").value;
-  const msg = document.getElementById("userMsg");
+    // ... (Ton code de création, identique à avant) ...
+    const email = document.getElementById("newEmail").value;
+    const password = document.getElementById("newPassword").value;
+    const role = document.getElementById("newRole").value;
+    const msg = document.getElementById("userMsg");
 
-  if(!email || !password) { msg.innerText = "⚠️ Remplis tout !"; return; }
-  msg.innerText = "Création...";
-  
-  try {
-    const secondaryApp = initializeApp(firebaseConfig, "Secondary");
-    const secondaryAuth = getAuth(secondaryApp);
-    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    if(!email || !password) { msg.innerText = "Remplis tout !"; return; }
+    msg.innerText = "Création...";
     
-    await setDoc(doc(db, "users", cred.user.uid), {
-      email: email, role: role, createdAt: new Date().toISOString().split('T')[0],
-      displayName: "", photoURL: ""
-    });
-    await signOut(secondaryAuth);
-    msg.innerText = `✅ Ajouté : ${email}`;
-    msg.style.color = "#00ff88";
-    window.fetchUsers();
-  } catch (error) {
-    msg.innerText = "❌ Erreur : " + error.message;
-    msg.style.color = "red";
-  }
+    try {
+        const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+        const secondaryAuth = getAuth(secondaryApp);
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        
+        await setDoc(doc(db, "users", cred.user.uid), {
+            email: email, role: role, createdAt: new Date().toISOString().split('T')[0],
+            displayName: "", photoURL: ""
+        });
+        await signOut(secondaryAuth);
+        msg.innerText = `✅ Ajouté !`;
+        msg.style.color = "#00ff88";
+        window.fetchUsers();
+    } catch (error) {
+        msg.innerText = "Erreur: " + error.message;
+    }
 };
 
+// AFFICHAGE LISTE AVEC SELECTEUR DE ROLE
 window.fetchUsers = async function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody) return;
-  tbody.innerHTML = "<tr><td colspan='3' style='text-align:center'>Chargement...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='3'>Chargement...</td></tr>";
+  
   try {
     const querySnapshot = await getDocs(collection(db, "users"));
     let html = "";
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      let color = data.role === 'admin' ? '#ff4f4f' : (data.role === 'rh' ? '#facc15' : '#3b82f6');
-      const nameDisplay = data.displayName ? `${data.displayName}` : data.email;
-      html += `<tr><td>${nameDisplay}</td><td><span style="color:${color};font-weight:bold">${data.role}</span></td><td>${data.createdAt || "-"}</td></tr>`;
+    
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const uid = docSnap.id;
+      const name = data.displayName || "Sans nom";
+      
+      // Sélecteur de Rôle Dynamique
+      const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
+      const isSelectRh = data.role === 'rh' ? 'selected' : '';
+      const isSelectCompta = data.role === 'compta' ? 'selected' : '';
+
+      // On crée un <select> qui déclenche updateUserRole() quand on le change
+      const roleSelect = `
+        <select onchange="window.updateUserRole('${uid}', this.value)" 
+                style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
+            <option value="admin" ${isSelectAdmin}>👑 Admin</option>
+            <option value="rh" ${isSelectRh}>🤝 RH</option>
+            <option value="compta" ${isSelectCompta}>📊 Compta</option>
+        </select>
+      `;
+
+      html += `
+        <tr>
+          <td>
+            <div style="font-weight:bold;">${name}</div>
+            <div style="font-size:0.8em; color:#94a3b8;">${data.email}</div>
+          </td>
+          <td>${roleSelect}</td>
+          <td>${data.createdAt || "-"}</td>
+        </tr>
+      `;
     });
-    tbody.innerHTML = html || "<tr><td colspan='3' style='text-align:center'>Aucun utilisateur.</td></tr>";
+    tbody.innerHTML = html;
   } catch (error) {
-    tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; color:red'>Erreur DB</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='3'>Erreur DB</td></tr>";
   }
 };
 
-/* 6. IMPORT TABLEAU */
+// FONCTION POUR METTRE A JOUR LE ROLE INSTANTANEMENT
+window.updateUserRole = async function(uid, newRole) {
+    try {
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, { role: newRole });
+        console.log(`Rôle mis à jour pour ${uid} -> ${newRole}`);
+        // Pas besoin d'alerte visuelle intrusive, c'est fait
+    } catch (error) {
+        alert("Erreur lors du changement de rôle : " + error.message);
+    }
+};
+
+/* 7. IMPORT TABLEAU */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -227,18 +273,15 @@ window.toggleCompta = function(mode) {
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Lecture des données...</td></tr>";
-
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Lecture...</td></tr>";
   try {
     const response = await fetch(SHEET_CSV_URL);
     if (!response.ok) throw new Error("Erreur lien");
     let data = await response.text();
     if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé.");
-
     const rows = data.split(/\r?\n/).map(row => {
         return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
     });
-
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
@@ -246,12 +289,10 @@ window.loadSheetData = async function() {
         if(lineStr.includes("nom du") || lineStr.includes("grade")) { headerIndex = i; break; }
     }
     if (headerIndex === -1) headerIndex = 0;
-
     const cleanRows = rows.slice(headerIndex);
     let html = "<thead><tr>";
     cleanRows[0].forEach(cell => { html += `<th>${cell || "."}</th>`; });
     html += "</tr></thead><tbody>";
-
     for (let i = 1; i < cleanRows.length; i++) {
         const row = cleanRows[i];
         if (row.length > 1 && row[0] !== "") {
