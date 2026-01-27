@@ -93,24 +93,23 @@
       <h1>Comptabilité</h1>
       
       <div class="compta-controls">
-        <button onclick="toggleCompta('iframe')" class="small-btn">Vue Fichier Original</button>
-        <button onclick="toggleCompta('data')" class="small-btn action-btn">🔄 Importer dans le Site</button>
+        <button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier Classique</button>
+        <button onclick="toggleCompta('data')" class="small-btn">📊 Exporter en Tableau Site</button>
       </div>
       
-      <div id="sheetFrame" class="iframe-container hidden">
+      <div id="sheetFrame" class="iframe-container" style="height: 750px;">
          <iframe
-          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/htmlembed?gid=1852400448&widget=true&chrome=false"
+          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=1852400448#gid=1852400448"
           width="100%"
-          height="600"
+          height="100%"
           style="border:none;">
         </iframe>
       </div>
 
-      <div id="nativeTableContainer">
-        <p style="color:#94a3b8; font-size:0.9em;">Données extraites en direct de l'onglet "Compta" :</p>
+      <div id="nativeTableContainer" class="hidden">
         <div class="table-wrapper">
           <table id="sheetTable" class="cyber-table">
-            <tr><td style="padding:20px; text-align:center">Clique sur le bouton bleu pour charger.</td></tr>
+            <tr><td style="padding:20px; text-align:center">Clique sur "Exporter" pour charger les données.</td></tr>
           </table>
         </div>
       </div>
