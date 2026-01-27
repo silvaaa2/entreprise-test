@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* 1. CONFIG FIREBASE */
+/* 1. CONFIG FIREBASE (Touche pas à ça) */
 const firebaseConfig = {
   apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
   authDomain: "entreprise-test-admin.firebaseapp.com",
@@ -15,8 +15,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 /* ===========================================================
-   2. TON LIEN CSV OFFICIEL
-   C'est le lien public que tu viens de me donner.
+   2. LE LIEN (Celui que tu m'as donné, il est bon !)
    =========================================================== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?output=csv";
 
@@ -62,7 +61,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ===========================================================
-   7. IMPORTATION DES DONNÉES (MOTEUR)
+   7. IMPORTATION DES DONNÉES (VERSION DEBUG)
    =========================================================== */
 
 window.toggleCompta = function(mode) {
@@ -73,7 +72,6 @@ window.toggleCompta = function(mode) {
     frame.classList.remove("hidden");
     table.classList.add("hidden");
   } else {
-    // Lance l'importation
     window.loadSheetData();
   }
 };
@@ -83,65 +81,67 @@ window.loadSheetData = async function() {
   const sheetFrame = document.getElementById("sheetFrame");
   const table = document.getElementById("sheetTable");
 
-  // Affiche la zone du tableau
   sheetFrame.classList.add("hidden");
   tableContainer.classList.remove("hidden");
   table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Récupération des données...</td></tr>";
 
   try {
+    console.log("Fetching URL:", SHEET_CSV_URL); // Pour le debug
     const response = await fetch(SHEET_CSV_URL);
     
+    // VERIF 1 : Est-ce que le lien répond ?
     if (!response.ok) {
-        throw new Error("Erreur réseau (Code " + response.status + ")");
+        throw new Error(`Erreur réseau (Code ${response.status})`);
+    }
+
+    // VERIF 2 : Est-ce qu'on reçoit bien du TEXTE (CSV) et pas une page HTML (Erreur 404) ?
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("text/html")) {
+        throw new Error("⚠️ ERREUR CRITIQUE : Le site reçoit une page web au lieu des données. <br>Si tu vois ça sur Vercel, c'est que la mise à jour du code n'est pas passée. Pense à faire 'git push' !");
     }
 
     const data = await response.text();
     
-    // Vérification : si on reçoit du HTML, c'est que le lien n'est pas bon (mais le tien est bon !)
-    if(data.trim().startsWith("<!DOCTYPE html>")) {
-        throw new Error("⚠️ Erreur de format. Vérifie que le document est bien publié en CSV.");
-    }
-
-    // Découpage des lignes
+    // Découpage
     const rows = data.split("\n").map(row => row.split(","));
     
-    // --- INTELLIGENCE : Trouver le début du tableau ---
-    // On scanne pour trouver la ligne qui contient "Nom du salarié" ou "Grade"
+    // RECHERCHE INTELLIGENTE DU DEBUT DU TABLEAU
+    // On cherche la ligne qui contient exactement "Nom du salarié" (ton tableau commence là)
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
-        // Mots clés basés sur ton image
-        if(lineStr.includes("nom du") || lineStr.includes("grade") || lineStr.includes("facture")) {
+        // On cherche tes colonnes spécifiques
+        if(lineStr.includes("nom du") && (lineStr.includes("grade") || lineStr.includes("run"))) {
             headerIndex = i;
             break;
         }
     }
 
-    // Si on ne trouve pas automatiquement, on prend la ligne 7 (index 7 = ligne 8 sur Excel)
-    if (headerIndex === -1) headerIndex = 7;
+    if (headerIndex === -1) {
+       // Si on ne trouve pas, on affiche les 5 premières lignes dans la console pour comprendre
+       console.log("Premières lignes reçues:", rows.slice(0, 5));
+       throw new Error("Impossible de trouver la ligne 'Nom du salarié'. Le format du Sheet a peut-être changé ?");
+    }
 
-    // On ne garde que les lignes à partir de l'en-tête
     const cleanRows = rows.slice(headerIndex); 
 
-    // --- CONSTRUCTION DU HTML ---
+    // CONSTRUCTION DU HTML
     let html = "<thead><tr>";
     
-    // 1. En-têtes
+    // Headers
     cleanRows[0].forEach(cell => {
-      const cleanCell = cell.replace(/^"|"$/g, '').trim(); // Enlève les guillemets CSV
+      const cleanCell = cell.replace(/^"|"$/g, '').trim(); 
       if(cleanCell) html += `<th>${cleanCell}</th>`;
     });
     html += "</tr></thead><tbody>";
 
-    // 2. Données
+    // Données
     for (let i = 1; i < cleanRows.length; i++) {
       const row = cleanRows[i];
-      // On affiche la ligne seulement si la colonne A (Nom) n'est pas vide
+      // On vérifie que la ligne a des données
       if (row[0] && row[0].replace(/^"|"$/g, '').trim().length > 0) {
         html += "<tr>";
-        // On remplit les cellules
         for(let j=0; j < cleanRows[0].length; j++) {
-            // Si la colonne a un titre, on affiche la cellule
             if(cleanRows[0][j].replace(/^"|"$/g, '').trim()) {
                 let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
                 html += `<td>${cellData}</td>`;
@@ -157,7 +157,7 @@ window.loadSheetData = async function() {
   } catch (error) {
     console.error("Problème import:", error);
     table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>
-      ❌ <b>Erreur :</b> ${error.message}
+      ❌ <b>Oups !</b><br>${error.message}
     </td></tr>`;
   }
 };
