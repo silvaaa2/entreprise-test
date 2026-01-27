@@ -17,15 +17,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ==================================================================
-   2. LIEN D'EXPORTATION (Onglet Compta ID: 1852400448)
+   2. TON NOUVEAU LIEN (C'est celui que tu viens de donner)
    ================================================================== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
-/* 3. NAVIGATION */
+/* 3. ELEMENTS DOM */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
+/* 4. LOGIN & NAVIGATION */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -37,15 +38,19 @@ window.login = async function() {
   }
 };
 
-window.logout = function() { signOut(auth); };
+window.logout = function() {
+  signOut(auth).then(() => window.location.reload());
+};
 
 window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
+  
   if(id === 'users') window.fetchUsers();
-  if(id === 'compta') window.toggleCompta('data'); // On force le tableau direct
+  if(id === 'compta') window.toggleCompta('data'); // Charge directement le tableau
 };
 
+/* 5. GESTION DE L'ÉTAT (Auth) */
 onAuthStateChanged(auth, (user) => {
   if (user) {
     if(loginBox) loginBox.classList.add("hidden");
@@ -58,7 +63,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-/* 4. USERS */
+/* 6. GESTION UTILISATEURS */
 window.createNewUser = async function() {
   const email = document.getElementById("newEmail").value;
   const password = document.getElementById("newPassword").value;
@@ -104,7 +109,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 5. TABLEAU COMPTA (IMPORTATION PROPRE) */
+/* 7. IMPORT TABLEAU (COMPTA) */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -126,44 +131,34 @@ window.toggleCompta = function(mode) {
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Lecture des données...</td></tr>";
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Chargement des données...</td></tr>";
 
   try {
-    const response = await fetch(https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv);
-    if (!response.ok) throw new Error("Erreur lien (Vérifie Partage Public)");
+    const response = await fetch(SHEET_CSV_URL);
+    if (!response.ok) throw new Error("Erreur lien (Vérifie que le sheet est bien Publié)");
     
     let data = await response.text();
     
-    if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé. Mets le sheet en Public.");
+    // Si Google renvoie une page web au lieu du CSV
+    if(data.trim().startsWith("<!DOCTYPE html>")) {
+        throw new Error("Lien incorrect. Assure-toi d'avoir choisi 'CSV' dans 'Publier sur le web'.");
+    }
 
-    // --- NOUVEAU PARSEUR (Simple et Efficace) ---
-    // 1. On détecte le séparateur (Virgule ou Point-Virgule)
-    const delimiter = data.indexOf(";") !== -1 ? ";" : ",";
-    
-    // 2. On découpe ligne par ligne
-    const rows = data.split(/\r?\n/).map(line => {
-      // 3. On découpe chaque ligne par le séparateur (en respectant les guillemets)
-      // Regex magique pour CSV
-      return line.split(new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`))
-                 .map(cell => cell.replace(/^"|"$/g, '').trim()); // Nettoyage
-    });
+    // Utilisation du parseur robuste (Gère les virgules ET les points-virgules)
+    const rows = parseCSVRefined(data);
 
-    // --- RECHERCHE INTELLIGENTE ---
+    // Recherche de la ligne de titre "Nom du salarié"
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
-        const lineStr = JSON.stringify(rows[i]).toLowerCase();
+        const line = JSON.stringify(rows[i]).toLowerCase();
         
-        // Sécurité : Si on voit "Farm", on prévient
-        if(lineStr.includes("achats") && lineStr.includes("farm")) {
-           throw new Error("⚠️ Google envoie le mauvais onglet (Farm). Utilise le lien Export spécifique.");
-        }
-        // On cherche la vraie ligne de titre
-        if(lineStr.includes("nom du") || lineStr.includes("grade") || lineStr.includes("poste")) {
+        // On cherche les mots clés de ton tableau Compta
+        if(line.includes("nom du") && line.includes("grade")) {
             headerIndex = i; break;
         }
     }
     
-    // Si on ne trouve pas les titres, on prend le début par défaut
+    // Si on ne trouve pas, on prend le début (car avec ton lien 'gid', ça devrait être bon direct)
     if (headerIndex === -1) headerIndex = 0;
 
     const cleanRows = rows.slice(headerIndex);
@@ -172,18 +167,20 @@ window.loadSheetData = async function() {
     let html = "<thead><tr>";
     // En-têtes
     cleanRows[0].forEach(cell => { 
-        html += `<th>${cell || "."}</th>`; 
+        let text = cell.replace(/^"|"$/g, '').trim();
+        html += `<th>${text || "."}</th>`; 
     });
     html += "</tr></thead><tbody>";
 
     // Données
     for (let i = 1; i < cleanRows.length; i++) {
         const row = cleanRows[i];
-        // On affiche seulement si la colonne A est remplie
-        if (row.length > 1 && row[0] !== "") {
+        // On affiche seulement si la colonne NOM (index 0) n'est pas vide
+        if (row.length > 1 && row[0].replace(/^"|"$/g, '').trim() !== "") {
             html += "<tr>";
             for(let j=0; j < cleanRows[0].length; j++) {
-                html += `<td>${row[j] || ""}</td>`;
+                let cellData = row[j] ? row[j].replace(/^"|"$/g, '') : "";
+                html += `<td>${cellData}</td>`;
             }
             html += "</tr>";
         }
@@ -193,6 +190,34 @@ window.loadSheetData = async function() {
 
   } catch (error) {
     console.error(error);
-    table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
+    table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>
+      ❌ <b>Erreur :</b> ${error.message}
+    </td></tr>`;
   }
 };
+
+// --- FONCTION PARSEUR (INDISPENSABLE) ---
+function parseCSVRefined(str) {
+    const arr = [];
+    let quote = false;
+    let col = 0, c = 0;
+    
+    // Détection auto : Est-ce qu'il y a plus de ; ou de , ?
+    const sample = str.substring(0, 500);
+    const delimiter = (sample.match(/;/g) || []).length > (sample.match(/,/g) || []).length ? ';' : ','; 
+
+    for (; c < str.length; c++) {
+        let cc = str[c], nc = str[c + 1];
+        arr[col] = arr[col] || [];
+        arr[col][arr[col].length] = arr[col][arr[col].length] || "";
+        
+        if (cc == '"' && quote && nc == '"') { arr[col][arr[col].length - 1] += cc; ++c; continue; }
+        if (cc == '"') { quote = !quote; continue; }
+        if (cc == delimiter && !quote) { ++arr[col].length; continue; }
+        if (cc == '\r' && nc == '\n' && !quote) { ++col; ++c; continue; }
+        if (cc == '\n' && !quote) { ++col; continue; }
+        if (cc == '\r' && !quote) { ++col; continue; }
+        arr[col][arr[col].length - 1] += cc;
+    }
+    return arr;
+}
