@@ -2,20 +2,27 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Dashboard</title>
+  <title>Admin Dashboard Ultra</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 
 <body>
 
 <div id="loginBox">
   <div class="login-card">
-    <h2>Admin Login</h2>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Mot de passe">
-    <button onclick="login()">Connexion</button>
+    <h2>Admin Access</h2>
+    <div class="input-group">
+      <input id="email" type="email" required>
+      <label>Email</label>
+    </div>
+    <div class="input-group">
+      <input id="password" type="password" required>
+      <label>Mot de passe</label>
+    </div>
+    <button onclick="login()">CONNEXION 🚀</button>
     <p id="error"></p>
   </div>
 </div>
@@ -28,34 +35,37 @@
     <button onclick="showSection('users')">👤 Utilisateurs</button>
     <button onclick="showSection('compta')">📊 Comptabilité</button>
     <button onclick="showSection('settings')">⚙️ Paramètres</button>
-    <button onclick="logout()">🚪 Déconnexion</button>
+    <div class="spacer"></div>
+    <button class="logout-btn" onclick="logout()">🚪 Déconnexion</button>
   </aside>
 
   <main class="content">
 
     <section id="home" class="section active">
-      <h1>Bienvenue</h1>
-      <p>Dashboard sécurisé Firebase</p>
+      <h1>Bienvenue, Boss.</h1>
+      <p>Système opérationnel et sécurisé.</p>
     </section>
 
     <section id="users" class="section">
       <h1>Utilisateurs</h1>
-      <p>Gestion Admin / Manager</p>
+      <p>Gestion de l'équipe</p>
     </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      <iframe
-        src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=1852400448"
-        width="100%"
-        height="600"
-        style="border:none;">
-      </iframe>
+      <div class="iframe-container">
+        <iframe
+          src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=1852400448"
+          width="100%"
+          height="600"
+          style="border:none;">
+        </iframe>
+      </div>
     </section>
 
     <section id="settings" class="section">
       <h1>Paramètres</h1>
-      <p>Configuration générale</p>
+      <p>Configuration du système</p>
     </section>
 
   </main>
