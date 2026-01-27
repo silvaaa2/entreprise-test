@@ -16,10 +16,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* 2. LIEN API GOOGLE VIZ (Onglet Compta ID: 1852400448) */
-const SHEET_API_URL = "https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/gviz/tq?tqx=out:csv&gid=1852400448";
+/* ==================================================================
+   2. LE LIEN UNIQUE (A REMPLACER)
+   Colle ici le lien que tu viens de copier dans "Publier sur le web".
+   Il doit finir par "output=csv"
+   ================================================================== */
+const SHEET_CSV_URL = "TON_LIEN_ICI_ENTRE_LES_GUILLEMETS"; 
 
-/* 3. ELEMENTS DOM */
+
+/* 3. VARIABLES DOM */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
@@ -28,14 +33,11 @@ const errorMsg = document.getElementById("error");
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
-  
   if(errorMsg) errorMsg.innerText = "Connexion...";
-
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
-    console.error("Erreur login:", error);
-    if(errorMsg) errorMsg.innerText = "❌ Email ou mot de passe incorrect.";
+    if(errorMsg) errorMsg.innerText = "❌ Login incorrect.";
   }
 };
 
@@ -46,12 +48,10 @@ window.logout = function() {
 window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
-  
   if(id === 'users') window.fetchUsers();
-  // Par défaut, on ne charge pas la data pour laisser la vue "Fichier classique"
+  // On ne charge pas la compta auto pour laisser le choix
 };
 
-/* 5. GESTION DE L'ÉTAT (Auth Listener) */
 onAuthStateChanged(auth, (user) => {
   if (user) {
     if(loginBox) loginBox.classList.add("hidden");
@@ -64,7 +64,7 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-/* 6. GESTION UTILISATEURS */
+/* 5. GESTION UTILISATEURS */
 window.createNewUser = async function() {
   const email = document.getElementById("newEmail").value;
   const password = document.getElementById("newPassword").value;
@@ -110,7 +110,7 @@ window.fetchUsers = async function() {
   }
 };
 
-/* 7. IMPORT TABLEAU (Boutons Toggle) */
+/* 6. IMPORT TABLEAU (BOUTONS) */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -132,41 +132,51 @@ window.toggleCompta = function(mode) {
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Extraction des données...</td></tr>";
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Importation des données...</td></tr>";
+
+  // Petite sécurité si tu as oublié de changer le lien
+  if(SHEET_CSV_URL.includes("TON_LIEN_ICI")) {
+     table.innerHTML = `<tr><td style='color:orange; text-align:center;'>⚠️ Tu as oublié de coller ton lien CSV dans le fichier script.js !</td></tr>`;
+     return;
+  }
 
   try {
-    const response = await fetch(SHEET_API_URL);
-    if (!response.ok) throw new Error("Erreur HTTP: " + response.status);
+    const response = await fetch(SHEET_CSV_URL);
+    if (!response.ok) throw new Error("Erreur lien (Vérifie 'Publier sur le web')");
     
     let data = await response.text();
     
-    if(data.trim().startsWith("<!DOCTYPE html>") || data.includes("<html")) {
-        throw new Error("⚠️ Accès Bloqué. Mets le Sheet en 'Public' (Partager > Tous les utilisateurs).");
+    // Si c'est du HTML, c'est pas bon
+    if(data.trim().startsWith("<!DOCTYPE html>")) {
+        throw new Error("⚠️ Lien incorrect. Tu dois choisir 'CSV' dans les options de publication.");
     }
 
-    const rows = parseCSVRefined(data);
+    // Parseur CSV
+    const rows = parseCSV(data);
 
+    // Recherche de l'en-tête "Nom du salarié"
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const line = JSON.stringify(rows[i]).toLowerCase();
         
-        if(line.includes("achats") && line.includes("farm")) {
-           throw new Error("⚠️ Mauvais onglet (Farm). Vérifie le partage du Sheet.");
+        // Si on trouve "Dépenses déductibles", c'est le mauvais onglet !
+        if(line.includes("dépenses") && line.includes("déductibles")) {
+           throw new Error("⚠️ Tu importes l'onglet 'Dépenses'.<br>Refais la manip 'Publier sur le web' en sélectionnant l'onglet 'Compta'.");
         }
+
         if(line.includes("nom du") && line.includes("grade")) {
             headerIndex = i; break;
         }
     }
     
-    if (headerIndex === -1) headerIndex = 0;
+    if (headerIndex === -1) headerIndex = 7; // Fallback
 
     const cleanRows = rows.slice(headerIndex);
     
     // HTML
     let html = "<thead><tr>";
     cleanRows[0].forEach(cell => { 
-        let text = cell.replace(/^"|"$/g, '').trim();
-        html += `<th>${text || "."}</th>`; 
+        html += `<th>${cell.replace(/^"|"$/g, '').trim() || "."}</th>`; 
     });
     html += "</tr></thead><tbody>";
 
@@ -190,14 +200,13 @@ window.loadSheetData = async function() {
   }
 };
 
-// --- FONCTION PARSEUR (IMPORTANT: Tout copier) ---
-function parseCSVRefined(str) {
+// Fonction Parseur CSV
+function parseCSV(str) {
     const arr = [];
     let quote = false;
     let col = 0, c = 0;
-    
-    const sample = str.substring(0, 500);
-    const delimiter = (sample.match(/;/g) || []).length > (sample.match(/,/g) || []).length ? ';' : ','; 
+    // Détection auto séparateur
+    const delimiter = (str.indexOf(";") > -1 && str.indexOf(";") < str.indexOf(",")) ? ";" : ",";
 
     for (; c < str.length; c++) {
         let cc = str[c], nc = str[c + 1];
