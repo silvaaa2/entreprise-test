@@ -1,249 +1,120 @@
 :root {
   --bg: #05070a;
   --panel: #0f172a;
-  --accent: #3b82f6; /* Bleu électrique */
+  --accent: #3b82f6;
   --accent-hover: #60a5fa;
   --glow: rgba(59, 130, 246, 0.5);
   --text: #e2e8f0;
   --error: #ff4f4f;
 }
 
-* {
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
-}
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { margin: 0; background: radial-gradient(circle at top, #1e293b, var(--bg)); color: var(--text); height: 100vh; overflow: hidden; }
+.hidden { display: none !important; }
 
-body {
-  margin: 0;
-  background: radial-gradient(circle at top, #1e293b, var(--bg));
-  color: var(--text);
-  height: 100vh;
-  overflow: hidden;
-}
+/* ... (Garde tes animations précédentes Login/Sidebar ici) ... */
+/* Pour gagner de la place, je te mets juste les NOUVEAUTÉS ci-dessous
+   mais assure-toi de garder tout le CSS d'avant ! */
 
-.hidden {
-  display: none !important;
-}
+/* --- AJOUTS SPECIFIQUES COMPTA --- */
 
-/* --- ANIMATIONS --- */
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- LOGIN PAGE --- */
-#loginBox {
-  height: 100vh;
+.compta-controls {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(5px);
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-.login-card {
-  width: 350px;
-  background: rgba(15, 23, 42, 0.8);
-  padding: 40px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-  text-align: center;
-  animation: float 6s ease-in-out infinite;
+.small-btn {
+  width: auto;
+  padding: 10px 20px;
+  font-size: 14px;
+  background: #1e293b;
+  border: 1px solid #334155;
 }
 
-.login-card h2 {
-  margin-bottom: 30px;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-shadow: 0 0 10px var(--glow);
-}
-
-/* INPUTS STYLÉS */
-.input-group {
-  position: relative;
-  margin-bottom: 25px;
-}
-
-.input-group input {
-  width: 100%;
-  padding: 10px 0;
-  font-size: 16px;
-  color: white;
-  border: none;
-  border-bottom: 2px solid #334155;
-  background: transparent;
-  outline: none;
-  transition: 0.3s;
-}
-
-.input-group label {
-  position: absolute;
-  top: 10px;
-  left: 0;
-  color: #64748b;
-  pointer-events: none;
-  transition: 0.3s ease;
-}
-
-.input-group input:focus ~ label,
-.input-group input:valid ~ label {
-  top: -20px;
-  font-size: 12px;
-  color: var(--accent);
-}
-
-.input-group input:focus {
-  border-bottom: 2px solid var(--accent);
-  box-shadow: 0 10px 20px -10px var(--glow);
-}
-
-/* BOUTON ÉNERVÉ */
-button {
-  width: 100%;
-  padding: 15px;
+.action-btn {
   background: var(--accent);
   color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  z-index: 1;
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.info-text {
+  color: #94a3b8;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+/* CYBER TABLE STYLE */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.cyber-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  min-width: 600px;
+}
+
+.cyber-table thead tr {
+  background: rgba(59, 130, 246, 0.2);
+  border-bottom: 2px solid var(--accent);
+}
+
+.cyber-table th {
+  padding: 15px;
+  text-align: left;
+  color: var(--accent-hover);
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  transition: 0.5s;
-  z-index: -1;
+.cyber-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: #cbd5e1;
 }
 
-button:hover::before {
-  left: 100%;
+.cyber-table tr:hover {
+  background: rgba(255,255,255,0.05);
 }
 
-button:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 0 25px var(--glow);
-  background: var(--accent-hover);
+.cyber-table tr:last-child td {
+  border-bottom: none;
 }
 
-button:active {
-  transform: scale(0.95);
-}
+/* Animations de base (Déjà dans ton fichier précédent) */
+@keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-#error {
-  color: var(--error);
-  margin-top: 15px;
-  font-size: 0.9em;
-  min-height: 20px;
-}
-
-/* --- DASHBOARD --- */
-#adminDashboard {
-  display: flex;
-  height: 100vh;
-}
-
-/* SIDEBAR */
-.sidebar {
-  width: 260px;
-  background: var(--panel);
-  padding: 30px 20px;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 5px 0 30px rgba(0,0,0,0.3);
-}
-
-.sidebar h3 {
-  text-align: center;
-  color: var(--text);
-  margin-bottom: 40px;
-  font-size: 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.sidebar button {
-  background: transparent;
-  color: #94a3b8;
-  text-align: left;
-  margin-bottom: 10px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  border: 1px solid transparent;
-}
-
-.sidebar button:hover {
-  background: rgba(59, 130, 246, 0.1);
-  color: white;
-  border: 1px solid var(--glow);
-  transform: translateX(10px);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
-}
-
-.spacer {
-  flex: 1;
-}
-
-.logout-btn {
-  background: rgba(255, 79, 79, 0.1) !important;
-  color: #ff4f4f !important;
-  border: 1px solid rgba(255, 79, 79, 0.2) !important;
-}
-
-.logout-btn:hover {
-  background: rgba(255, 79, 79, 0.8) !important;
-  color: white !important;
-  box-shadow: 0 0 20px rgba(255, 79, 79, 0.4) !important;
-}
-
-/* CONTENT */
-.content {
-  flex: 1;
-  padding: 40px;
-  overflow-y: auto;
-  background: radial-gradient(circle at bottom right, #172033, var(--bg));
-}
-
-.section {
-  display: none;
-  animation: fadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.section.active {
-  display: block;
-}
-
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-  background: linear-gradient(90deg, #fff, var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.iframe-container {
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.1);
-}
+#loginBox { height: 100vh; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+.login-card { width: 350px; background: rgba(15, 23, 42, 0.8); padding: 40px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 0 50px rgba(0, 0, 0, 0.5); text-align: center; animation: float 6s ease-in-out infinite; }
+.login-card h2 { margin-bottom: 30px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px var(--glow); }
+.input-group { position: relative; margin-bottom: 25px; }
+.input-group input { width: 100%; padding: 10px 0; font-size: 16px; color: white; border: none; border-bottom: 2px solid #334155; background: transparent; outline: none; transition: 0.3s; }
+.input-group label { position: absolute; top: 10px; left: 0; color: #64748b; pointer-events: none; transition: 0.3s ease; }
+.input-group input:focus ~ label, .input-group input:valid ~ label { top: -20px; font-size: 12px; color: var(--accent); }
+.input-group input:focus { border-bottom: 2px solid var(--accent); box-shadow: 0 10px 20px -10px var(--glow); }
+button { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s ease; z-index: 1; text-transform: uppercase; letter-spacing: 1px; }
+button::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition: 0.5s; z-index: -1; }
+button:hover::before { left: 100%; }
+button:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 0 25px var(--glow); background: var(--accent-hover); }
+button:active { transform: scale(0.95); }
+#error { color: var(--error); margin-top: 15px; font-size: 0.9em; min-height: 20px; }
+#adminDashboard { display: flex; height: 100vh; }
+.sidebar { width: 260px; background: var(--panel); padding: 30px 20px; display: flex; flex-direction: column; border-right: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 5px 0 30px rgba(0,0,0,0.3); }
+.sidebar h3 { text-align: center; color: var(--text); margin-bottom: 40px; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; }
+.sidebar button { background: transparent; color: #94a3b8; text-align: left; margin-bottom: 10px; padding: 12px 20px; border-radius: 12px; border: 1px solid transparent; }
+.sidebar button:hover { background: rgba(59, 130, 246, 0.1); color: white; border: 1px solid var(--glow); transform: translateX(10px); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+.spacer { flex: 1; }
+.logout-btn { background: rgba(255, 79, 79, 0.1) !important; color: #ff4f4f !important; border: 1px solid rgba(255, 79, 79, 0.2) !important; }
+.logout-btn:hover { background: rgba(255, 79, 79, 0.8) !important; color: white !important; box-shadow: 0 0 20px rgba(255, 79, 79, 0.4) !important; }
+.content { flex: 1; padding: 40px; overflow-y: auto; background: radial-gradient(circle at bottom right, #172033, var(--bg)); }
+.section { display: none; animation: fadeIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.section.active { display: block; }
+h1 { font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.iframe-container { border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
