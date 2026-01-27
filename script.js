@@ -1,42 +1,53 @@
-/* NAVIGATION */
-function showSection(id) {
-  document.querySelectorAll('.section').forEach(section => {
-    section.classList.remove('active');
-  });
+// ===== NAVIGATION =====
+window.showSection = function (id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+};
 
-  const target = document.getElementById(id);
-  if (target) target.classList.add('active');
-}
+// ===== FIREBASE =====
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } 
+from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-/* EFFET 3D TILT */
-document.querySelectorAll('.tilt').forEach(el => {
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-  el.addEventListener('mousemove', e => {
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
+  authDomain: "entreprise-test-admin.firebaseapp.com",
+  projectId: "entreprise-test-admin",
+  storageBucket: "entreprise-test-admin.firebasestorage.app",
+  messagingSenderId: "785617328418",
+  appId: "1:785617328418:web:2edc96ea5062bede2e2d7b"
+};
 
-    const rotateX = ((y / rect.height) - 0.5) * -12;
-    const rotateY = ((x / rect.width) - 0.5) * 12;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-    el.style.transform = `
-      perspective(800px)
-      rotateX(${rotateX}deg)
-      rotateY(${rotateY}deg)
-      scale(1.03)
-    `;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-    el.style.setProperty('--x', `${(x / rect.width) * 100}%`);
-    el.style.setProperty('--y', `${(y / rect.height) * 100}%`);
-  });
+// ===== LOGIN =====
+window.login = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
 
-  el.addEventListener('mouseleave', () => {
-    el.style.transform = `
-      perspective(800px)
-      rotateX(0deg)
-      rotateY(0deg)
-      scale(1)
-    `;
-  });
+  signInWithEmailAndPassword(auth, email, password)
+    .catch(err => {
+      document.getElementById("loginError").innerText = err.message;
+    });
+};
 
+// ===== LOGOUT =====
+window.logout = function () {
+  signOut(auth);
+};
+
+// ===== AUTH STATE =====
+onAuthStateChanged(auth, user => {
+  document.getElementById("loginBox").classList.toggle("hidden", !!user);
+  document.getElementById("adminDashboard").classList.toggle("hidden", !user);
 });
