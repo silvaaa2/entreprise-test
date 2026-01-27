@@ -17,11 +17,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 /* ==================================================================
-   2. LIEN D'EXPORTATION SPÉCIFIQUE
-   ID: 1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU
-   GID (Onglet Compta): 1852400448
+   2. LIEN API GOOGLE VIZ (L'ARME ULTIME)
+   On utilise 'gviz/tq' qui est fait pour les développeurs.
+   tqx=out:csv -> Force la sortie en CSV propre.
+   gid=1852400448 -> C'est ton onglet Compta.
    ================================================================== */
-const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/export?format=csv&gid=1852400448`;
+const SHEET_API_URL = "https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/gviz/tq?tqx=out:csv&gid=1852400448";
 
 
 /* 3. LOGIN & NAVIGATION */
@@ -46,8 +47,7 @@ window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
   if(id === 'users') window.fetchUsers();
-  // Si on ouvre la compta, on charge auto les données
-  if(id === 'compta') window.toggleCompta('data');
+  if(id === 'compta') window.toggleCompta('data'); // Charge auto la compta
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -108,7 +108,7 @@ window.fetchUsers = async function() {
 };
 
 /* ==================================================================
-   5. IMPORTATION DU TABLEAU (Logique Avancée)
+   5. IMPORTATION TABLEAU (CORRECTION DU BUG DE LETTRES)
    ================================================================== */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
@@ -131,100 +131,58 @@ window.toggleCompta = function(mode) {
 
 window.loadSheetData = async function() {
   const table = document.getElementById("sheetTable");
-  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Extraction des données (Onglet Compta)...</td></tr>";
+  table.innerHTML = "<tr><td style='padding:20px; text-align:center;'>📡 Connexion à la Compta...</td></tr>";
 
   try {
-    const response = await fetch(SHEET_CSV_URL);
-    if (!response.ok) throw new Error("Accès refusé. Vérifie que le Sheet est en 'Tous les utilisateurs disposant du lien'.");
+    const response = await fetch(SHEET_API_URL);
+    if (!response.ok) throw new Error("Erreur accès (Code " + response.status + ")");
     
-    const data = await response.text();
+    let data = await response.text();
     
-    // Si Google renvoie du HTML (page de login), c'est une erreur de permission
-    if(data.trim().startsWith("<!DOCTYPE html>")) {
-        throw new Error("Le fichier est privé. Mets-le en 'Public' dans Google Sheets.");
+    // Si on reçoit du HTML au lieu du CSV, c'est que c'est privé ou mauvais lien
+    if(data.trim().startsWith("<!DOCTYPE html>") || data.includes("<html")) {
+        throw new Error("⚠️ Accès Bloqué par Google.<br>Va dans ton Sheet > Partager > 'Tous les utilisateurs disposant du lien'.");
     }
 
-    // Utilisation du Parser CSV Robuste
-    const rows = parseCSV(data);
+    // --- CORRECTION BUG "LETTRE PAR LETTRE" ---
+    // Google renvoie parfois des guillemets autour de tout. On nettoie.
+    // On détecte le séparateur : Virgule ou Point-Virgule ?
+    // En France, Google Sheets exporte souvent avec ";"
+    
+    // Petit nettoyage des guillemets inutiles de l'API Viz
+    // L'API Viz met parfois des " autour des chiffres, on va gérer ça dans le parseur.
 
-    // --- RECHERCHE INTELLIGENTE DU DEBUT DU TABLEAU ---
+    const rows = parseCSVRefined(data);
+
+    // --- RECHERCHE INTELLIGENTE ---
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const line = JSON.stringify(rows[i]).toLowerCase();
         
-        // Vérification de sécurité : si on est sur la mauvaise page
+        // Sécurité : Si on voit "Farm", on arrête tout
         if(line.includes("achats") && line.includes("farm")) {
-           throw new Error("⚠️ Erreur : Google envoie la page 'Farm'. Vérifie les permissions.");
+           throw new Error("⚠️ Erreur : Google envoie encore l'onglet 'Farm'.<br>Solution : Utilise le lien 'Partager' (Share) et mets-le en Public.");
         }
 
-        // On cherche la ligne des titres "Nom du salarié", "Grade"
         if(line.includes("nom du") && line.includes("grade")) {
             headerIndex = i; break;
         }
     }
     
-    // Si non trouvé, on tente la ligne 7 (standard)
-    if (headerIndex === -1) headerIndex = 7;
+    if (headerIndex === -1) headerIndex = 0; // Par défaut on prend le début si on trouve pas
 
     const cleanRows = rows.slice(headerIndex);
     
-    // Construction du tableau HTML
+    // Construction du tableau
     let html = "<thead><tr>";
     
-    // 1. En-têtes
+    // En-têtes
     cleanRows[0].forEach(cell => { 
-        html += `<th>${cell.trim() || "."}</th>`; 
+        // On enlève les guillemets qui traînent
+        let text = cell.replace(/^"|"$/g, '').trim();
+        html += `<th>${text || "."}</th>`; 
     });
     html += "</tr></thead><tbody>";
 
-    // 2. Données
-    for (let i = 1; i < cleanRows.length; i++) {
-        const row = cleanRows[i];
-        // On affiche seulement si la colonne NOM (index 0) contient du texte
-        if (row[0] && row[0].trim().length > 0) {
-            html += "<tr>";
-            for(let j=0; j < cleanRows[0].length; j++) {
-                html += `<td>${row[j] || ""}</td>`;
-            }
-            html += "</tr>";
-        }
-    }
-    html += "</tbody>";
-    table.innerHTML = html;
-
-  } catch (error) {
-    console.error(error);
-    table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>
-      ❌ <b>Erreur :</b> ${error.message}
-    </td></tr>`;
-  }
-};
-
-// --- PARSER CSV SPECIAL GOOGLE ---
-// Gère les virgules dans les chiffres (ex: "1,200$") et les guillemets
-function parseCSV(str) {
-    const arr = [];
-    let quote = false;
-    let col = 0, c = 0;
-    for (; c < str.length; c++) {
-        let cc = str[c], nc = str[c + 1];
-        arr[col] = arr[col] || [];
-        arr[col][arr[col].length] = arr[col][arr[col].length] || "";
-        
-        // Si on rencontre des guillemets
-        if (cc == '"' && quote && nc == '"') { arr[col][arr[col].length - 1] += cc; ++c; continue; }
-        if (cc == '"') { quote = !quote; continue; }
-        
-        // Séparateur (Virgule ou Point-Virgule selon la région)
-        // Ici on suppose Virgule car format US/Standard, mais s'adapte
-        if (cc == ',' && !quote) { ++arr[col].length; continue; }
-        
-        // Nouvelle ligne
-        if (cc == '\r' && nc == '\n' && !quote) { ++col; ++c; continue; }
-        if (cc == '\n' && !quote) { ++col; continue; }
-        if (cc == '\r' && !quote) { ++col; continue; }
-        
-        arr[col][arr[col].length - 1] += cc;
-    }
-    return arr;
-}
+    // Données
+    for (let i = 1; i < cleanRows.length; i
