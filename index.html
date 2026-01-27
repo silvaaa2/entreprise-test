@@ -43,22 +43,21 @@
 
     <section id="home" class="section active">
       <h1>Bienvenue, Boss.</h1>
-      <p>Système opérationnel. Sélectionne un module à gauche.</p>
+      <p>Système opérationnel.</p>
     </section>
 
     <section id="users" class="section">
       <h1>Gestion des Accès</h1>
-      
       <div class="create-user-box">
         <h3>✨ Créer un nouvel accès</h3>
         <div class="form-grid">
           <div class="input-group">
             <input id="newEmail" type="email" required>
-            <label>Email du collaborateur</label>
+            <label>Email</label>
           </div>
           <div class="input-group">
             <input id="newPassword" type="password" required>
-            <label>Mot de passe provisoire</label>
+            <label>Mot de passe</label>
           </div>
           <div class="input-group">
             <select id="newRole" class="cyber-select">
@@ -77,11 +76,7 @@
         <div class="table-wrapper">
           <table class="cyber-table">
             <thead>
-              <tr>
-                <th>Email</th>
-                <th>Rôle</th>
-                <th>Date Création</th>
-              </tr>
+              <tr><th>Email</th><th>Rôle</th><th>Date Création</th></tr>
             </thead>
             <tbody id="userListBody"></tbody>
           </table>
@@ -91,21 +86,33 @@
 
     <section id="rh" class="section">
       <h1>Ressources Humaines</h1>
-      <p>Gestion des contrats et du personnel.</p>
+      <p>Gestion RH.</p>
     </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      <p>Vue directe sur le fichier Maître.</p>
       
-      <div class="iframe-container" style="height: 80vh;">
+      <div class="compta-controls">
+        <button onclick="toggleCompta('iframe')" class="small-btn">Vue Fichier Original</button>
+        <button onclick="toggleCompta('data')" class="small-btn action-btn">🔄 Importer dans le Site</button>
+      </div>
+      
+      <div id="sheetFrame" class="iframe-container hidden">
          <iframe
-          id="googleSheetFrame"
           src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/htmlembed?gid=1852400448&widget=true&chrome=false"
           width="100%"
-          height="100%"
+          height="600"
           style="border:none;">
         </iframe>
+      </div>
+
+      <div id="nativeTableContainer">
+        <p style="color:#94a3b8; font-size:0.9em;">Données extraites en direct de l'onglet "Compta" :</p>
+        <div class="table-wrapper">
+          <table id="sheetTable" class="cyber-table">
+            <tr><td style="padding:20px; text-align:center">Clique sur le bouton bleu pour charger.</td></tr>
+          </table>
+        </div>
       </div>
     </section>
 
