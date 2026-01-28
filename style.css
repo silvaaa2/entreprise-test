@@ -113,3 +113,54 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 #tableSearch::placeholder {
     color: #64748b;
 }
+/* --- DASHBOARD HOME (NOUVEAU) --- */
+.home-header { margin-bottom: 30px; }
+.home-header h1 { font-size: 2.5em; margin: 0; background: -webkit-linear-gradient(#fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.stat-card {
+    background: rgba(30, 41, 59, 0.7);
+    padding: 25px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.stat-card .icon {
+    font-size: 3em;
+    margin-right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+}
+
+.stat-card .info h3 { margin: 0; font-size: 1em; color: #94a3b8; font-weight: normal; }
+.stat-card .info p { margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: white; }
+
+/* Couleurs spécifiques par carte */
+.card-rh { border-bottom: 4px solid #facc15; } /* Jaune */
+.card-rh .icon { color: #facc15; }
+
+.card-users { border-bottom: 4px solid #3b82f6; } /* Bleu */
+.card-users .icon { color: #3b82f6; }
+
+.card-time { border-bottom: 4px solid #a855f7; } /* Violet */
+.card-time .icon { color: #a855f7; }
+#statTime { font-family: monospace; letter-spacing: 2px; }
