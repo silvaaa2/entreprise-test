@@ -48,9 +48,39 @@
 
   <main class="content">
 
-    <section id="home" class="section active">
-      <h1>Bienvenue, Boss.</h1>
-      <p>Système opérationnel.</p>
+<section id="home" class="section active">
+      <div class="home-header">
+        <h1>Bienvenue, Boss. 👋</h1>
+        <p>Voici l'état actuel de ton entreprise.</p>
+      </div>
+
+      <div class="stats-grid">
+        
+        <div class="stat-card card-rh">
+            <div class="icon">👥</div>
+            <div class="info">
+                <h3>Effectif Total</h3>
+                <p id="statEmployees">Chargement...</p>
+            </div>
+        </div>
+
+        <div class="stat-card card-users">
+            <div class="icon">🔐</div>
+            <div class="info">
+                <h3>Comptes Actifs</h3>
+                <p id="statUsers">Chargement...</p>
+            </div>
+        </div>
+
+        <div class="stat-card card-time">
+            <div class="icon">🕒</div>
+            <div class="info">
+                <h3 id="statDate">--/--/----</h3>
+                <p id="statTime">--:--:--</p>
+            </div>
+        </div>
+
+      </div>
     </section>
 
     <section id="users" class="section">
