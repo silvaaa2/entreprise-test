@@ -85,3 +85,31 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
     color: white;
     font-size: 0.95em;
 }
+/* ... LE RESTE DE TON CSS ... */
+
+/* BARRE DE RECHERCHE */
+.search-container {
+    margin-bottom: 15px;
+}
+
+#tableSearch {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    color: white;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+#tableSearch:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+#tableSearch::placeholder {
+    color: #64748b;
+}
