@@ -96,9 +96,51 @@
       </div>
     </section>
 
-    <section id="rh" class="section">
+   <section id="rh" class="section">
       <h1>Ressources Humaines</h1>
-      <p>Espace réservé aux RH et Admins.</p>
+      <p>Gestion des effectifs de l'entreprise.</p>
+
+      <div class="create-user-box">
+        <h3>📝 Nouveau Contrat d'Embauche</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <input id="empName" type="text" required>
+            <label>Nom & Prénom</label>
+          </div>
+          <div class="input-group">
+            <input id="empGrade" type="text" required>
+            <label>Poste / Grade (ex: Vendeur)</label>
+          </div>
+          <div class="input-group">
+            <input id="empDate" type="date" style="color:white;" required>
+            </div>
+        </div>
+        <button onclick="createEmployee()">✍️ Signer le contrat (Ajouter)</button>
+        <p id="rhMsg"></p>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <h3>Registre du Personnel</h3>
+        
+        <div class="search-container">
+            <input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher un employé...">
+        </div>
+
+        <div class="table-wrapper">
+          <table class="cyber-table" id="rhTable">
+            <thead>
+              <tr>
+                <th>Identité</th>
+                <th>Poste</th>
+                <th>Embauché le</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="employeeListBody">
+                </tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <section id="compta" class="section">
