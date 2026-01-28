@@ -16,10 +16,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ==================================================================
-   🚨 SÉCURITÉ SUPER ADMIN
-   Remplace par ton email exact. Si cet email se connecte, il devient Admin d'office.
-   ================================================================== */
+// 🚨 TON EMAIL SUPER ADMIN
 const SUPER_ADMIN = "dr947695@gmail.com"; 
 
 /* 2. LIEN TABLEAU */
@@ -59,9 +56,7 @@ onAuthStateChanged(auth, async (user) => {
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
-
-    // On charge le profil et on applique les permissions
-    await loadUserProfile(user); // Je passe l'objet user entier maintenant
+    await loadUserProfile(user);
     window.fetchUsers();
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
@@ -75,11 +70,10 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* 5. GESTION DU PROFIL & PERMISSIONS (C'EST ICI QUE J'AI CORRIGÉ) */
+/* 5. GESTION DU PROFIL */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
-    
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
@@ -89,25 +83,16 @@ async function loadUserProfile(user) {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
-        // --- BACKDOOR SUPER ADMIN ---
-        // Si c'est TOI et que tu n'es pas dans la base (ou pas admin), on te force Admin.
+        // BACKDOOR SUPER ADMIN
         if (email === SUPER_ADMIN) {
             if (!docSnap.exists() || docSnap.data().role !== 'admin') {
-                console.log("👑 Super Admin détecté : Attribution des droits...");
+                console.log("👑 Super Admin détecté.");
                 await setDoc(docRef, {
-                    email: email,
-                    role: 'admin',
-                    displayName: "Le Boss",
-                    photoURL: "",
-                    createdAt: new Date().toISOString().split('T')[0]
+                    email: email, role: 'admin', displayName: "Le Boss", photoURL: "", createdAt: new Date().toISOString().split('T')[0]
                 }, { merge: true });
-                
-                // On recharge la page pour appliquer les changements proprement
-                location.reload();
-                return;
+                location.reload(); return;
             }
         }
-        // -----------------------------
 
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -120,11 +105,8 @@ async function loadUserProfile(user) {
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
 
-            // Application des permissions
             applyPermissions(data.role);
-
         } else {
-            // Invité
             applyPermissions("guest");
         }
     } catch (error) {
@@ -133,29 +115,24 @@ async function loadUserProfile(user) {
 }
 
 function applyPermissions(role) {
-    console.log("Rôle appliqué :", role);
-    
     const btnUsers = document.getElementById("btn-users");
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
 
-    // Reset : On montre tout
     if(btnUsers) btnUsers.style.display = "block";
     if(btnRh) btnRh.style.display = "block";
     if(btnCompta) btnCompta.style.display = "block";
 
-    if(role === 'admin') return; // Admin voit tout
+    if(role === 'admin') return;
 
     if(role === 'rh') {
         if(btnCompta) btnCompta.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
     }
-
     if(role === 'compta') {
         if(btnRh) btnRh.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
     }
-
     if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
         if(btnCompta) btnCompta.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
@@ -185,7 +162,6 @@ window.saveProfileSettings = async function() {
         document.getElementById("sidebarUserImg").src = newPhotoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     } catch (error) {
         msg.innerText = "Erreur.";
-        console.error(error);
     }
 };
 
@@ -221,16 +197,13 @@ window.fetchUsers = async function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody) return;
   tbody.innerHTML = "<tr><td colspan='3'>Chargement...</td></tr>";
-  
   try {
     const querySnapshot = await getDocs(collection(db, "users"));
     let html = "";
-    
     querySnapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const uid = docSnap.id;
       const name = data.displayName || "Sans nom";
-      
       const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
       const isSelectRh = data.role === 'rh' ? 'selected' : '';
       const isSelectCompta = data.role === 'compta' ? 'selected' : '';
@@ -241,19 +214,9 @@ window.fetchUsers = async function() {
             <option value="admin" ${isSelectAdmin}>👑 Admin</option>
             <option value="rh" ${isSelectRh}>🤝 RH</option>
             <option value="compta" ${isSelectCompta}>📊 Compta</option>
-        </select>
-      `;
+        </select>`;
 
-      html += `
-        <tr>
-          <td>
-            <div style="font-weight:bold;">${name}</div>
-            <div style="font-size:0.8em; color:#94a3b8;">${data.email}</div>
-          </td>
-          <td>${roleSelect}</td>
-          <td>${data.createdAt || "-"}</td>
-        </tr>
-      `;
+      html += `<tr><td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td><td>${roleSelect}</td><td>${data.createdAt || "-"}</td></tr>`;
     });
     tbody.innerHTML = html;
   } catch (error) {
@@ -265,10 +228,8 @@ window.updateUserRole = async function(uid, newRole) {
     try {
         const userRef = doc(db, "users", uid);
         await updateDoc(userRef, { role: newRole });
-        console.log(`Rôle mis à jour pour ${uid} -> ${newRole}`);
-    } catch (error) {
-        alert("Erreur rôle : " + error.message);
-    }
+        console.log(`Rôle mis à jour.`);
+    } catch (error) { alert("Erreur rôle : " + error.message); }
 };
 
 /* 7. IMPORT TABLEAU */
@@ -309,6 +270,8 @@ window.loadSheetData = async function() {
     }
     if (headerIndex === -1) headerIndex = 0;
     const cleanRows = rows.slice(headerIndex);
+    
+    // CONSTRUCTION HTML DU TABLEAU AVEC RECHERCHE
     let html = "<thead><tr>";
     cleanRows[0].forEach(cell => { html += `<th>${cell || "."}</th>`; });
     html += "</tr></thead><tbody>";
@@ -324,5 +287,31 @@ window.loadSheetData = async function() {
     table.innerHTML = html;
   } catch (error) {
     table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
+  }
+};
+
+/* 8. FONCTION DE RECHERCHE (FILTRE) */
+window.searchTable = function() {
+  const input = document.getElementById("tableSearch");
+  const filter = input.value.toUpperCase();
+  const table = document.getElementById("sheetTable");
+  const tr = table.getElementsByTagName("tr");
+
+  // On boucle sur toutes les lignes (sauf le header index 0)
+  for (let i = 1; i < tr.length; i++) {
+    let visible = false;
+    const tds = tr[i].getElementsByTagName("td");
+    
+    // On regarde dans toutes les colonnes de la ligne
+    for(let j=0; j < tds.length; j++) {
+        if(tds[j]) {
+            if (tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
+                visible = true;
+                break; // Si on trouve dans une colonne, on affiche la ligne et on arrête de chercher
+            }
+        }
+    }
+    
+    tr[i].style.display = visible ? "" : "none";
   }
 };
