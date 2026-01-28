@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-// AJOUT DE 'deleteDoc' et 'addDoc' DANS LES IMPORTS
+// VERIFIE BIEN CETTE LIGNE CI-DESSOUS, C'EST ELLE QUI COMPTE :
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
