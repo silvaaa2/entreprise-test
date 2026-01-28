@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-// VERIFIE BIEN CETTE LIGNE CI-DESSOUS, C'EST ELLE QUI COMPTE :
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
@@ -24,7 +23,7 @@ const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
-/* 3. LOGIN */
+/* LOGIN */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -44,19 +43,20 @@ window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
   
+  if(id === 'home') window.updateDashboardStats(); // Mettre à jour les stats
   if(id === 'users') window.fetchUsers();
-  if(id === 'rh') window.fetchEmployees(); // Chargement RH
+  if(id === 'rh') window.fetchEmployees();
   if(id === 'compta') window.toggleCompta('data');
 };
 
-/* 4. AUTH STATE & PERMISSIONS */
+/* AUTH STATE */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     if(loginBox) loginBox.classList.add("hidden");
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
     await loadUserProfile(user);
-    window.fetchUsers();
+    window.updateDashboardStats(); // Lancement direct
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
     if(adminDashboard) adminDashboard.classList.add("hidden");
@@ -69,7 +69,7 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* 5. GESTION DU PROFIL */
+/* PROFIL */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
@@ -95,13 +95,10 @@ async function loadUserProfile(user) {
             const data = docSnap.data();
             const realName = data.displayName || "Utilisateur";
             const realPhoto = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-
             sidebarName.innerText = realName;
             sidebarImg.src = realPhoto;
-            
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
-
             applyPermissions(data.role);
         } else {
             applyPermissions("guest");
@@ -119,19 +116,10 @@ function applyPermissions(role) {
     if(btnCompta) btnCompta.style.display = "block";
 
     if(role === 'admin') return;
-
-    if(role === 'rh') {
-        if(btnCompta) btnCompta.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none";
-    }
-    if(role === 'compta') {
-        if(btnRh) btnRh.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none";
-    }
+    if(role === 'rh') { if(btnCompta) btnCompta.style.display = "none"; if(btnUsers) btnUsers.style.display = "none"; }
+    if(role === 'compta') { if(btnRh) btnRh.style.display = "none"; if(btnUsers) btnUsers.style.display = "none"; }
     if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
-        if(btnCompta) btnCompta.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none";
-        if(btnRh) btnRh.style.display = "none";
+        if(btnCompta) btnCompta.style.display = "none"; if(btnUsers) btnUsers.style.display = "none"; if(btnRh) btnRh.style.display = "none";
     }
 }
 
@@ -140,151 +128,108 @@ window.saveProfileSettings = async function() {
     const newPhotoURL = document.getElementById("settingsPhotoURL").value;
     const msg = document.getElementById("settingsMsg");
     const user = auth.currentUser;
-
     if (!user) return;
     if (!newName) { msg.innerText = "Nom obligatoire !"; return; }
-
     msg.innerText = "Sauvegarde...";
     try {
-        await setDoc(doc(db, "users", user.uid), {
-            displayName: newName,
-            photoURL: newPhotoURL || ""
-        }, { merge: true });
-
-        msg.innerText = "✅ Sauvegardé !";
-        msg.style.color = "#00ff88";
+        await setDoc(doc(db, "users", user.uid), { displayName: newName, photoURL: newPhotoURL || "" }, { merge: true });
+        msg.innerText = "✅ Sauvegardé !"; msg.style.color = "#00ff88";
         document.getElementById("sidebarUserName").innerText = newName;
         document.getElementById("sidebarUserImg").src = newPhotoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     } catch (error) { msg.innerText = "Erreur."; }
 };
 
-/* ==================================================================
-   6. MODULE RH (GESTION DES EMPLOYÉS) - NOUVEAU !
-   ================================================================== */
+/* --- NOUVEAU : STATISTIQUES DASHBOARD --- */
+window.updateDashboardStats = async function() {
+    // 1. Horloge
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById("statDate").innerText = now.toLocaleDateString('fr-FR');
+        document.getElementById("statTime").innerText = now.toLocaleTimeString('fr-FR');
+    }, 1000);
 
-// AJOUTER UN EMPLOYÉ
+    // 2. Compteurs (Firebase)
+    try {
+        // Compte Employés (RH)
+        const snapEmp = await getDocs(collection(db, "employees"));
+        document.getElementById("statEmployees").innerText = snapEmp.size;
+
+        // Compte Utilisateurs (Comptes site)
+        const snapUsers = await getDocs(collection(db, "users"));
+        document.getElementById("statUsers").innerText = snapUsers.size;
+    } catch (e) {
+        console.log("Erreur stats:", e);
+    }
+};
+
+/* MODULE RH */
 window.createEmployee = async function() {
     const name = document.getElementById("empName").value;
     const grade = document.getElementById("empGrade").value;
     const date = document.getElementById("empDate").value;
     const msg = document.getElementById("rhMsg");
-
     if(!name || !grade || !date) { msg.innerText = "⚠️ Remplis tout !"; return; }
     msg.innerText = "Signature du contrat...";
-
     try {
-        // On ajoute dans une collection 'employees' différente des 'users'
-        await addDoc(collection(db, "employees"), {
-            name: name,
-            grade: grade,
-            hiredDate: date,
-            createdAt: new Date().toISOString()
-        });
-
-        msg.innerText = "✅ Employé recruté !";
-        msg.style.color = "#00ff88";
-        
-        // Reset des champs
-        document.getElementById("empName").value = "";
-        document.getElementById("empGrade").value = "";
-        window.fetchEmployees(); // Rafraîchir la liste
-
-    } catch (error) {
-        msg.innerText = "Erreur: " + error.message;
-        msg.style.color = "red";
-    }
+        await addDoc(collection(db, "employees"), { name: name, grade: grade, hiredDate: date, createdAt: new Date().toISOString() });
+        msg.innerText = "✅ Employé recruté !"; msg.style.color = "#00ff88";
+        document.getElementById("empName").value = ""; document.getElementById("empGrade").value = "";
+        window.fetchEmployees();
+    } catch (error) { msg.innerText = "Erreur: " + error.message; }
 };
 
-// LISTER LES EMPLOYÉS
 window.fetchEmployees = async function() {
     const tbody = document.getElementById("employeeListBody");
     if(!tbody) return;
-    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>Chargement du registre...</td></tr>";
-
+    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>Chargement...</td></tr>";
     try {
         const querySnapshot = await getDocs(collection(db, "employees"));
         let html = "";
-
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-            
-            html += `
-            <tr>
-                <td style="font-weight:bold; color:white;">${data.name}</td>
-                <td><span style="color:#facc15;">${data.grade}</span></td>
-                <td>${data.hiredDate}</td>
-                <td>
-                    <button onclick="deleteEmployee('${id}')" style="background:#ff4f4f; padding:5px 10px; font-size:0.8em; width:auto;">🗑️ Virer</button>
-                </td>
-            </tr>
-            `;
+            html += `<tr><td style="font-weight:bold; color:white;">${data.name}</td><td><span style="color:#facc15;">${data.grade}</span></td><td>${data.hiredDate}</td><td><button onclick="deleteEmployee('${id}')" style="background:#ff4f4f; padding:5px 10px; font-size:0.8em; width:auto;">🗑️ Virer</button></td></tr>`;
         });
-
-        tbody.innerHTML = html || "<tr><td colspan='4' style='text-align:center'>Aucun employé pour le moment.</td></tr>";
-    } catch (error) {
-        tbody.innerHTML = "<tr><td colspan='4'>Erreur DB RH</td></tr>";
-    }
+        tbody.innerHTML = html || "<tr><td colspan='4' style='text-align:center'>Aucun employé.</td></tr>";
+    } catch (error) { tbody.innerHTML = "<tr><td colspan='4'>Erreur DB RH</td></tr>"; }
 };
 
-// SUPPRIMER (VIRER) UN EMPLOYÉ
 window.deleteEmployee = async function(id) {
-    if(!confirm("⚠️ Es-tu sûr de vouloir virer cet employé ? Cette action est irréversible.")) return;
-
-    try {
-        await deleteDoc(doc(db, "employees", id));
-        window.fetchEmployees(); // Rafraîchir
-    } catch (error) {
-        alert("Erreur suppression: " + error.message);
-    }
+    if(!confirm("⚠️ Virer cet employé ?")) return;
+    try { await deleteDoc(doc(db, "employees", id)); window.fetchEmployees(); } 
+    catch (error) { alert("Erreur: " + error.message); }
 };
 
-// RECHERCHE RH
 window.searchRH = function() {
   const input = document.getElementById("rhSearch");
   const filter = input.value.toUpperCase();
   const table = document.getElementById("rhTable");
   const tr = table.getElementsByTagName("tr");
-
   for (let i = 1; i < tr.length; i++) {
     let visible = false;
     const tds = tr[i].getElementsByTagName("td");
-    for(let j=0; j < tds.length; j++) {
-        if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
-            visible = true; break;
-        }
-    }
+    for(let j=0; j < tds.length; j++) { if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) { visible = true; break; } }
     tr[i].style.display = visible ? "" : "none";
   }
 };
 
-
-/* 7. GESTION UTILISATEURS DU SITE (Login) */
+/* USERS */
 window.createNewUser = async function() {
     const email = document.getElementById("newEmail").value;
     const password = document.getElementById("newPassword").value;
     const role = document.getElementById("newRole").value;
     const msg = document.getElementById("userMsg");
-
     if(!email || !password) { msg.innerText = "Remplis tout !"; return; }
     msg.innerText = "Création...";
-    
     try {
         const secondaryApp = initializeApp(firebaseConfig, "Secondary");
         const secondaryAuth = getAuth(secondaryApp);
         const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        
-        await setDoc(doc(db, "users", cred.user.uid), {
-            email: email, role: role, createdAt: new Date().toISOString().split('T')[0],
-            displayName: "", photoURL: ""
-        });
+        await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "", photoURL: "" });
         await signOut(secondaryAuth);
-        msg.innerText = `✅ Ajouté !`;
-        msg.style.color = "#00ff88";
+        msg.innerText = `✅ Ajouté !`; msg.style.color = "#00ff88";
         window.fetchUsers();
-    } catch (error) {
-        msg.innerText = "Erreur: " + error.message;
-    }
+    } catch (error) { msg.innerText = "Erreur: " + error.message; }
 };
 
 window.fetchUsers = async function() {
@@ -301,46 +246,29 @@ window.fetchUsers = async function() {
       const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
       const isSelectRh = data.role === 'rh' ? 'selected' : '';
       const isSelectCompta = data.role === 'compta' ? 'selected' : '';
-
-      const roleSelect = `
-        <select onchange="window.updateUserRole('${uid}', this.value)" 
-                style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
-            <option value="admin" ${isSelectAdmin}>👑 Admin</option>
-            <option value="rh" ${isSelectRh}>🤝 RH</option>
-            <option value="compta" ${isSelectCompta}>📊 Compta</option>
-        </select>`;
-
+      const roleSelect = `<select onchange="window.updateUserRole('${uid}', this.value)" style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;"><option value="admin" ${isSelectAdmin}>👑 Admin</option><option value="rh" ${isSelectRh}>🤝 RH</option><option value="compta" ${isSelectCompta}>📊 Compta</option></select>`;
       html += `<tr><td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td><td>${roleSelect}</td><td>${data.createdAt || "-"}</td></tr>`;
     });
     tbody.innerHTML = html;
-  } catch (error) {
-    tbody.innerHTML = "<tr><td colspan='3'>Erreur DB</td></tr>";
-  }
+  } catch (error) { tbody.innerHTML = "<tr><td colspan='3'>Erreur DB</td></tr>"; }
 };
 
 window.updateUserRole = async function(uid, newRole) {
-    try {
-        const userRef = doc(db, "users", uid);
-        await updateDoc(userRef, { role: newRole });
-        console.log(`Rôle mis à jour.`);
-    } catch (error) { alert("Erreur rôle : " + error.message); }
+    try { await updateDoc(doc(db, "users", uid), { role: newRole }); console.log(`Rôle mis à jour.`); } 
+    catch (error) { alert("Erreur rôle : " + error.message); }
 };
 
-/* 8. IMPORT TABLEAU */
+/* COMPTA */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
   const btns = document.querySelectorAll(".compta-controls button");
   if(mode === 'iframe') {
-    frame.classList.remove("hidden");
-    table.classList.add("hidden");
-    if(btns[0]) btns[0].classList.add("action-btn");
-    if(btns[1]) btns[1].classList.remove("action-btn");
+    frame.classList.remove("hidden"); table.classList.add("hidden");
+    if(btns[0]) btns[0].classList.add("action-btn"); if(btns[1]) btns[1].classList.remove("action-btn");
   } else {
-    frame.classList.add("hidden");
-    table.classList.remove("hidden");
-    if(btns[0]) btns[0].classList.remove("action-btn");
-    if(btns[1]) btns[1].classList.add("action-btn");
+    frame.classList.add("hidden"); table.classList.remove("hidden");
+    if(btns[0]) btns[0].classList.remove("action-btn"); if(btns[1]) btns[1].classList.add("action-btn");
     window.loadSheetData();
   }
 };
@@ -353,9 +281,7 @@ window.loadSheetData = async function() {
     if (!response.ok) throw new Error("Erreur lien");
     let data = await response.text();
     if(data.trim().startsWith("<!DOCTYPE html>")) throw new Error("Accès refusé.");
-    const rows = data.split(/\r?\n/).map(row => {
-        return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
-    });
+    const rows = data.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim()));
     let headerIndex = -1;
     for(let i=0; i < rows.length; i++) {
         const lineStr = JSON.stringify(rows[i]).toLowerCase();
@@ -377,9 +303,7 @@ window.loadSheetData = async function() {
     }
     html += "</tbody>";
     table.innerHTML = html;
-  } catch (error) {
-    table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`;
-  }
+  } catch (error) { table.innerHTML = `<tr><td style='color:#ff4f4f; text-align:center; padding:20px;'>❌ ${error.message}</td></tr>`; }
 };
 
 window.searchTable = function() {
@@ -390,11 +314,7 @@ window.searchTable = function() {
   for (let i = 1; i < tr.length; i++) {
     let visible = false;
     const tds = tr[i].getElementsByTagName("td");
-    for(let j=0; j < tds.length; j++) {
-        if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
-            visible = true; break;
-        }
-    }
+    for(let j=0; j < tds.length; j++) { if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) { visible = true; break; } }
     tr[i].style.display = visible ? "" : "none";
   }
 };
