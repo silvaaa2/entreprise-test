@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+// AJOUT DE 'deleteDoc' et 'addDoc' DANS LES IMPORTS
+import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -16,17 +17,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 🚨 TON EMAIL SUPER ADMIN
 const SUPER_ADMIN = "dr947695@gmail.com"; 
-
-/* 2. LIEN TABLEAU */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-HA5J6neWRkD5OEq7NWW71D3f1LqSs2-ulwYHYk9GY1ph6m2R0wDWKKOZvdAsSumqdlHQ_5v/pub?gid=2002987340&single=true&output=csv";
 
-/* 3. NAVIGATION */
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
+/* 3. LOGIN */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -47,6 +45,7 @@ window.showSection = function(id) {
   document.getElementById(id)?.classList.add("active");
   
   if(id === 'users') window.fetchUsers();
+  if(id === 'rh') window.fetchEmployees(); // Chargement RH
   if(id === 'compta') window.toggleCompta('data');
 };
 
@@ -83,10 +82,8 @@ async function loadUserProfile(user) {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
-        // BACKDOOR SUPER ADMIN
         if (email === SUPER_ADMIN) {
             if (!docSnap.exists() || docSnap.data().role !== 'admin') {
-                console.log("👑 Super Admin détecté.");
                 await setDoc(docRef, {
                     email: email, role: 'admin', displayName: "Le Boss", photoURL: "", createdAt: new Date().toISOString().split('T')[0]
                 }, { merge: true });
@@ -109,9 +106,7 @@ async function loadUserProfile(user) {
         } else {
             applyPermissions("guest");
         }
-    } catch (error) {
-        console.error("Erreur profil:", error);
-    }
+    } catch (error) { console.error("Erreur profil:", error); }
 }
 
 function applyPermissions(role) {
@@ -160,12 +155,111 @@ window.saveProfileSettings = async function() {
         msg.style.color = "#00ff88";
         document.getElementById("sidebarUserName").innerText = newName;
         document.getElementById("sidebarUserImg").src = newPhotoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    } catch (error) { msg.innerText = "Erreur."; }
+};
+
+/* ==================================================================
+   6. MODULE RH (GESTION DES EMPLOYÉS) - NOUVEAU !
+   ================================================================== */
+
+// AJOUTER UN EMPLOYÉ
+window.createEmployee = async function() {
+    const name = document.getElementById("empName").value;
+    const grade = document.getElementById("empGrade").value;
+    const date = document.getElementById("empDate").value;
+    const msg = document.getElementById("rhMsg");
+
+    if(!name || !grade || !date) { msg.innerText = "⚠️ Remplis tout !"; return; }
+    msg.innerText = "Signature du contrat...";
+
+    try {
+        // On ajoute dans une collection 'employees' différente des 'users'
+        await addDoc(collection(db, "employees"), {
+            name: name,
+            grade: grade,
+            hiredDate: date,
+            createdAt: new Date().toISOString()
+        });
+
+        msg.innerText = "✅ Employé recruté !";
+        msg.style.color = "#00ff88";
+        
+        // Reset des champs
+        document.getElementById("empName").value = "";
+        document.getElementById("empGrade").value = "";
+        window.fetchEmployees(); // Rafraîchir la liste
+
     } catch (error) {
-        msg.innerText = "Erreur.";
+        msg.innerText = "Erreur: " + error.message;
+        msg.style.color = "red";
     }
 };
 
-/* 6. GESTION UTILISATEURS */
+// LISTER LES EMPLOYÉS
+window.fetchEmployees = async function() {
+    const tbody = document.getElementById("employeeListBody");
+    if(!tbody) return;
+    tbody.innerHTML = "<tr><td colspan='4' style='text-align:center'>Chargement du registre...</td></tr>";
+
+    try {
+        const querySnapshot = await getDocs(collection(db, "employees"));
+        let html = "";
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            html += `
+            <tr>
+                <td style="font-weight:bold; color:white;">${data.name}</td>
+                <td><span style="color:#facc15;">${data.grade}</span></td>
+                <td>${data.hiredDate}</td>
+                <td>
+                    <button onclick="deleteEmployee('${id}')" style="background:#ff4f4f; padding:5px 10px; font-size:0.8em; width:auto;">🗑️ Virer</button>
+                </td>
+            </tr>
+            `;
+        });
+
+        tbody.innerHTML = html || "<tr><td colspan='4' style='text-align:center'>Aucun employé pour le moment.</td></tr>";
+    } catch (error) {
+        tbody.innerHTML = "<tr><td colspan='4'>Erreur DB RH</td></tr>";
+    }
+};
+
+// SUPPRIMER (VIRER) UN EMPLOYÉ
+window.deleteEmployee = async function(id) {
+    if(!confirm("⚠️ Es-tu sûr de vouloir virer cet employé ? Cette action est irréversible.")) return;
+
+    try {
+        await deleteDoc(doc(db, "employees", id));
+        window.fetchEmployees(); // Rafraîchir
+    } catch (error) {
+        alert("Erreur suppression: " + error.message);
+    }
+};
+
+// RECHERCHE RH
+window.searchRH = function() {
+  const input = document.getElementById("rhSearch");
+  const filter = input.value.toUpperCase();
+  const table = document.getElementById("rhTable");
+  const tr = table.getElementsByTagName("tr");
+
+  for (let i = 1; i < tr.length; i++) {
+    let visible = false;
+    const tds = tr[i].getElementsByTagName("td");
+    for(let j=0; j < tds.length; j++) {
+        if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
+            visible = true; break;
+        }
+    }
+    tr[i].style.display = visible ? "" : "none";
+  }
+};
+
+
+/* 7. GESTION UTILISATEURS DU SITE (Login) */
 window.createNewUser = async function() {
     const email = document.getElementById("newEmail").value;
     const password = document.getElementById("newPassword").value;
@@ -232,7 +326,7 @@ window.updateUserRole = async function(uid, newRole) {
     } catch (error) { alert("Erreur rôle : " + error.message); }
 };
 
-/* 7. IMPORT TABLEAU */
+/* 8. IMPORT TABLEAU */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
@@ -270,8 +364,6 @@ window.loadSheetData = async function() {
     }
     if (headerIndex === -1) headerIndex = 0;
     const cleanRows = rows.slice(headerIndex);
-    
-    // CONSTRUCTION HTML DU TABLEAU AVEC RECHERCHE
     let html = "<thead><tr>";
     cleanRows[0].forEach(cell => { html += `<th>${cell || "."}</th>`; });
     html += "</tr></thead><tbody>";
@@ -290,28 +382,19 @@ window.loadSheetData = async function() {
   }
 };
 
-/* 8. FONCTION DE RECHERCHE (FILTRE) */
 window.searchTable = function() {
   const input = document.getElementById("tableSearch");
   const filter = input.value.toUpperCase();
   const table = document.getElementById("sheetTable");
   const tr = table.getElementsByTagName("tr");
-
-  // On boucle sur toutes les lignes (sauf le header index 0)
   for (let i = 1; i < tr.length; i++) {
     let visible = false;
     const tds = tr[i].getElementsByTagName("td");
-    
-    // On regarde dans toutes les colonnes de la ligne
     for(let j=0; j < tds.length; j++) {
-        if(tds[j]) {
-            if (tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
-                visible = true;
-                break; // Si on trouve dans une colonne, on affiche la ligne et on arrête de chercher
-            }
+        if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) {
+            visible = true; break;
         }
     }
-    
     tr[i].style.display = visible ? "" : "none";
   }
 };
