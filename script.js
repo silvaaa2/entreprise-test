@@ -43,7 +43,7 @@ window.showSection = function(id) {
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.getElementById(id)?.classList.add("active");
   
-  if(id === 'home') window.updateDashboardStats(); // Mettre à jour les stats
+  if(id === 'home') window.updateDashboardStats();
   if(id === 'users') window.fetchUsers();
   if(id === 'rh') window.fetchEmployees();
   if(id === 'compta') window.toggleCompta('data');
@@ -56,7 +56,8 @@ onAuthStateChanged(auth, async (user) => {
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
     await loadUserProfile(user);
-    window.updateDashboardStats(); // Lancement direct
+    // On lance les stats, mais elles seront cachées visuellement si pas admin
+    window.updateDashboardStats(); 
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
     if(adminDashboard) adminDashboard.classList.add("hidden");
@@ -69,7 +70,7 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* PROFIL */
+/* PROFIL & PERMISSIONS */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
@@ -82,6 +83,7 @@ async function loadUserProfile(user) {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
+        // BACKDOOR
         if (email === SUPER_ADMIN) {
             if (!docSnap.exists() || docSnap.data().role !== 'admin') {
                 await setDoc(docRef, {
@@ -99,6 +101,8 @@ async function loadUserProfile(user) {
             sidebarImg.src = realPhoto;
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
+            
+            // >>> APPLICATION DES DROITS <<<
             applyPermissions(data.role);
         } else {
             applyPermissions("guest");
@@ -110,16 +114,46 @@ function applyPermissions(role) {
     const btnUsers = document.getElementById("btn-users");
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
+    
+    // NOUVEAU : On cible la grille des stats et le message d'accueil
+    const statsGrid = document.querySelector(".stats-grid");
+    const homeMsg = document.querySelector(".home-header p");
 
+    // 1. Reset visuel (tout le monde voit tout par défaut)
     if(btnUsers) btnUsers.style.display = "block";
     if(btnRh) btnRh.style.display = "block";
     if(btnCompta) btnCompta.style.display = "block";
+    
+    // 2. Logique Admin (Le Roi)
+    if(role === 'admin') {
+        // L'admin voit les stats
+        if(statsGrid) statsGrid.style.display = "grid";
+        if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
+        return; // On arrête là, l'admin a accès à tout
+    }
 
-    if(role === 'admin') return;
-    if(role === 'rh') { if(btnCompta) btnCompta.style.display = "none"; if(btnUsers) btnUsers.style.display = "none"; }
-    if(role === 'compta') { if(btnRh) btnRh.style.display = "none"; if(btnUsers) btnUsers.style.display = "none"; }
+    // 3. Logique pour TOUS les autres (RH, Compta, Invité)
+    // -> On CACHE les stats pour eux
+    if(statsGrid) statsGrid.style.display = "none";
+    if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche pour commencer.";
+
+    // 4. Logique spécifique RH
+    if(role === 'rh') {
+        if(btnCompta) btnCompta.style.display = "none";
+        if(btnUsers) btnUsers.style.display = "none";
+    }
+
+    // 5. Logique spécifique Compta
+    if(role === 'compta') {
+        if(btnRh) btnRh.style.display = "none";
+        if(btnUsers) btnUsers.style.display = "none";
+    }
+
+    // 6. Logique Invité / Inconnu
     if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
-        if(btnCompta) btnCompta.style.display = "none"; if(btnUsers) btnUsers.style.display = "none"; if(btnRh) btnRh.style.display = "none";
+        if(btnCompta) btnCompta.style.display = "none";
+        if(btnUsers) btnUsers.style.display = "none";
+        if(btnRh) btnRh.style.display = "none";
     }
 }
 
@@ -139,27 +173,25 @@ window.saveProfileSettings = async function() {
     } catch (error) { msg.innerText = "Erreur."; }
 };
 
-/* --- NOUVEAU : STATISTIQUES DASHBOARD --- */
+/* DASHBOARD STATS (Lancé mais caché si pas admin) */
 window.updateDashboardStats = async function() {
-    // 1. Horloge
     setInterval(() => {
         const now = new Date();
-        document.getElementById("statDate").innerText = now.toLocaleDateString('fr-FR');
-        document.getElementById("statTime").innerText = now.toLocaleTimeString('fr-FR');
+        const dateElem = document.getElementById("statDate");
+        const timeElem = document.getElementById("statTime");
+        if(dateElem) dateElem.innerText = now.toLocaleDateString('fr-FR');
+        if(timeElem) timeElem.innerText = now.toLocaleTimeString('fr-FR');
     }, 1000);
 
-    // 2. Compteurs (Firebase)
     try {
-        // Compte Employés (RH)
         const snapEmp = await getDocs(collection(db, "employees"));
-        document.getElementById("statEmployees").innerText = snapEmp.size;
+        const elEmp = document.getElementById("statEmployees");
+        if(elEmp) elEmp.innerText = snapEmp.size;
 
-        // Compte Utilisateurs (Comptes site)
         const snapUsers = await getDocs(collection(db, "users"));
-        document.getElementById("statUsers").innerText = snapUsers.size;
-    } catch (e) {
-        console.log("Erreur stats:", e);
-    }
+        const elUsers = document.getElementById("statUsers");
+        if(elUsers) elUsers.innerText = snapUsers.size;
+    } catch (e) { console.log("Stats chargées en arrière-plan"); }
 };
 
 /* MODULE RH */
