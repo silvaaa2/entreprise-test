@@ -44,9 +44,7 @@
     <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
-    
     <button id="btn-docs" onclick="showSection('docs')" style="color: #facc15;">📂 Documents Admin</button>
-
     <button id="btn-settings" onclick="showSection('settings')">⚙️ Paramètres</button>
     
     <div class="spacer"></div>
@@ -201,7 +199,6 @@
     <section id="docs" class="section">
         <h1>📂 Documents Confidentiels</h1>
         <p>Espace de stockage réservé à l'administration.</p>
-
         <div class="create-user-box">
             <h3>📌 Ajouter une note / document</h3>
             <div class="form-grid">
@@ -217,9 +214,7 @@
             <button onclick="createAdminDoc()">Sauvegarder dans le Cloud ☁️</button>
             <p id="docMsg"></p>
         </div>
-
-        <div id="docsGrid" class="docs-grid">
-            </div>
+        <div id="docsGrid" class="docs-grid"></div>
     </section>
 
     <section id="settings" class="section">
@@ -230,6 +225,12 @@
         <div class="input-group" style="margin-top: 20px;"><input id="settingsPhotoURL" type="url"><label>URL Photo</label></div>
         <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
         <p id="settingsMsg"></p>
+
+        <div style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
+            <h3 style="color: #ef4444; margin-top:0;">⚠️ Zone de Danger</h3>
+            <p style="font-size: 0.85em; color: #94a3b8; margin-bottom: 15px;">La suppression de votre compte est définitive. Toutes vos données d'accès seront effacées.</p>
+            <button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button>
+        </div>
       </div>
     </section>
 
