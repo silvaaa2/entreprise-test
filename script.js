@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-// AJOUT DE 'deleteUser' DANS LES IMPORTS 👇
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -23,6 +22,14 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-H
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
+
+/* --- INIT THEME (Lumière/Sombre) --- */
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+    const btn = document.getElementById('themeBtn');
+    if(btn) btn.innerText = "🌙 Mode Sombre";
+}
 
 /* LOGIN EMAIL */
 window.login = async function() {
@@ -203,28 +210,18 @@ window.saveProfileSettings = async function() {
     } catch (error) { msg.innerText = "Erreur."; }
 };
 
-/* --- NOUVEAU : SUPPRESSION DE MON COMPTE --- */
 window.deleteMyAccount = async function() {
     const user = auth.currentUser;
     if (!user) return;
-
     if (!confirm("⚠️ ATTENTION ⚠️\n\nTu es sur le point de supprimer DÉFINITIVEMENT ton compte.\nCette action est irréversible.\n\nVeux-tu continuer ?")) return;
-
-    // 2ème confirmation pour être sûr
     if (!confirm("Vraiment sûr ? Tout sera effacé.")) return;
-
     try {
-        // 1. Supprimer le document dans la base de données
         await deleteDoc(doc(db, "users", user.uid));
-        
-        // 2. Supprimer le compte de l'authentification
         await deleteUser(user);
-        
         alert("Compte supprimé. Adieu ! 👋");
-        window.location.reload(); // Recharger pour revenir au login
+        window.location.reload(); 
     } catch (error) {
         console.error("Erreur suppression:", error);
-        // Si l'utilisateur est connecté depuis trop longtemps, Firebase demande de se reconnecter
         if (error.code === 'auth/requires-recent-login') {
             alert("🔒 Sécurité : Pour supprimer ton compte, tu dois te déconnecter et te reconnecter d'abord.");
             await signOut(auth);
@@ -279,7 +276,7 @@ window.fetchEmployees = async function() {
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
-            html += `<tr><td style="font-weight:bold; color:white;">${data.name}</td><td><span style="color:#facc15;">${data.grade}</span></td><td>${data.hiredDate}</td><td><button onclick="deleteEmployee('${id}')" style="background:#ff4f4f; padding:5px 10px; font-size:0.8em; width:auto;">🗑️ Virer</button></td></tr>`;
+            html += `<tr><td style="font-weight:bold; color:var(--text);">${data.name}</td><td><span style="color:#facc15;">${data.grade}</span></td><td>${data.hiredDate}</td><td><button onclick="deleteEmployee('${id}')" style="background:#ff4f4f; padding:5px 10px; font-size:0.8em; width:auto;">🗑️ Virer</button></td></tr>`;
         });
         tbody.innerHTML = html || "<tr><td colspan='4' style='text-align:center'>Aucun employé.</td></tr>";
     } catch (error) { tbody.innerHTML = "<tr><td colspan='4'>Erreur DB RH</td></tr>"; }
@@ -346,7 +343,7 @@ window.fetchUsers = function() {
           const isSelectGuest = (!data.role || data.role === 'guest') ? 'selected' : '';
 
           const roleSelect = `
-            <select onchange="window.updateUserRole('${uid}', this.value)" style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
+            <select onchange="window.updateUserRole('${uid}', this.value)" style="background:var(--panel); color:var(--text); border:1px solid var(--border); padding:5px; border-radius:5px;">
                 <option value="guest" ${isSelectGuest}>⛔ Aucun accès</option>
                 <option value="admin" ${isSelectAdmin}>👑 Admin</option>
                 <option value="rh" ${isSelectRh}>🤝 RH</option>
@@ -354,10 +351,10 @@ window.fetchUsers = function() {
             </select>`;
           
           const deleteBtn = `<button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em;">🗑️ Exclure</button>`;
-          const nameClickable = `<div onclick="window.openUserProfile('${uid}')" style="font-weight:bold; cursor:pointer; color:#3b82f6; transition:0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${name}</div>`;
+          const nameClickable = `<div onclick="window.openUserProfile('${uid}')" style="font-weight:bold; cursor:pointer; color:var(--accent); transition:0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${name}</div>`;
 
           html += `<tr>
-            <td>${nameClickable}<div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td>
+            <td>${nameClickable}<div style="font-size:0.8em; color:var(--subtext);">${data.email}</div></td>
             <td>${roleSelect}</td>
             <td>${data.createdAt || "-"}</td>
             <td>${deleteBtn}</td>
@@ -547,4 +544,19 @@ window.searchTable = function() {
     for(let j=0; j < tds.length; j++) { if(tds[j] && tds[j].textContent.toUpperCase().indexOf(filter) > -1) { visible = true; break; } }
     tr[i].style.display = visible ? "" : "none";
   }
+};
+
+/* --- FONCTION THEME TOGGLE --- */
+window.toggleTheme = function() {
+    const body = document.body;
+    body.classList.toggle('light-mode');
+    
+    const btn = document.getElementById('themeBtn');
+    if(body.classList.contains('light-mode')) {
+        localStorage.setItem('theme', 'light');
+        if(btn) btn.innerText = "🌙 Mode Sombre";
+    } else {
+        localStorage.setItem('theme', 'dark');
+        if(btn) btn.innerText = "☀️ Mode Clair";
+    }
 };
