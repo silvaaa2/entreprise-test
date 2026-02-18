@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+/* AJOUT DE onSnapshot ICI 👇 */
+import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -41,6 +42,7 @@ window.loginWithGoogle = async function() {
   if(errorMsg) errorMsg.innerText = "Connexion Google...";
   try {
     await signInWithPopup(auth, provider);
+    // La redirection est gérée par onAuthStateChanged
   } catch (error) {
     console.error(error);
     if(errorMsg) errorMsg.innerText = "❌ Erreur Google: " + error.message;
@@ -56,7 +58,7 @@ window.showSection = function(id) {
   document.getElementById(id)?.classList.add("active");
   
   if(id === 'home') window.updateDashboardStats();
-  if(id === 'users') window.fetchUsers();
+  if(id === 'users') window.fetchUsers(); // Lance l'écoute temps réel
   if(id === 'rh') window.fetchEmployees();
   if(id === 'compta') window.toggleCompta('data');
 };
@@ -81,10 +83,11 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* PROFIL & PERMISSIONS */
+/* PROFIL & PERMISSIONS (AVEC FUSION INTELLIGENTE) */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
+    
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
@@ -106,21 +109,29 @@ async function loadUserProfile(user) {
 
         // 2. FUSION COMPTES
         if (!docSnap.exists()) {
+            // On regarde si un admin a pré-créé ce compte par email
             const q = query(collection(db, "users"), where("email", "==", email));
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
+                // FUSION
                 const oldDoc = querySnapshot.docs[0];
                 const oldData = oldDoc.data();
+                
                 await setDoc(docRef, {
-                    ...oldData, 
+                    ...oldData, // Récupère le rôle défini par l'admin
                     displayName: user.displayName || oldData.displayName,
                     photoURL: user.photoURL || oldData.photoURL,
                     uid: uid 
                 });
+                
+                // Supprime le doublon "fantôme"
                 await deleteDoc(oldDoc.ref);
+                
                 docSnap = await getDoc(docRef);
+                console.log("✅ Compte fusionné !");
             } else {
+                // NOUVEAU VISITEUR -> Invité (Aucun accès)
                 await setDoc(docRef, {
                     email: email, 
                     displayName: user.displayName, 
@@ -132,7 +143,7 @@ async function loadUserProfile(user) {
             }
         }
 
-        // 3. CHARGEMENT UI
+        // 3. UI PROFILE
         if (docSnap.exists()) {
             const data = docSnap.data();
             const realName = data.displayName || user.displayName || "Utilisateur";
@@ -158,27 +169,28 @@ function applyPermissions(role) {
     const homeMsg = document.querySelector(".home-header p");
     const homeTitle = document.querySelector(".home-header h1");
 
-    // 1. Tout cacher par défaut
+    // 1. CACHER TOUT PAR DÉFAUT
     if(btnUsers) btnUsers.style.display = "none";
     if(btnRh) btnRh.style.display = "none";
     if(btnCompta) btnCompta.style.display = "none";
     if(statsGrid) statsGrid.style.display = "none";
     
-    // 2. Admin
+    // 2. ADMIN (Tout voir)
     if(role === 'admin') {
         if(btnUsers) btnUsers.style.display = "block";
         if(btnRh) btnRh.style.display = "block";
         if(btnCompta) btnCompta.style.display = "block";
         if(statsGrid) statsGrid.style.display = "grid";
+        
         if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
-    // 3. Message pour les autres
+    // 3. MESSAGE POUR LES AUTRES
     if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
     
-    // Si c'est 'guest' ou 'rien', on laisse le message d'attente et AUCUN bouton
+    // Si Guest ou Rien
     if (!role || role === 'guest') {
         if(homeMsg) homeMsg.innerText = "⛔ Ton compte n'a pas encore d'accès.";
         return; 
@@ -186,10 +198,12 @@ function applyPermissions(role) {
 
     if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche.";
 
+    // 4. RH
     if(role === 'rh') {
         if(btnRh) btnRh.style.display = "block";
     }
 
+    // 5. COMPTA
     if(role === 'compta') {
         if(btnCompta) btnCompta.style.display = "block";
     }
@@ -283,7 +297,9 @@ window.searchRH = function() {
   }
 };
 
-/* USERS */
+/* USERS & REALTIME UPDATE */
+let unsubscribeUsers = null;
+
 window.createNewUser = async function() {
     const email = document.getElementById("newEmail").value;
     const password = document.getElementById("newPassword").value;
@@ -298,48 +314,56 @@ window.createNewUser = async function() {
         await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" });
         await signOut(secondaryAuth);
         msg.innerText = `✅ Ajouté !`; msg.style.color = "#00ff88";
-        window.fetchUsers();
+        // Pas besoin d'appeler fetchUsers, c'est automatique grâce au Realtime
     } catch (error) { msg.innerText = "Erreur: " + error.message; }
 };
 
-window.fetchUsers = async function() {
+window.fetchUsers = function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody) return;
-  tbody.innerHTML = "<tr><td colspan='4'>Chargement...</td></tr>";
-  try {
-    const querySnapshot = await getDocs(collection(db, "users"));
-    let html = "";
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      const uid = docSnap.id;
-      const name = data.displayName || "Sans nom";
-      
-      const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
-      const isSelectRh = data.role === 'rh' ? 'selected' : '';
-      const isSelectCompta = data.role === 'compta' ? 'selected' : '';
-      const isSelectGuest = data.role === 'guest' ? 'selected' : '';
 
-      // MENU DEROULANT AVEC OPTION "AUCUN ACCES"
-      const roleSelect = `
-        <select onchange="window.updateUserRole('${uid}', this.value)" style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
-            <option value="guest" ${isSelectGuest}>⛔ Aucun accès</option>
-            <option value="admin" ${isSelectAdmin}>👑 Admin</option>
-            <option value="rh" ${isSelectRh}>🤝 RH</option>
-            <option value="compta" ${isSelectCompta}>📊 Compta</option>
-        </select>`;
-      
-      // BOUTON EXCLURE (SUPPRIMER)
-      const deleteBtn = `<button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em;">🗑️ Exclure</button>`;
+  // Evite de lancer deux écoutes en même temps
+  if(unsubscribeUsers) return;
 
-      html += `<tr>
-        <td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td>
-        <td>${roleSelect}</td>
-        <td>${data.createdAt || "-"}</td>
-        <td>${deleteBtn}</td>
-      </tr>`;
-    });
-    tbody.innerHTML = html;
-  } catch (error) { tbody.innerHTML = "<tr><td colspan='4'>Erreur DB</td></tr>"; }
+  tbody.innerHTML = "<tr><td colspan='4'>Chargement en direct... 📡</td></tr>";
+
+  const q = collection(db, "users");
+  
+  // ECOUTE TEMPS RÉEL (SNAPSHOT)
+  unsubscribeUsers = onSnapshot(q, (snapshot) => {
+      let html = "";
+      snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const uid = docSnap.id;
+          const name = data.displayName || "Sans nom";
+          
+          const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
+          const isSelectRh = data.role === 'rh' ? 'selected' : '';
+          const isSelectCompta = data.role === 'compta' ? 'selected' : '';
+          const isSelectGuest = (!data.role || data.role === 'guest') ? 'selected' : '';
+
+          const roleSelect = `
+            <select onchange="window.updateUserRole('${uid}', this.value)" style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
+                <option value="guest" ${isSelectGuest}>⛔ Aucun accès</option>
+                <option value="admin" ${isSelectAdmin}>👑 Admin</option>
+                <option value="rh" ${isSelectRh}>🤝 RH</option>
+                <option value="compta" ${isSelectCompta}>📊 Compta</option>
+            </select>`;
+          
+          const deleteBtn = `<button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em;">🗑️ Exclure</button>`;
+
+          html += `<tr>
+            <td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td>
+            <td>${roleSelect}</td>
+            <td>${data.createdAt || "-"}</td>
+            <td>${deleteBtn}</td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+  }, (error) => {
+      console.error("Erreur Live:", error);
+      tbody.innerHTML = "<tr><td colspan='4'>Erreur connexion</td></tr>";
+  });
 };
 
 window.updateUserRole = async function(uid, newRole) {
@@ -347,20 +371,16 @@ window.updateUserRole = async function(uid, newRole) {
     catch (error) { alert("Erreur rôle : " + error.message); }
 };
 
-/* NOUVEAU : FONCTION POUR SUPPRIMER UN USER */
+/* SUPPRESSION USER */
 window.deleteUser = async function(uid) {
-    // Securité : ne pas se supprimer soi-même
     if (auth.currentUser && auth.currentUser.uid === uid) {
         alert("⚠️ Tu ne peux pas te supprimer toi-même !");
         return;
     }
-
     if(!confirm("⚠️ Es-tu sûr de vouloir EXCLURE définitivement cette personne ?")) return;
-    
     try { 
         await deleteDoc(doc(db, "users", uid)); 
-        alert("✅ Utilisateur exclu.");
-        window.fetchUsers(); 
+        // Pas besoin de recharger, c'est automatique
     } 
     catch (error) { alert("Erreur suppression : " + error.message); }
 };
