@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-// AJOUT ICI DE GoogleAuthProvider et signInWithPopup
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
@@ -36,7 +35,7 @@ window.login = async function() {
   }
 };
 
-/* LOGIN GOOGLE (NOUVEAU) */
+/* LOGIN GOOGLE */
 window.loginWithGoogle = async function() {
   const provider = new GoogleAuthProvider();
   if(errorMsg) errorMsg.innerText = "Connexion Google...";
@@ -145,18 +144,27 @@ function applyPermissions(role) {
     
     const statsGrid = document.querySelector(".stats-grid");
     const homeMsg = document.querySelector(".home-header p");
+    // AJOUT: Sélection du titre H1
+    const homeTitle = document.querySelector(".home-header h1");
 
     if(btnUsers) btnUsers.style.display = "block";
     if(btnRh) btnRh.style.display = "block";
     if(btnCompta) btnCompta.style.display = "block";
     
+    // 2. Logique Admin (Le Roi)
     if(role === 'admin') {
         if(statsGrid) statsGrid.style.display = "grid";
+        // On remet le texte Boss pour l'admin
+        if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
+    // 3. Logique Autres (Invité, RH, Compta)
     if(statsGrid) statsGrid.style.display = "none";
+    
+    // --- MODIFICATION ICI ---
+    if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
     if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche pour commencer.";
 
     if(role === 'rh') {
