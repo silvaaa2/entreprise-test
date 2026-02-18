@@ -342,3 +342,16 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
     color: white;
     box-shadow: none;
 }
+
+/* --- BOUTON DANGER --- */
+.danger-btn {
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  margin-top: 15px;
+}
+.danger-btn:hover {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
