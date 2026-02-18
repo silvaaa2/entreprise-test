@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -59,6 +59,7 @@ window.showSection = function(id) {
   if(id === 'users') window.fetchUsers();
   if(id === 'rh') window.fetchEmployees();
   if(id === 'compta') window.toggleCompta('data');
+  if(id === 'docs') window.fetchAdminDocs(); // Charger les docs
 };
 
 /* AUTH STATE */
@@ -155,25 +156,32 @@ function applyPermissions(role) {
     const btnUsers = document.getElementById("btn-users");
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
+    const btnDocs = document.getElementById("btn-docs"); // NOUVEAU
+    
     const statsGrid = document.querySelector(".stats-grid");
     const homeMsg = document.querySelector(".home-header p");
     const homeTitle = document.querySelector(".home-header h1");
 
+    // CACHER TOUT
     if(btnUsers) btnUsers.style.display = "none";
     if(btnRh) btnRh.style.display = "none";
     if(btnCompta) btnCompta.style.display = "none";
+    if(btnDocs) btnDocs.style.display = "none"; // Caché par défaut
     if(statsGrid) statsGrid.style.display = "none";
     
+    // ADMIN (Accès Total)
     if(role === 'admin') {
         if(btnUsers) btnUsers.style.display = "block";
         if(btnRh) btnRh.style.display = "block";
         if(btnCompta) btnCompta.style.display = "block";
+        if(btnDocs) btnDocs.style.display = "block"; // Visible pour l'admin
         if(statsGrid) statsGrid.style.display = "grid";
         if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
+    // AUTRES
     if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
     
     if (!role || role === 'guest') {
@@ -181,6 +189,7 @@ function applyPermissions(role) {
         return; 
     }
     if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche.";
+    
     if(role === 'rh') if(btnRh) btnRh.style.display = "block";
     if(role === 'compta') if(btnCompta) btnCompta.style.display = "block";
 }
@@ -271,7 +280,7 @@ window.searchRH = function() {
   }
 };
 
-/* --- PARTIE UTILISATEURS (LISTE + MODAL) --- */
+/* --- PARTIE UTILISATEURS --- */
 let unsubscribeUsers = null;
 
 window.createNewUser = async function() {
@@ -321,8 +330,6 @@ window.fetchUsers = function() {
             </select>`;
           
           const deleteBtn = `<button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em;">🗑️ Exclure</button>`;
-
-          // NOM CLIQUABLE POUR OUVRIR LE MODAL
           const nameClickable = `<div onclick="window.openUserProfile('${uid}')" style="font-weight:bold; cursor:pointer; color:#3b82f6; transition:0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${name}</div>`;
 
           html += `<tr>
@@ -354,7 +361,63 @@ window.deleteUser = async function(uid) {
     catch (error) { alert("Erreur suppression : " + error.message); }
 };
 
-/* --- GESTION DU PROFIL MODAL (NOUVEAU) --- */
+/* --- NOUVEAU : SYSTEME DE DOCUMENTS ADMIN --- */
+let unsubscribeDocs = null;
+
+window.createAdminDoc = async function() {
+    const title = document.getElementById("docTitle").value;
+    const content = document.getElementById("docContent").value;
+    const msg = document.getElementById("docMsg");
+
+    if(!title || !content) { msg.innerText = "Remplis tout !"; return; }
+    msg.innerText = "Sauvegarde...";
+
+    try {
+        await addDoc(collection(db, "admin_docs"), {
+            title: title,
+            content: content,
+            createdAt: new Date().toISOString()
+        });
+        msg.innerText = "✅ Sauvegardé !";
+        document.getElementById("docTitle").value = "";
+        document.getElementById("docContent").value = "";
+    } catch(e) { msg.innerText = "Erreur: " + e.message; }
+};
+
+window.fetchAdminDocs = function() {
+    const container = document.getElementById("docsGrid");
+    if(!container) return;
+    if(unsubscribeDocs) return; // Evite doublon écoute
+
+    container.innerHTML = "<p>Chargement des dossiers secrets...</p>";
+
+    const q = query(collection(db, "admin_docs"), orderBy("createdAt", "desc"));
+
+    unsubscribeDocs = onSnapshot(q, (snapshot) => {
+        let html = "";
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            html += `
+            <div class="doc-card">
+                <div class="doc-icon">📁</div>
+                <h4>${data.title}</h4>
+                <p>${data.content}</p>
+                <button onclick="window.deleteAdminDoc('${id}')" class="delete-doc-btn">Supprimer</button>
+            </div>
+            `;
+        });
+        container.innerHTML = html || "<p>Aucun document.</p>";
+    });
+};
+
+window.deleteAdminDoc = async function(id) {
+    if(!confirm("Supprimer ce document ?")) return;
+    try { await deleteDoc(doc(db, "admin_docs", id)); } catch(e) { alert(e); }
+};
+
+/* --- GESTION DU PROFIL MODAL --- */
 window.openUserProfile = async function(uid) {
     const modal = document.getElementById("profileModal");
     const mImg = document.getElementById("m_photo");
@@ -366,7 +429,6 @@ window.openUserProfile = async function(uid) {
 
     if(!modal) return;
     
-    // Afficher la modale
     modal.classList.remove("hidden");
     mName.innerText = "Chargement...";
     
@@ -381,7 +443,6 @@ window.openUserProfile = async function(uid) {
             mDate.innerText = data.createdAt || "Inconnue";
             mUid.innerText = uid;
 
-            // Traduction du rôle
             let roleText = "Invité";
             if(data.role === 'admin') roleText = "👑 Administrateur";
             if(data.role === 'rh') roleText = "🤝 Ressources Humaines";
