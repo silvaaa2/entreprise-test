@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+// AJOUT DE 'deleteUser' DANS LES IMPORTS 👇
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
@@ -59,7 +60,7 @@ window.showSection = function(id) {
   if(id === 'users') window.fetchUsers();
   if(id === 'rh') window.fetchEmployees();
   if(id === 'compta') window.toggleCompta('data');
-  if(id === 'docs') window.fetchAdminDocs(); // Charger les docs
+  if(id === 'docs') window.fetchAdminDocs(); 
 };
 
 /* AUTH STATE */
@@ -86,7 +87,6 @@ function resetInterface() {
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
-    
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
@@ -140,12 +140,10 @@ async function loadUserProfile(user) {
             const data = docSnap.data();
             const realName = data.displayName || user.displayName || "Utilisateur";
             const realPhoto = data.photoURL || user.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-            
             sidebarName.innerText = realName;
             sidebarImg.src = realPhoto;
             if(nameInput) nameInput.value = realName;
             if(photoInput) photoInput.value = realPhoto;
-            
             applyPermissions(data.role);
         }
 
@@ -156,32 +154,28 @@ function applyPermissions(role) {
     const btnUsers = document.getElementById("btn-users");
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
-    const btnDocs = document.getElementById("btn-docs"); // NOUVEAU
-    
+    const btnDocs = document.getElementById("btn-docs");
     const statsGrid = document.querySelector(".stats-grid");
     const homeMsg = document.querySelector(".home-header p");
     const homeTitle = document.querySelector(".home-header h1");
 
-    // CACHER TOUT
     if(btnUsers) btnUsers.style.display = "none";
     if(btnRh) btnRh.style.display = "none";
     if(btnCompta) btnCompta.style.display = "none";
-    if(btnDocs) btnDocs.style.display = "none"; // Caché par défaut
+    if(btnDocs) btnDocs.style.display = "none"; 
     if(statsGrid) statsGrid.style.display = "none";
     
-    // ADMIN (Accès Total)
     if(role === 'admin') {
         if(btnUsers) btnUsers.style.display = "block";
         if(btnRh) btnRh.style.display = "block";
         if(btnCompta) btnCompta.style.display = "block";
-        if(btnDocs) btnDocs.style.display = "block"; // Visible pour l'admin
+        if(btnDocs) btnDocs.style.display = "block"; 
         if(statsGrid) statsGrid.style.display = "grid";
         if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
-    // AUTRES
     if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
     
     if (!role || role === 'guest') {
@@ -189,7 +183,6 @@ function applyPermissions(role) {
         return; 
     }
     if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche.";
-    
     if(role === 'rh') if(btnRh) btnRh.style.display = "block";
     if(role === 'compta') if(btnCompta) btnCompta.style.display = "block";
 }
@@ -208,6 +201,37 @@ window.saveProfileSettings = async function() {
         document.getElementById("sidebarUserName").innerText = newName;
         document.getElementById("sidebarUserImg").src = newPhotoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     } catch (error) { msg.innerText = "Erreur."; }
+};
+
+/* --- NOUVEAU : SUPPRESSION DE MON COMPTE --- */
+window.deleteMyAccount = async function() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    if (!confirm("⚠️ ATTENTION ⚠️\n\nTu es sur le point de supprimer DÉFINITIVEMENT ton compte.\nCette action est irréversible.\n\nVeux-tu continuer ?")) return;
+
+    // 2ème confirmation pour être sûr
+    if (!confirm("Vraiment sûr ? Tout sera effacé.")) return;
+
+    try {
+        // 1. Supprimer le document dans la base de données
+        await deleteDoc(doc(db, "users", user.uid));
+        
+        // 2. Supprimer le compte de l'authentification
+        await deleteUser(user);
+        
+        alert("Compte supprimé. Adieu ! 👋");
+        window.location.reload(); // Recharger pour revenir au login
+    } catch (error) {
+        console.error("Erreur suppression:", error);
+        // Si l'utilisateur est connecté depuis trop longtemps, Firebase demande de se reconnecter
+        if (error.code === 'auth/requires-recent-login') {
+            alert("🔒 Sécurité : Pour supprimer ton compte, tu dois te déconnecter et te reconnecter d'abord.");
+            await signOut(auth);
+        } else {
+            alert("Erreur : " + error.message);
+        }
+    }
 };
 
 window.updateDashboardStats = async function() {
@@ -353,7 +377,7 @@ window.updateUserRole = async function(uid, newRole) {
 
 window.deleteUser = async function(uid) {
     if (auth.currentUser && auth.currentUser.uid === uid) {
-        alert("⚠️ Tu ne peux pas te supprimer toi-même !");
+        alert("⚠️ Tu ne peux pas te supprimer toi-même ! Utilise le bouton dans les Paramètres.");
         return;
     }
     if(!confirm("⚠️ Es-tu sûr de vouloir EXCLURE définitivement cette personne ?")) return;
@@ -361,7 +385,7 @@ window.deleteUser = async function(uid) {
     catch (error) { alert("Erreur suppression : " + error.message); }
 };
 
-/* --- NOUVEAU : SYSTEME DE DOCUMENTS ADMIN --- */
+/* --- SYSTEME DE DOCUMENTS ADMIN --- */
 let unsubscribeDocs = null;
 
 window.createAdminDoc = async function() {
@@ -387,7 +411,7 @@ window.createAdminDoc = async function() {
 window.fetchAdminDocs = function() {
     const container = document.getElementById("docsGrid");
     if(!container) return;
-    if(unsubscribeDocs) return; // Evite doublon écoute
+    if(unsubscribeDocs) return; 
 
     container.innerHTML = "<p>Chargement des dossiers secrets...</p>";
 
