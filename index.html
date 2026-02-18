@@ -44,6 +44,9 @@
     <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
+    
+    <button id="btn-docs" onclick="showSection('docs')" style="color: #facc15;">📂 Documents Admin</button>
+
     <button id="btn-settings" onclick="showSection('settings')">⚙️ Paramètres</button>
     
     <div class="spacer"></div>
@@ -58,14 +61,13 @@
 
   <main class="content">
 
-<section id="home" class="section active">
+    <section id="home" class="section active">
       <div class="home-header">
         <h1>Bienvenue, Boss. 👋</h1>
         <p>Voici l'état actuel de ton entreprise.</p>
       </div>
 
       <div class="stats-grid">
-        
         <div class="stat-card card-rh">
             <div class="icon">👥</div>
             <div class="info">
@@ -73,7 +75,6 @@
                 <p id="statEmployees">Chargement...</p>
             </div>
         </div>
-
         <div class="stat-card card-users">
             <div class="icon">🔐</div>
             <div class="info">
@@ -81,7 +82,6 @@
                 <p id="statUsers">Chargement...</p>
             </div>
         </div>
-
         <div class="stat-card card-time">
             <div class="icon">🕒</div>
             <div class="info">
@@ -89,13 +89,11 @@
                 <p id="statTime">--:--:--</p>
             </div>
         </div>
-
       </div>
     </section>
 
     <section id="users" class="section">
       <h1>Gestion des Accès</h1>
-      
       <div class="create-user-box">
         <h3>✨ Ajouter un collaborateur</h3>
         <div class="form-grid">
@@ -119,7 +117,6 @@
         <button onclick="createNewUser()">Ajouter (+)</button>
         <p id="userMsg"></p>
       </div>
-
       <div style="margin-top: 40px;">
         <h3>L'Équipe</h3>
         <div class="table-wrapper">
@@ -141,7 +138,6 @@
    <section id="rh" class="section">
       <h1>Ressources Humaines</h1>
       <p>Gestion des effectifs de l'entreprise.</p>
-
       <div class="create-user-box">
         <h3>📝 Nouveau Contrat d'Embauche</h3>
         <div class="form-grid">
@@ -160,14 +156,11 @@
         <button onclick="createEmployee()">✍️ Signer le contrat (Ajouter)</button>
         <p id="rhMsg"></p>
       </div>
-
       <div style="margin-top: 40px;">
         <h3>Registre du Personnel</h3>
-        
         <div class="search-container">
             <input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher un employé...">
         </div>
-
         <div class="table-wrapper">
           <table class="cyber-table" id="rhTable">
             <thead>
@@ -178,8 +171,7 @@
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="employeeListBody">
-                </tbody>
+            <tbody id="employeeListBody"></tbody>
           </table>
         </div>
       </div>
@@ -187,28 +179,47 @@
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      
       <div class="compta-controls">
         <button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier</button>
         <button onclick="toggleCompta('data')" class="small-btn">📊 Vue Tableau</button>
       </div>
-      
       <div id="sheetFrame" class="iframe-container" style="height: 750px;">
          <iframe src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340" width="100%" height="100%" style="border:none;"></iframe>
       </div>
-
       <div id="nativeTableContainer" class="hidden">
-        
         <div class="search-container">
             <input type="text" id="tableSearch" onkeyup="searchTable()" placeholder="🔍 Rechercher un nom, un grade, un salaire...">
         </div>
-
         <div class="table-wrapper">
           <table id="sheetTable" class="cyber-table">
             <tr><td style="padding:20px; text-align:center">Chargement...</td></tr>
           </table>
         </div>
       </div>
+    </section>
+
+    <section id="docs" class="section">
+        <h1>📂 Documents Confidentiels</h1>
+        <p>Espace de stockage réservé à l'administration.</p>
+
+        <div class="create-user-box">
+            <h3>📌 Ajouter une note / document</h3>
+            <div class="form-grid">
+                <div class="input-group">
+                    <input id="docTitle" type="text" required>
+                    <label>Titre du document</label>
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <input id="docContent" type="text" required>
+                    <label>Contenu (Lien, note, mémo...)</label>
+                </div>
+            </div>
+            <button onclick="createAdminDoc()">Sauvegarder dans le Cloud ☁️</button>
+            <p id="docMsg"></p>
+        </div>
+
+        <div id="docsGrid" class="docs-grid">
+            </div>
     </section>
 
     <section id="settings" class="section">
@@ -228,13 +239,11 @@
 <div id="profileModal" class="modal hidden">
   <div class="modal-content">
     <span class="close-btn" onclick="closeUserProfile()">&times;</span>
-    
     <div class="modal-header">
       <img id="m_photo" src="" alt="Avatar">
       <h2 id="m_name">Chargement...</h2>
       <p id="m_email" class="subtext">...</p>
     </div>
-
     <div class="modal-body">
       <div class="info-row">
         <span class="label">Rôle Actuel :</span>
@@ -249,7 +258,6 @@
         <span id="m_uid" class="value tiny">...</span>
       </div>
     </div>
-
     <div class="modal-footer">
       <button onclick="closeUserProfile()" class="secondary-btn">Fermer</button>
     </div>
