@@ -60,7 +60,7 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .cyber-table tr:hover { background: rgba(255,255,255,0.05); }
 .iframe-container { border-radius: 15px; overflow: hidden; border: 1px solid #334155; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
 
-/* --- NOUVEAU STYLE PROFIL SIDEBAR --- */
+/* PROFIL SIDEBAR */
 .user-profile-section {
     display: flex;
     align-items: center;
@@ -74,7 +74,7 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .user-profile-section img {
     width: 45px;
     height: 45px;
-    border-radius: 50%; /* Le rond magique */
+    border-radius: 50%;
     object-fit: cover;
     margin-right: 15px;
     border: 2px solid var(--accent);
@@ -85,14 +85,13 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
     color: white;
     font-size: 0.95em;
 }
-/* ... LE RESTE DE TON CSS ... */
 
 /* BARRE DE RECHERCHE */
 .search-container {
     margin-bottom: 15px;
 }
 
-#tableSearch {
+#tableSearch, #rhSearch {
     width: 100%;
     padding: 15px;
     font-size: 16px;
@@ -104,16 +103,17 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
     transition: all 0.3s ease;
 }
 
-#tableSearch:focus {
+#tableSearch:focus, #rhSearch:focus {
     border-color: var(--accent);
     box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-#tableSearch::placeholder {
+#tableSearch::placeholder, #rhSearch::placeholder {
     color: #64748b;
 }
-/* --- DASHBOARD HOME (NOUVEAU) --- */
+
+/* DASHBOARD HOME */
 .home-header { margin-bottom: 30px; }
 .home-header h1 { font-size: 2.5em; margin: 0; background: -webkit-linear-gradient(#fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
@@ -154,13 +154,50 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .stat-card .info h3 { margin: 0; font-size: 1em; color: #94a3b8; font-weight: normal; }
 .stat-card .info p { margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: white; }
 
-/* Couleurs spécifiques par carte */
-.card-rh { border-bottom: 4px solid #facc15; } /* Jaune */
+.card-rh { border-bottom: 4px solid #facc15; }
 .card-rh .icon { color: #facc15; }
-
-.card-users { border-bottom: 4px solid #3b82f6; } /* Bleu */
+.card-users { border-bottom: 4px solid #3b82f6; }
 .card-users .icon { color: #3b82f6; }
-
-.card-time { border-bottom: 4px solid #a855f7; } /* Violet */
+.card-time { border-bottom: 4px solid #a855f7; }
 .card-time .icon { color: #a855f7; }
 #statTime { font-family: monospace; letter-spacing: 2px; }
+
+/* --- GOOGLE BTN & SEPARATOR --- */
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #64748b;
+  font-size: 0.8em;
+}
+.separator::before, .separator::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.separator span {
+  padding: 0 10px;
+}
+
+.google-btn {
+  background: white !important;
+  color: #1e293b !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.google-btn:hover {
+  background: #f1f5f9 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.google-btn img {
+  width: 20px;
+  height: 20px;
+}
