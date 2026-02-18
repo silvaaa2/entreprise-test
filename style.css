@@ -201,3 +201,85 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
   width: 20px;
   height: 20px;
 }
+
+/* --- MODAL PROFIL (POPUP) --- */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8); /* Fond sombre transparent */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px); /* Effet de flou derrière */
+  animation: fadeIn 0.3s;
+}
+
+.modal-content {
+  background: #0f172a; /* Couleur du panneau */
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  width: 400px;
+  text-align: center;
+  box-shadow: 0 0 50px rgba(59, 130, 246, 0.2);
+  position: relative;
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  color: #64748b;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.close-btn:hover { color: white; }
+
+/* Design interne de la carte */
+.modal-header img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  object-fit: cover;
+  margin-bottom: 15px;
+}
+.modal-header h2 { margin: 0; color: white; }
+.subtext { color: #94a3b8; margin-top: 5px; font-size: 0.9em; }
+
+.modal-body { margin-top: 25px; text-align: left; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 10px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.info-row:last-child { border-bottom: none; margin-bottom: 0; }
+.label { color: #64748b; font-size: 0.9em; }
+.value { color: white; font-weight: 600; }
+.tiny { font-size: 0.7em; color: #475569; font-family: monospace; }
+
+.badge {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.8em;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.secondary-btn {
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+}
+.secondary-btn:hover {
+  background: #1e293b;
+  color: white;
+  transform: none;
+  box-shadow: none;
+}
