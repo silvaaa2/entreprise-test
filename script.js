@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-/* AJOUT DE onSnapshot ICI 👇 */
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
@@ -42,7 +41,6 @@ window.loginWithGoogle = async function() {
   if(errorMsg) errorMsg.innerText = "Connexion Google...";
   try {
     await signInWithPopup(auth, provider);
-    // La redirection est gérée par onAuthStateChanged
   } catch (error) {
     console.error(error);
     if(errorMsg) errorMsg.innerText = "❌ Erreur Google: " + error.message;
@@ -58,7 +56,7 @@ window.showSection = function(id) {
   document.getElementById(id)?.classList.add("active");
   
   if(id === 'home') window.updateDashboardStats();
-  if(id === 'users') window.fetchUsers(); // Lance l'écoute temps réel
+  if(id === 'users') window.fetchUsers();
   if(id === 'rh') window.fetchEmployees();
   if(id === 'compta') window.toggleCompta('data');
 };
@@ -83,7 +81,7 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* PROFIL & PERMISSIONS (AVEC FUSION INTELLIGENTE) */
+/* PROFIL & PERMISSIONS */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
@@ -109,29 +107,22 @@ async function loadUserProfile(user) {
 
         // 2. FUSION COMPTES
         if (!docSnap.exists()) {
-            // On regarde si un admin a pré-créé ce compte par email
             const q = query(collection(db, "users"), where("email", "==", email));
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
-                // FUSION
                 const oldDoc = querySnapshot.docs[0];
                 const oldData = oldDoc.data();
-                
                 await setDoc(docRef, {
-                    ...oldData, // Récupère le rôle défini par l'admin
+                    ...oldData, 
                     displayName: user.displayName || oldData.displayName,
                     photoURL: user.photoURL || oldData.photoURL,
                     uid: uid 
                 });
-                
-                // Supprime le doublon "fantôme"
                 await deleteDoc(oldDoc.ref);
-                
                 docSnap = await getDoc(docRef);
                 console.log("✅ Compte fusionné !");
             } else {
-                // NOUVEAU VISITEUR -> Invité (Aucun accès)
                 await setDoc(docRef, {
                     email: email, 
                     displayName: user.displayName, 
@@ -164,49 +155,34 @@ function applyPermissions(role) {
     const btnUsers = document.getElementById("btn-users");
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
-    
     const statsGrid = document.querySelector(".stats-grid");
     const homeMsg = document.querySelector(".home-header p");
     const homeTitle = document.querySelector(".home-header h1");
 
-    // 1. CACHER TOUT PAR DÉFAUT
     if(btnUsers) btnUsers.style.display = "none";
     if(btnRh) btnRh.style.display = "none";
     if(btnCompta) btnCompta.style.display = "none";
     if(statsGrid) statsGrid.style.display = "none";
     
-    // 2. ADMIN (Tout voir)
     if(role === 'admin') {
         if(btnUsers) btnUsers.style.display = "block";
         if(btnRh) btnRh.style.display = "block";
         if(btnCompta) btnCompta.style.display = "block";
         if(statsGrid) statsGrid.style.display = "grid";
-        
         if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
-    // 3. MESSAGE POUR LES AUTRES
     if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
     
-    // Si Guest ou Rien
     if (!role || role === 'guest') {
         if(homeMsg) homeMsg.innerText = "⛔ Ton compte n'a pas encore d'accès.";
         return; 
     }
-
     if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche.";
-
-    // 4. RH
-    if(role === 'rh') {
-        if(btnRh) btnRh.style.display = "block";
-    }
-
-    // 5. COMPTA
-    if(role === 'compta') {
-        if(btnCompta) btnCompta.style.display = "block";
-    }
+    if(role === 'rh') if(btnRh) btnRh.style.display = "block";
+    if(role === 'compta') if(btnCompta) btnCompta.style.display = "block";
 }
 
 window.saveProfileSettings = async function() {
@@ -225,7 +201,6 @@ window.saveProfileSettings = async function() {
     } catch (error) { msg.innerText = "Erreur."; }
 };
 
-/* DASHBOARD STATS */
 window.updateDashboardStats = async function() {
     setInterval(() => {
         const now = new Date();
@@ -246,7 +221,6 @@ window.updateDashboardStats = async function() {
     } catch (e) { console.log("Stats chargées en arrière-plan"); }
 };
 
-/* MODULE RH */
 window.createEmployee = async function() {
     const name = document.getElementById("empName").value;
     const grade = document.getElementById("empGrade").value;
@@ -297,7 +271,7 @@ window.searchRH = function() {
   }
 };
 
-/* USERS & REALTIME UPDATE */
+/* --- PARTIE UTILISATEURS (LISTE + MODAL) --- */
 let unsubscribeUsers = null;
 
 window.createNewUser = async function() {
@@ -314,22 +288,18 @@ window.createNewUser = async function() {
         await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" });
         await signOut(secondaryAuth);
         msg.innerText = `✅ Ajouté !`; msg.style.color = "#00ff88";
-        // Pas besoin d'appeler fetchUsers, c'est automatique grâce au Realtime
     } catch (error) { msg.innerText = "Erreur: " + error.message; }
 };
 
 window.fetchUsers = function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody) return;
-
-  // Evite de lancer deux écoutes en même temps
   if(unsubscribeUsers) return;
 
   tbody.innerHTML = "<tr><td colspan='4'>Chargement en direct... 📡</td></tr>";
 
   const q = collection(db, "users");
   
-  // ECOUTE TEMPS RÉEL (SNAPSHOT)
   unsubscribeUsers = onSnapshot(q, (snapshot) => {
       let html = "";
       snapshot.forEach((docSnap) => {
@@ -352,8 +322,11 @@ window.fetchUsers = function() {
           
           const deleteBtn = `<button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em;">🗑️ Exclure</button>`;
 
+          // NOM CLIQUABLE POUR OUVRIR LE MODAL
+          const nameClickable = `<div onclick="window.openUserProfile('${uid}')" style="font-weight:bold; cursor:pointer; color:#3b82f6; transition:0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${name}</div>`;
+
           html += `<tr>
-            <td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td>
+            <td>${nameClickable}<div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td>
             <td>${roleSelect}</td>
             <td>${data.createdAt || "-"}</td>
             <td>${deleteBtn}</td>
@@ -371,18 +344,63 @@ window.updateUserRole = async function(uid, newRole) {
     catch (error) { alert("Erreur rôle : " + error.message); }
 };
 
-/* SUPPRESSION USER */
 window.deleteUser = async function(uid) {
     if (auth.currentUser && auth.currentUser.uid === uid) {
         alert("⚠️ Tu ne peux pas te supprimer toi-même !");
         return;
     }
     if(!confirm("⚠️ Es-tu sûr de vouloir EXCLURE définitivement cette personne ?")) return;
-    try { 
-        await deleteDoc(doc(db, "users", uid)); 
-        // Pas besoin de recharger, c'est automatique
-    } 
+    try { await deleteDoc(doc(db, "users", uid)); } 
     catch (error) { alert("Erreur suppression : " + error.message); }
+};
+
+/* --- GESTION DU PROFIL MODAL (NOUVEAU) --- */
+window.openUserProfile = async function(uid) {
+    const modal = document.getElementById("profileModal");
+    const mImg = document.getElementById("m_photo");
+    const mName = document.getElementById("m_name");
+    const mEmail = document.getElementById("m_email");
+    const mRole = document.getElementById("m_role");
+    const mDate = document.getElementById("m_date");
+    const mUid = document.getElementById("m_uid");
+
+    if(!modal) return;
+    
+    // Afficher la modale
+    modal.classList.remove("hidden");
+    mName.innerText = "Chargement...";
+    
+    try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if(userDoc.exists()) {
+            const data = userDoc.data();
+            
+            mName.innerText = data.displayName || "Sans nom";
+            mEmail.innerText = data.email || "Pas d'email";
+            mImg.src = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            mDate.innerText = data.createdAt || "Inconnue";
+            mUid.innerText = uid;
+
+            // Traduction du rôle
+            let roleText = "Invité";
+            if(data.role === 'admin') roleText = "👑 Administrateur";
+            if(data.role === 'rh') roleText = "🤝 Ressources Humaines";
+            if(data.role === 'compta') roleText = "📊 Comptable";
+            if(data.role === 'guest' || !data.role) roleText = "⛔ Aucun accès";
+            
+            mRole.innerText = roleText;
+        } else {
+            mName.innerText = "Utilisateur introuvable";
+        }
+    } catch(e) {
+        console.error(e);
+        mName.innerText = "Erreur de chargement";
+    }
+};
+
+window.closeUserProfile = function() {
+    const modal = document.getElementById("profileModal");
+    if(modal) modal.classList.add("hidden");
 };
 
 /* COMPTA */
