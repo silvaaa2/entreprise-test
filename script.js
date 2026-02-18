@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
 const firebaseConfig = {
@@ -39,24 +39,9 @@ window.login = async function() {
 window.loginWithGoogle = async function() {
   const provider = new GoogleAuthProvider();
   if(errorMsg) errorMsg.innerText = "Connexion Google...";
-  
   try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    // Vérif si l'user existe déjà dans la DB, sinon on le crée
-    const docRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      await setDoc(docRef, {
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        role: 'guest', // Rôle par défaut
-        createdAt: new Date().toISOString().split('T')[0]
-      });
-    }
+    await signInWithPopup(auth, provider);
+    // La redirection et le profil sont gérés par onAuthStateChanged
   } catch (error) {
     console.error(error);
     if(errorMsg) errorMsg.innerText = "❌ Erreur Google: " + error.message;
@@ -97,10 +82,12 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* PROFIL & PERMISSIONS */
+/* PROFIL & PERMISSIONS (AVEC FUSION INTELLIGENTE) */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
+    
+    // Elements UI
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
@@ -108,9 +95,9 @@ async function loadUserProfile(user) {
 
     try {
         const docRef = doc(db, "users", uid);
-        const docSnap = await getDoc(docRef);
+        let docSnap = await getDoc(docRef);
 
-        // BACKDOOR
+        // 1. BACKDOOR SUPER ADMIN
         if (email === SUPER_ADMIN) {
             if (!docSnap.exists() || docSnap.data().role !== 'admin') {
                 await setDoc(docRef, {
@@ -120,20 +107,57 @@ async function loadUserProfile(user) {
             }
         }
 
+        // 2. FUSION COMPTES : Si le compte Google n'existe pas, on cherche s'il a été pré-créé par email
+        if (!docSnap.exists()) {
+            const q = query(collection(db, "users"), where("email", "==", email));
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+                // TROUVÉ ! C'est un compte pré-créé par l'admin (avec un autre UID)
+                const oldDoc = querySnapshot.docs[0];
+                const oldData = oldDoc.data();
+                
+                // On copie les droits (le rôle) sur le nouveau compte Google
+                await setDoc(docRef, {
+                    ...oldData, // Garde le role 'admin' ou 'compta'
+                    displayName: user.displayName || oldData.displayName,
+                    photoURL: user.photoURL || oldData.photoURL,
+                    uid: uid // Mise à jour UID
+                });
+                
+                // On supprime l'ancien compte fantôme pour éviter les doublons
+                await deleteDoc(oldDoc.ref);
+                
+                // On recharge le nouveau doc
+                docSnap = await getDoc(docRef);
+                console.log("✅ Compte fusionné avec succès !");
+            } else {
+                // Pas trouvé, c'est un vrai nouveau visiteur -> Invité
+                await setDoc(docRef, {
+                    email: email, 
+                    displayName: user.displayName, 
+                    photoURL: user.photoURL, 
+                    role: 'guest', 
+                    createdAt: new Date().toISOString().split('T')[0]
+                });
+                docSnap = await getDoc(docRef);
+            }
+        }
+
+        // 3. CHARGEMENT UI
         if (docSnap.exists()) {
             const data = docSnap.data();
-            const realName = data.displayName || "Utilisateur";
-            const realPhoto = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            const realName = data.displayName || user.displayName || "Utilisateur";
+            const realPhoto = data.photoURL || user.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            
             sidebarName.innerText = realName;
             sidebarImg.src = realPhoto;
-            if(nameInput) nameInput.value = data.displayName || "";
-            if(photoInput) photoInput.value = data.photoURL || "";
+            if(nameInput) nameInput.value = realName;
+            if(photoInput) photoInput.value = realPhoto;
             
             applyPermissions(data.role);
-        } else {
-            // Cas d'un user google tout neuf qui n'est pas encore dans la db (failsafe)
-            applyPermissions("guest");
         }
+
     } catch (error) { console.error("Erreur profil:", error); }
 }
 
@@ -144,43 +168,42 @@ function applyPermissions(role) {
     
     const statsGrid = document.querySelector(".stats-grid");
     const homeMsg = document.querySelector(".home-header p");
-    // AJOUT: Sélection du titre H1
     const homeTitle = document.querySelector(".home-header h1");
 
-    if(btnUsers) btnUsers.style.display = "block";
-    if(btnRh) btnRh.style.display = "block";
-    if(btnCompta) btnCompta.style.display = "block";
+    // 1. Reset : On cache tout par sécurité d'abord
+    if(btnUsers) btnUsers.style.display = "none";
+    if(btnRh) btnRh.style.display = "none";
+    if(btnCompta) btnCompta.style.display = "none";
+    if(statsGrid) statsGrid.style.display = "none";
     
-    // 2. Logique Admin (Le Roi)
+    console.log("Application des droits pour le rôle :", role);
+
+    // 2. Logique ADMIN (Tout voir)
     if(role === 'admin') {
+        if(btnUsers) btnUsers.style.display = "block";
+        if(btnRh) btnRh.style.display = "block";
+        if(btnCompta) btnCompta.style.display = "block";
         if(statsGrid) statsGrid.style.display = "grid";
-        // On remet le texte Boss pour l'admin
+        
         if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
-    // 3. Logique Autres (Invité, RH, Compta)
-    if(statsGrid) statsGrid.style.display = "none";
-    
-    // --- MODIFICATION ICI ---
+    // 3. Logique GUEST / INVITE (Rien voir)
     if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
-    if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche pour commencer.";
+    if(homeMsg) homeMsg.innerText = "Attends qu'un administrateur valide ton compte.";
 
+    // 4. Logique RH (Voit RH seulement)
     if(role === 'rh') {
-        if(btnCompta) btnCompta.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none";
+        if(btnRh) btnRh.style.display = "block";
+        if(homeMsg) homeMsg.innerText = "Accès RH activé.";
     }
 
+    // 5. Logique COMPTA (Voit Compta seulement)
     if(role === 'compta') {
-        if(btnRh) btnRh.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none";
-    }
-
-    if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
-        if(btnCompta) btnCompta.style.display = "none";
-        if(btnUsers) btnUsers.style.display = "none";
-        if(btnRh) btnRh.style.display = "none";
+        if(btnCompta) btnCompta.style.display = "block";
+        if(homeMsg) homeMsg.innerText = "Accès Comptabilité activé.";
     }
 }
 
@@ -284,7 +307,8 @@ window.createNewUser = async function() {
         const secondaryApp = initializeApp(firebaseConfig, "Secondary");
         const secondaryAuth = getAuth(secondaryApp);
         const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "", photoURL: "" });
+        // Ajout avec un displayName vide pour éviter le "undefined"
+        await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" });
         await signOut(secondaryAuth);
         msg.innerText = `✅ Ajouté !`; msg.style.color = "#00ff88";
         window.fetchUsers();
