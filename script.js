@@ -41,7 +41,6 @@ window.loginWithGoogle = async function() {
   if(errorMsg) errorMsg.innerText = "Connexion Google...";
   try {
     await signInWithPopup(auth, provider);
-    // La redirection et le profil sont gérés par onAuthStateChanged
   } catch (error) {
     console.error(error);
     if(errorMsg) errorMsg.innerText = "❌ Erreur Google: " + error.message;
@@ -82,12 +81,10 @@ function resetInterface() {
     document.getElementById("sidebarUserImg").src = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 }
 
-/* PROFIL & PERMISSIONS (AVEC FUSION INTELLIGENTE) */
+/* PROFIL & PERMISSIONS */
 async function loadUserProfile(user) {
     const uid = user.uid;
     const email = user.email;
-    
-    // Elements UI
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarImg = document.getElementById("sidebarUserImg");
     const nameInput = document.getElementById("settingsDisplayName");
@@ -107,32 +104,23 @@ async function loadUserProfile(user) {
             }
         }
 
-        // 2. FUSION COMPTES : Si le compte Google n'existe pas, on cherche s'il a été pré-créé par email
+        // 2. FUSION COMPTES
         if (!docSnap.exists()) {
             const q = query(collection(db, "users"), where("email", "==", email));
             const querySnapshot = await getDocs(q);
             
             if (!querySnapshot.empty) {
-                // TROUVÉ ! C'est un compte pré-créé par l'admin (avec un autre UID)
                 const oldDoc = querySnapshot.docs[0];
                 const oldData = oldDoc.data();
-                
-                // On copie les droits (le rôle) sur le nouveau compte Google
                 await setDoc(docRef, {
-                    ...oldData, // Garde le role 'admin' ou 'compta'
+                    ...oldData, 
                     displayName: user.displayName || oldData.displayName,
                     photoURL: user.photoURL || oldData.photoURL,
-                    uid: uid // Mise à jour UID
+                    uid: uid 
                 });
-                
-                // On supprime l'ancien compte fantôme pour éviter les doublons
                 await deleteDoc(oldDoc.ref);
-                
-                // On recharge le nouveau doc
                 docSnap = await getDoc(docRef);
-                console.log("✅ Compte fusionné avec succès !");
             } else {
-                // Pas trouvé, c'est un vrai nouveau visiteur -> Invité
                 await setDoc(docRef, {
                     email: email, 
                     displayName: user.displayName, 
@@ -170,40 +158,40 @@ function applyPermissions(role) {
     const homeMsg = document.querySelector(".home-header p");
     const homeTitle = document.querySelector(".home-header h1");
 
-    // 1. Reset : On cache tout par sécurité d'abord
+    // 1. Tout cacher par défaut
     if(btnUsers) btnUsers.style.display = "none";
     if(btnRh) btnRh.style.display = "none";
     if(btnCompta) btnCompta.style.display = "none";
     if(statsGrid) statsGrid.style.display = "none";
     
-    console.log("Application des droits pour le rôle :", role);
-
-    // 2. Logique ADMIN (Tout voir)
+    // 2. Admin
     if(role === 'admin') {
         if(btnUsers) btnUsers.style.display = "block";
         if(btnRh) btnRh.style.display = "block";
         if(btnCompta) btnCompta.style.display = "block";
         if(statsGrid) statsGrid.style.display = "grid";
-        
         if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
 
-    // 3. Logique GUEST / INVITE (Rien voir)
+    // 3. Message pour les autres
     if(homeTitle) homeTitle.innerText = "Bienvenue chez Mathieu"; 
-    if(homeMsg) homeMsg.innerText = "Attends qu'un administrateur valide ton compte.";
-
-    // 4. Logique RH (Voit RH seulement)
-    if(role === 'rh') {
-        if(btnRh) btnRh.style.display = "block";
-        if(homeMsg) homeMsg.innerText = "Accès RH activé.";
+    
+    // Si c'est 'guest' ou 'rien', on laisse le message d'attente et AUCUN bouton
+    if (!role || role === 'guest') {
+        if(homeMsg) homeMsg.innerText = "⛔ Ton compte n'a pas encore d'accès.";
+        return; 
     }
 
-    // 5. Logique COMPTA (Voit Compta seulement)
+    if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche.";
+
+    if(role === 'rh') {
+        if(btnRh) btnRh.style.display = "block";
+    }
+
     if(role === 'compta') {
         if(btnCompta) btnCompta.style.display = "block";
-        if(homeMsg) homeMsg.innerText = "Accès Comptabilité activé.";
     }
 }
 
@@ -307,7 +295,6 @@ window.createNewUser = async function() {
         const secondaryApp = initializeApp(firebaseConfig, "Secondary");
         const secondaryAuth = getAuth(secondaryApp);
         const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        // Ajout avec un displayName vide pour éviter le "undefined"
         await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" });
         await signOut(secondaryAuth);
         msg.innerText = `✅ Ajouté !`; msg.style.color = "#00ff88";
@@ -318,7 +305,7 @@ window.createNewUser = async function() {
 window.fetchUsers = async function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody) return;
-  tbody.innerHTML = "<tr><td colspan='3'>Chargement...</td></tr>";
+  tbody.innerHTML = "<tr><td colspan='4'>Chargement...</td></tr>";
   try {
     const querySnapshot = await getDocs(collection(db, "users"));
     let html = "";
@@ -326,19 +313,56 @@ window.fetchUsers = async function() {
       const data = docSnap.data();
       const uid = docSnap.id;
       const name = data.displayName || "Sans nom";
+      
       const isSelectAdmin = data.role === 'admin' ? 'selected' : '';
       const isSelectRh = data.role === 'rh' ? 'selected' : '';
       const isSelectCompta = data.role === 'compta' ? 'selected' : '';
-      const roleSelect = `<select onchange="window.updateUserRole('${uid}', this.value)" style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;"><option value="admin" ${isSelectAdmin}>👑 Admin</option><option value="rh" ${isSelectRh}>🤝 RH</option><option value="compta" ${isSelectCompta}>📊 Compta</option></select>`;
-      html += `<tr><td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td><td>${roleSelect}</td><td>${data.createdAt || "-"}</td></tr>`;
+      const isSelectGuest = data.role === 'guest' ? 'selected' : '';
+
+      // MENU DEROULANT AVEC OPTION "AUCUN ACCES"
+      const roleSelect = `
+        <select onchange="window.updateUserRole('${uid}', this.value)" style="background:#0f172a; color:white; border:1px solid #334155; padding:5px; border-radius:5px;">
+            <option value="guest" ${isSelectGuest}>⛔ Aucun accès</option>
+            <option value="admin" ${isSelectAdmin}>👑 Admin</option>
+            <option value="rh" ${isSelectRh}>🤝 RH</option>
+            <option value="compta" ${isSelectCompta}>📊 Compta</option>
+        </select>`;
+      
+      // BOUTON EXCLURE (SUPPRIMER)
+      const deleteBtn = `<button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em;">🗑️ Exclure</button>`;
+
+      html += `<tr>
+        <td><div style="font-weight:bold;">${name}</div><div style="font-size:0.8em; color:#94a3b8;">${data.email}</div></td>
+        <td>${roleSelect}</td>
+        <td>${data.createdAt || "-"}</td>
+        <td>${deleteBtn}</td>
+      </tr>`;
     });
     tbody.innerHTML = html;
-  } catch (error) { tbody.innerHTML = "<tr><td colspan='3'>Erreur DB</td></tr>"; }
+  } catch (error) { tbody.innerHTML = "<tr><td colspan='4'>Erreur DB</td></tr>"; }
 };
 
 window.updateUserRole = async function(uid, newRole) {
     try { await updateDoc(doc(db, "users", uid), { role: newRole }); console.log(`Rôle mis à jour.`); } 
     catch (error) { alert("Erreur rôle : " + error.message); }
+};
+
+/* NOUVEAU : FONCTION POUR SUPPRIMER UN USER */
+window.deleteUser = async function(uid) {
+    // Securité : ne pas se supprimer soi-même
+    if (auth.currentUser && auth.currentUser.uid === uid) {
+        alert("⚠️ Tu ne peux pas te supprimer toi-même !");
+        return;
+    }
+
+    if(!confirm("⚠️ Es-tu sûr de vouloir EXCLURE définitivement cette personne ?")) return;
+    
+    try { 
+        await deleteDoc(doc(db, "users", uid)); 
+        alert("✅ Utilisateur exclu.");
+        window.fetchUsers(); 
+    } 
+    catch (error) { alert("Erreur suppression : " + error.message); }
 };
 
 /* COMPTA */
