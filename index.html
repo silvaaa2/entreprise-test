@@ -45,10 +45,13 @@
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
     <button id="btn-docs" onclick="showSection('docs')" style="color: #facc15;">📂 Documents Admin</button>
-    <button id="btn-settings" onclick="showSection('settings')">⚙️ Paramètres</button>
     
     <div class="spacer"></div>
 
+    <button onclick="toggleTheme()" id="themeBtn">☀️ Mode Clair</button>
+
+    <button id="btn-settings" onclick="showSection('settings')">⚙️ Paramètres</button>
+    
     <div class="user-profile-section">
         <img id="sidebarUserImg" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Profile">
         <span id="sidebarUserName">Utilisateur</span>
@@ -148,7 +151,7 @@
             <label>Poste / Grade (ex: Vendeur)</label>
           </div>
           <div class="input-group">
-            <input id="empDate" type="date" style="color:white;" required>
+            <input id="empDate" type="date" required>
             </div>
         </div>
         <button onclick="createEmployee()">✍️ Signer le contrat (Ajouter)</button>
@@ -226,9 +229,9 @@
         <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
         <p id="settingsMsg"></p>
 
-        <div style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px;">
+        <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;">
             <h3 style="color: #ef4444; margin-top:0;">⚠️ Zone de Danger</h3>
-            <p style="font-size: 0.85em; color: #94a3b8; margin-bottom: 15px;">La suppression de votre compte est définitive. Toutes vos données d'accès seront effacées.</p>
+            <p style="font-size: 0.85em; color: var(--subtext); margin-bottom: 15px;">La suppression de votre compte est définitive.</p>
             <button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button>
         </div>
       </div>
