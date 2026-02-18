@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+// AJOUT ICI DE GoogleAuthProvider et signInWithPopup
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* 1. CONFIG FIREBASE */
@@ -23,7 +24,7 @@ const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 const errorMsg = document.getElementById("error");
 
-/* LOGIN */
+/* LOGIN EMAIL */
 window.login = async function() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -32,6 +33,34 @@ window.login = async function() {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     if(errorMsg) errorMsg.innerText = "❌ Login incorrect.";
+  }
+};
+
+/* LOGIN GOOGLE (NOUVEAU) */
+window.loginWithGoogle = async function() {
+  const provider = new GoogleAuthProvider();
+  if(errorMsg) errorMsg.innerText = "Connexion Google...";
+  
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Vérif si l'user existe déjà dans la DB, sinon on le crée
+    const docRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(docRef);
+    
+    if (!docSnap.exists()) {
+      await setDoc(docRef, {
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        role: 'guest', // Rôle par défaut
+        createdAt: new Date().toISOString().split('T')[0]
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    if(errorMsg) errorMsg.innerText = "❌ Erreur Google: " + error.message;
   }
 };
 
@@ -56,7 +85,6 @@ onAuthStateChanged(auth, async (user) => {
     if(adminDashboard) adminDashboard.classList.remove("hidden");
     window.showSection('home');
     await loadUserProfile(user);
-    // On lance les stats, mais elles seront cachées visuellement si pas admin
     window.updateDashboardStats(); 
   } else {
     if(loginBox) loginBox.classList.remove("hidden");
@@ -102,9 +130,9 @@ async function loadUserProfile(user) {
             if(nameInput) nameInput.value = data.displayName || "";
             if(photoInput) photoInput.value = data.photoURL || "";
             
-            // >>> APPLICATION DES DROITS <<<
             applyPermissions(data.role);
         } else {
+            // Cas d'un user google tout neuf qui n'est pas encore dans la db (failsafe)
             applyPermissions("guest");
         }
     } catch (error) { console.error("Erreur profil:", error); }
@@ -115,41 +143,32 @@ function applyPermissions(role) {
     const btnRh = document.getElementById("btn-rh");
     const btnCompta = document.getElementById("btn-compta");
     
-    // NOUVEAU : On cible la grille des stats et le message d'accueil
     const statsGrid = document.querySelector(".stats-grid");
     const homeMsg = document.querySelector(".home-header p");
 
-    // 1. Reset visuel (tout le monde voit tout par défaut)
     if(btnUsers) btnUsers.style.display = "block";
     if(btnRh) btnRh.style.display = "block";
     if(btnCompta) btnCompta.style.display = "block";
     
-    // 2. Logique Admin (Le Roi)
     if(role === 'admin') {
-        // L'admin voit les stats
         if(statsGrid) statsGrid.style.display = "grid";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
-        return; // On arrête là, l'admin a accès à tout
+        return;
     }
 
-    // 3. Logique pour TOUS les autres (RH, Compta, Invité)
-    // -> On CACHE les stats pour eux
     if(statsGrid) statsGrid.style.display = "none";
     if(homeMsg) homeMsg.innerText = "Sélectionne un menu à gauche pour commencer.";
 
-    // 4. Logique spécifique RH
     if(role === 'rh') {
         if(btnCompta) btnCompta.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
     }
 
-    // 5. Logique spécifique Compta
     if(role === 'compta') {
         if(btnRh) btnRh.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
     }
 
-    // 6. Logique Invité / Inconnu
     if(!role || (role !== 'rh' && role !== 'compta' && role !== 'admin')) {
         if(btnCompta) btnCompta.style.display = "none";
         if(btnUsers) btnUsers.style.display = "none";
@@ -173,7 +192,7 @@ window.saveProfileSettings = async function() {
     } catch (error) { msg.innerText = "Erreur."; }
 };
 
-/* DASHBOARD STATS (Lancé mais caché si pas admin) */
+/* DASHBOARD STATS */
 window.updateDashboardStats = async function() {
     setInterval(() => {
         const now = new Date();
