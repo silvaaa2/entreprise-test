@@ -12,7 +12,7 @@
 
 <div id="loginBox">
   <div class="login-card">
-    <h2>Admin Access</h2>
+    <h2>Espace Membre</h2>
     <div class="input-group">
       <input id="email" type="email" required>
       <label>Email</label>
@@ -22,6 +22,16 @@
       <label>Mot de passe</label>
     </div>
     <button onclick="login()">CONNEXION 🚀</button>
+    
+    <div class="separator">
+        <span>OU</span>
+    </div>
+  
+    <button class="google-btn" onclick="loginWithGoogle()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
+        Continuer avec Google
+    </button>
+
     <p id="error"></p>
   </div>
 </div>
