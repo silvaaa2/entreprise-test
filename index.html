@@ -126,7 +126,7 @@
           <table class="cyber-table">
             <thead>
               <tr>
-                <th>Profil</th>
+                <th>Profil (Clique pour voir)</th>
                 <th>Rôle (Modifier)</th>
                 <th>Date Arrivée</th>
                 <th>Actions</th>
@@ -223,6 +223,37 @@
     </section>
 
   </main>
+</div>
+
+<div id="profileModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeUserProfile()">&times;</span>
+    
+    <div class="modal-header">
+      <img id="m_photo" src="" alt="Avatar">
+      <h2 id="m_name">Chargement...</h2>
+      <p id="m_email" class="subtext">...</p>
+    </div>
+
+    <div class="modal-body">
+      <div class="info-row">
+        <span class="label">Rôle Actuel :</span>
+        <span id="m_role" class="value badge">...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Date d'arrivée :</span>
+        <span id="m_date" class="value">...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Identifiant (UID) :</span>
+        <span id="m_uid" class="value tiny">...</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button onclick="closeUserProfile()" class="secondary-btn">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <script type="module" src="script.js"></script>
