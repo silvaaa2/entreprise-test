@@ -45,8 +45,12 @@
     <div class="spacer" style="flex: 0.1;"></div>
     <span id="perso-title-menu" style="color:var(--subtext); font-size:0.7em; margin-left:10px; text-transform:uppercase; letter-spacing:1px;">Espace Perso</span>
     <button id="btn-service" onclick="showSection('service')" style="color: #10b981;">⏱️ Mon Pointage</button>
-    <button id="btn-requests" onclick="showSection('requests')" style="color: #f59e0b;">🎫 Demandes & Congés</button>
-    <button id="btn-chat" onclick="showSection('chat')" style="color: #3b82f6;">💬 Machine à café</button>
+    <button id="btn-requests" onclick="showSection('requests')" style="color: #f59e0b;">
+        🎫 Demandes & Congés <span id="badgeRequests" class="nav-badge hidden">0</span>
+    </button>
+    <button id="btn-chat" onclick="showSection('chat')" style="color: #3b82f6;">
+        💬 Machine à café <span id="badgeChat" class="nav-badge hidden">!</span>
+    </button>
     
     <div class="spacer" style="flex: 0.1;"></div>
     <span id="admin-title-menu" style="color:var(--subtext); font-size:0.7em; margin-left:10px; text-transform:uppercase; letter-spacing:1px;">Administration</span>
