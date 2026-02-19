@@ -178,7 +178,7 @@ function applyPermissions(role) {
         if(btnCompta) btnCompta.style.display = "block";
         if(btnDocs) btnDocs.style.display = "block"; 
         if(statsGrid) statsGrid.style.display = "grid";
-        if(homeTitle) homeTitle.innerText = "Bienvenue, Boss. 👋";
+        if(homeTitle) homeTitle.innerText = "Bienvenue, Boss.";
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
         return;
     }
