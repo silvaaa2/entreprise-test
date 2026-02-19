@@ -25,18 +25,49 @@ const adminDashboard = document.getElementById("adminDashboard");
 /* INIT THEME */
 if (localStorage.getItem('theme') === 'light') { 
     document.body.classList.add('light-mode'); 
-    document.getElementById('themeBtn').innerText = "🌙 Mode Sombre"; 
+    const themeBtn = document.getElementById('themeBtn');
+    if (themeBtn) themeBtn.innerText = "🌙 Mode Sombre"; 
+}
+
+/* ==================== OUTILS GLOBAUX ==================== */
+// Calcule la semaine actuelle (ex: "2026-W08"). Change tous les Lundi à 00h00.
+window.getIsoWeek = function() {
+    const date = new Date();
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return d.getUTCFullYear() + "-W" + weekNo;
+};
+
+function formatTime(totalSeconds) { 
+    const h = Math.floor(totalSeconds / 3600); 
+    const m = Math.floor((totalSeconds % 3600) / 60); 
+    return `${h}h ${m}m`; 
 }
 
 /* ==================== 2. AUTHENTIFICATION & NAVIGATION ==================== */
 window.login = async function() { 
-    try { await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value); } 
-    catch(e){ document.getElementById("error").innerText = "❌ Erreur de connexion";} 
+    const emailInput = document.getElementById("email").value;
+    const passwordInput = document.getElementById("password").value;
+    const errorMsg = document.getElementById("error");
+    
+    try { 
+        await signInWithEmailAndPassword(auth, emailInput, passwordInput); 
+    } catch(e) { 
+        if(errorMsg) errorMsg.innerText = "❌ Erreur de connexion";
+    } 
 };
 
 window.loginWithGoogle = async function() { 
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
-    catch(e){ document.getElementById("error").innerText = "❌ Erreur Google";} 
+    const errorMsg = document.getElementById("error");
+    try { 
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider); 
+    } catch(e) { 
+        if(errorMsg) errorMsg.innerText = "❌ Erreur Google";
+    } 
 };
 
 window.logout = function() { 
@@ -45,16 +76,35 @@ window.logout = function() {
 
 window.showSection = function(id) {
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-    document.getElementById(id)?.classList.add("active");
+    const sectionToShow = document.getElementById(id);
+    if(sectionToShow) sectionToShow.classList.add("active");
   
-    if(id === 'home') { window.updateDashboardStats(); window.fetchAnnouncements(); }
-    if(id === 'users') window.fetchUsers();
-    if(id === 'rh') { window.fetchEmployees(); window.fetchAnnouncements(); }
-    if(id === 'compta') window.toggleCompta('data');
-    if(id === 'docs') window.fetchAdminDocs(); 
-    if(id === 'service') window.loadMyService(); 
-    if(id === 'requests') window.fetchRequests(); 
-    if(id === 'chat') window.fetchChatMessages(); 
+    if(id === 'home') { 
+        window.updateDashboardStats(); 
+        window.fetchAnnouncements(); 
+    }
+    if(id === 'users') {
+        window.fetchUsers();
+    }
+    if(id === 'rh') { 
+        window.fetchEmployees(); 
+        window.fetchAnnouncements(); 
+    }
+    if(id === 'compta') {
+        window.toggleCompta('data');
+    }
+    if(id === 'docs') {
+        window.fetchAdminDocs(); 
+    }
+    if(id === 'service') {
+        window.loadMyService(); 
+    }
+    if(id === 'requests') {
+        window.fetchRequests(); 
+    }
+    if(id === 'chat') {
+        window.fetchChatMessages(); 
+    }
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -78,18 +128,37 @@ async function loadUserProfile(user) {
 
         // Forcer le Super Admin
         if (user.email === SUPER_ADMIN && (!docSnap.exists() || docSnap.data().role !== 'admin')) {
-            await setDoc(docRef, { email: user.email, role: 'admin', displayName: "Le Boss", photoURL: "", createdAt: new Date().toISOString().split('T')[0] }, { merge: true });
-            location.reload(); return;
+            await setDoc(docRef, { 
+                email: user.email, 
+                role: 'admin', 
+                displayName: "Le Boss", 
+                photoURL: "", 
+                createdAt: new Date().toISOString().split('T')[0] 
+            }, { merge: true });
+            location.reload(); 
+            return;
         }
 
         // Fusionner si connexion Google
         if (!docSnap.exists()) {
             const q = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
             if (!q.empty) {
-                await setDoc(docRef, { ...q.docs[0].data(), displayName: user.displayName, photoURL: user.photoURL, uid: user.uid });
-                await deleteDoc(q.docs[0].ref);
+                const existingDoc = q.docs[0];
+                await setDoc(docRef, { 
+                    ...existingDoc.data(), 
+                    displayName: user.displayName, 
+                    photoURL: user.photoURL, 
+                    uid: user.uid 
+                });
+                await deleteDoc(existingDoc.ref);
             } else {
-                await setDoc(docRef, { email: user.email, displayName: user.displayName, photoURL: user.photoURL, role: 'guest', createdAt: new Date().toISOString().split('T')[0] });
+                await setDoc(docRef, { 
+                    email: user.email, 
+                    displayName: user.displayName, 
+                    photoURL: user.photoURL, 
+                    role: 'guest', 
+                    createdAt: new Date().toISOString().split('T')[0] 
+                });
             }
             docSnap = await getDoc(docRef);
         }
@@ -103,41 +172,57 @@ async function loadUserProfile(user) {
         window.currentUserEmail = data.email;
         
         applyPermissions(data.role);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e); 
+    }
 }
 
 function applyPermissions(role) {
-    const menusToHide = ["btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-service", "btn-requests", "btn-chat", "mainStatsGrid", "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox"];
-    menusToHide.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = "none"; });
+    const menusToHide = [
+        "btn-users", "btn-rh", "btn-compta", "btn-docs", 
+        "btn-service", "btn-requests", "btn-chat", "mainStatsGrid", 
+        "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox"
+    ];
+    
+    menusToHide.forEach(id => { 
+        const el = document.getElementById(id);
+        if(el) el.style.display = "none"; 
+    });
     
     const homeMsg = document.querySelector(".home-header p");
 
-    if(role === 'admin') {
-        menusToHide.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+    if (role === 'admin') {
+        menusToHide.forEach(id => { 
+            const el = document.getElementById(id);
+            if(el) el.style.display = ""; 
+        });
         document.getElementById("employeeRequestBox").style.display = "none"; 
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
     } 
-    else if(role === 'employee') {
-        ["btn-service", "btn-requests", "btn-chat", "perso-title-menu", "employeeRequestBox"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+    else if (role === 'employee') {
+        ["btn-service", "btn-requests", "btn-chat", "perso-title-menu", "employeeRequestBox"].forEach(id => { 
+            const el = document.getElementById(id);
+            if(el) el.style.display = ""; 
+        });
         if(homeMsg) homeMsg.innerText = "N'oublie pas de pointer pour commencer ta journée.";
     } 
-    else if(role === 'rh') {
-        ["btn-rh", "btn-service", "btn-requests", "btn-chat", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+    else if (role === 'rh') {
+        ["btn-rh", "btn-service", "btn-requests", "btn-chat", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox"].forEach(id => { 
+            const el = document.getElementById(id);
+            if(el) el.style.display = ""; 
+        });
         if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
     } 
-    else if(role === 'compta') {
-        ["btn-compta", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+    else if (role === 'compta') {
+        ["btn-compta", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { 
+            const el = document.getElementById(id);
+            if(el) el.style.display = ""; 
+        });
         if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
     }
     else {
         if(homeMsg) homeMsg.innerText = "⛔ Ton compte n'a pas encore d'accès. Demande à ton Boss.";
     }
-}
-
-function formatTime(totalSeconds) { 
-    const h = Math.floor(totalSeconds / 3600); 
-    const m = Math.floor((totalSeconds % 3600) / 60); 
-    return `${h}h ${m}m`; 
 }
 
 /* ==================== 4. GESTION DES UTILISATEURS (COMPTES) ==================== */
@@ -148,32 +233,48 @@ window.createNewUser = async function() {
     const password = document.getElementById("newPassword").value;
     const role = document.getElementById("newRole").value;
     const msg = document.getElementById("userMsg");
-    if(!email || !password) { msg.innerText = "Remplis tout !"; return; }
+    
+    if(!email || !password) { 
+        msg.innerText = "Remplis tout !"; 
+        return; 
+    }
     msg.innerText = "Création...";
+    
     try {
         const secondaryApp = initializeApp(firebaseConfig, "Secondary");
         const secondaryAuth = getAuth(secondaryApp);
         const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" });
+        
+        await setDoc(doc(db, "users", cred.user.uid), { 
+            email: email, 
+            role: role, 
+            createdAt: new Date().toISOString().split('T')[0], 
+            displayName: "En attente", 
+            photoURL: "" 
+        });
+        
         await signOut(secondaryAuth);
-        msg.innerText = `✅ Ajouté !`; msg.style.color = "var(--success)";
-    } catch (error) { msg.innerText = "Erreur: " + error.message; }
+        msg.innerText = `✅ Ajouté !`; 
+        msg.style.color = "var(--success)";
+    } catch (error) { 
+        msg.innerText = "Erreur: " + error.message; 
+    }
 };
 
 window.fetchUsers = function() {
-  const tbody = document.getElementById("userListBody");
-  if(!tbody || unsubscribeUsers) return;
+    const tbody = document.getElementById("userListBody");
+    if(!tbody || unsubscribeUsers) return;
 
-  tbody.innerHTML = "<tr><td colspan='4'>Chargement... 📡</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='4'>Chargement... 📡</td></tr>";
 
-  unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      let html = "";
-      snapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          const uid = docSnap.id;
-          const r = data.role;
+    unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+        let html = "";
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const uid = docSnap.id;
+            const r = data.role;
 
-          const roleSelect = `
+            const roleSelect = `
             <select onchange="window.updateUserRole('${uid}', this.value)" style="background:var(--panel); color:var(--text); border:1px solid var(--border); padding:5px; border-radius:5px;">
                 <option value="guest" ${(!r || r === 'guest') ? 'selected' : ''}>⛔ Aucun accès</option>
                 <option value="employee" ${r === 'employee' ? 'selected' : ''}>👷 Employé</option>
@@ -182,30 +283,37 @@ window.fetchUsers = function() {
                 <option value="admin" ${r === 'admin' ? 'selected' : ''}>👑 Admin</option>
             </select>`;
 
-          html += `<tr>
-            <td>
-                <div onclick="window.openUserProfile('${uid}')" class="clickable-name">${data.displayName || "Sans nom"}</div>
-                <div style="font-size:0.8em; color:var(--subtext);">${data.email}</div>
-            </td>
-            <td>${roleSelect}</td>
-            <td>${data.createdAt || "-"}</td>
-            <td>
-                <button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em; color:white; border:none; border-radius:5px;">🗑️ Exclure</button>
-            </td>
-          </tr>`;
-      });
-      tbody.innerHTML = html;
-  });
+            html += `<tr>
+                <td>
+                    <div onclick="window.openUserProfile('${uid}')" class="clickable-name">${data.displayName || "Sans nom"}</div>
+                    <div style="font-size:0.8em; color:var(--subtext);">${data.email}</div>
+                </td>
+                <td>${roleSelect}</td>
+                <td>${data.createdAt || "-"}</td>
+                <td>
+                    <button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em; color:white; border:none; border-radius:5px;">🗑️ Exclure</button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    });
 };
 
 window.updateUserRole = async function(uid, newRole) { 
-    try { await updateDoc(doc(db, "users", uid), { role: newRole }); } 
-    catch (e) { alert("Erreur: " + e.message); } 
+    try { 
+        await updateDoc(doc(db, "users", uid), { role: newRole }); 
+    } catch (e) { 
+        alert("Erreur: " + e.message); 
+    } 
 };
 
 window.deleteUser = async function(uid) {
-    if (auth.currentUser && auth.currentUser.uid === uid) return alert("Utilise les Paramètres.");
-    if(confirm("⚠️ EXCLURE définitivement cette personne ?")) { await deleteDoc(doc(db, "users", uid)); }
+    if (auth.currentUser && auth.currentUser.uid === uid) {
+        return alert("Utilise les Paramètres pour supprimer ton propre compte.");
+    }
+    if(confirm("⚠️ EXCLURE définitivement cette personne ?")) { 
+        await deleteDoc(doc(db, "users", uid)); 
+    }
 };
 
 window.openUserProfile = async function(uid) {
@@ -225,8 +333,10 @@ window.openUserProfile = async function(uid) {
         document.getElementById("m_photo").src = d.data().photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     } 
 };
-window.closeUserProfile = () => document.getElementById("profileModal").classList.add("hidden");
 
+window.closeUserProfile = function() { 
+    document.getElementById("profileModal").classList.add("hidden"); 
+};
 
 /* ==================== 5. POINTAGE (MON SERVICE EMPLOYE) ==================== */
 let myPersonalTimer = null;
@@ -240,14 +350,20 @@ window.loadMyService = async function() {
     const snap = await getDocs(query(collection(db, "employees"), where("email", "==", user.email)));
     
     if (snap.empty) { 
-        container.innerHTML = `<div class="pointage-card"><h3 style="color:var(--error);">⚠️ Dossier introuvable</h3><p>Aucun dossier RH relié à <b>${user.email}</b>.</p></div>`; 
+        container.innerHTML = `
+        <div class="pointage-card">
+            <h3 style="color:var(--error);">⚠️ Dossier introuvable</h3>
+            <p>Aucun dossier RH relié à <b>${user.email}</b>.</p>
+        </div>`; 
         return; 
     }
     
     myEmployeeDocId = snap.docs[0].id;
     
     onSnapshot(doc(db, "employees", myEmployeeDocId), (docSnap) => { 
-        if(docSnap.exists()) renderMyServiceUI(docSnap.data()); 
+        if(docSnap.exists()) {
+            renderMyServiceUI(docSnap.data()); 
+        }
     });
 };
 
@@ -258,25 +374,47 @@ function renderMyServiceUI(data) {
     let statusText = isEnService ? `<span class="status-badge status-en_service" style="font-size:1em;">🟢 EN SERVICE</span>` : `<span class="status-badge status-hors_service" style="font-size:1em;">⚪ HORS SERVICE</span>`;
     let buttonHtml = isEnService ? `<button class="btn-clock-out" onclick="toggleMyService('hors_service')">🔴 Terminer mon service</button>` : `<button class="btn-clock-in" onclick="toggleMyService('en_service')">🟢 Prendre mon service</button>`;
 
+    const currentWeekStr = window.getIsoWeek();
+    let baseWeekly = (data.currentWeek === currentWeekStr) ? (data.weeklyServiceSeconds || 0) : 0;
+    let lastSession = data.lastSessionSeconds || 0;
+    
+    let topLabel = isEnService ? "Temps de la session actuelle :" : "Dernière session :";
+
     document.getElementById("myServiceContainer").innerHTML = `
         <div class="pointage-card">
             <h2 style="margin-top:0;">${data.name}</h2>
             <p style="color:var(--subtext); margin-bottom: 20px;">${data.grade}</p>
             <div style="margin-bottom: 30px;">${statusText}</div>
-            <p style="color:var(--subtext); margin:0;">Temps de service total :</p>
-            <div id="my_live_clock" class="live-clock">0h 0m</div>
+            
+            <p style="color:var(--subtext); margin:0;">${topLabel}</p>
+            <div id="my_session_clock" class="live-clock" style="font-size: 2.5em; margin: 10px 0;">
+                ${isEnService ? "0h 0m" : formatTime(lastSession)}
+            </div>
+            
+            <div style="margin: 20px 0; padding-top: 20px; border-top: 1px solid var(--border);">
+                <p style="color:var(--subtext); margin:0; font-size: 0.9em;">⏱️ Service total de la semaine :</p>
+                <div id="my_weekly_clock" style="font-size: 1.5em; color:var(--text); font-weight: bold; font-family: monospace;">
+                    0h 0m
+                </div>
+            </div>
+            
             ${buttonHtml}
         </div>`;
 
-    let baseSeconds = data.totalServiceSeconds || 0;
-    
     const updateMyTimer = () => {
-        let currentSecs = baseSeconds;
+        let sessionSecs = 0;
+        let weeklySecs = baseWeekly;
+        
         if (isEnService && data.currentServiceStart) {
-            currentSecs += Math.floor((Date.now() - data.currentServiceStart) / 1000);
+            sessionSecs = Math.floor((Date.now() - data.currentServiceStart) / 1000);
+            weeklySecs += sessionSecs;
         }
-        if(document.getElementById("my_live_clock")) {
-            document.getElementById("my_live_clock").innerText = formatTime(currentSecs);
+        
+        if (isEnService && document.getElementById("my_session_clock")) {
+            document.getElementById("my_session_clock").innerText = formatTime(sessionSecs);
+        }
+        if (document.getElementById("my_weekly_clock")) {
+            document.getElementById("my_weekly_clock").innerText = formatTime(weeklySecs);
         }
     };
     
@@ -289,15 +427,22 @@ function renderMyServiceUI(data) {
 
 window.toggleMyService = async function(newStatus) {
     if(!myEmployeeDocId) return;
+    
     const docSnap = await getDoc(doc(db, "employees", myEmployeeDocId));
     const data = docSnap.data();
-    let updates = { status: newStatus };
+    
+    const currentWeekStr = window.getIsoWeek();
+    let currentWeekly = (data.currentWeek === currentWeekStr) ? (data.weeklyServiceSeconds || 0) : 0;
+    let updates = { status: newStatus, currentWeek: currentWeekStr };
 
     if (data.status !== 'en_service' && newStatus === 'en_service') {
         updates.currentServiceStart = Date.now();
-    } else if (data.status === 'en_service' && newStatus !== 'en_service') {
+        updates.weeklyServiceSeconds = currentWeekly; 
+    } 
+    else if (data.status === 'en_service' && newStatus !== 'en_service') {
         const durationSecs = Math.floor((Date.now() - data.currentServiceStart) / 1000);
-        updates.totalServiceSeconds = (data.totalServiceSeconds || 0) + durationSecs;
+        updates.weeklyServiceSeconds = currentWeekly + durationSecs;
+        updates.lastSessionSeconds = durationSecs;
         updates.currentServiceStart = null; 
         
         // SAUVEGARDE HISTORIQUE (POINTEUSE)
@@ -309,9 +454,9 @@ window.toggleMyService = async function(newStatus) {
             durationText: formatTime(durationSecs)
         });
     }
+    
     await updateDoc(doc(db, "employees", myEmployeeDocId), updates);
 };
-
 
 /* ==================== 6. DEMANDES ET CONGÉS ==================== */
 window.submitRequest = async function() {
@@ -319,8 +464,12 @@ window.submitRequest = async function() {
     const dates = document.getElementById("reqDates").value;
     const motif = document.getElementById("reqMotif").value;
     const msg = document.getElementById("reqMsg");
-    if(!dates || !motif) { msg.innerText = "Remplis tout !"; return; }
-
+    
+    if(!dates || !motif) { 
+        msg.innerText = "Remplis tout !"; 
+        return; 
+    }
+    
     try {
         await addDoc(collection(db, "requests"), {
             employeeName: window.currentUserName,
@@ -331,15 +480,19 @@ window.submitRequest = async function() {
             status: 'pending',
             createdAt: new Date().toISOString()
         });
-        msg.innerText = "✅ Demande envoyée !"; msg.style.color = "var(--success)";
+        msg.innerText = "✅ Demande envoyée !"; 
+        msg.style.color = "var(--success)";
         document.getElementById("reqDates").value = ""; 
         document.getElementById("reqMotif").value = "";
-    } catch(e) { msg.innerText = "Erreur."; }
+    } catch(e) { 
+        msg.innerText = "Erreur de soumission."; 
+    }
 };
 
 let unsubReq = null;
 window.fetchRequests = function() {
     if(unsubReq) return;
+    
     unsubReq = onSnapshot(query(collection(db, "requests"), orderBy("createdAt", "desc")), (snapshot) => {
         let html = "";
         snapshot.forEach((docSnap) => {
@@ -347,7 +500,9 @@ window.fetchRequests = function() {
             const dateStr = new Date(data.createdAt).toLocaleDateString('fr-FR');
             
             // L'employé ne voit que ses propres demandes
-            if(window.currentUserRole === 'employee' && data.employeeEmail !== window.currentUserEmail) return;
+            if(window.currentUserRole === 'employee' && data.employeeEmail !== window.currentUserEmail) {
+                return;
+            }
 
             let badge = `<span class="status-badge status-pending">⏳ En attente</span>`;
             if(data.status === 'approved') badge = `<span class="status-badge status-en_service">✅ Approuvé</span>`;
@@ -355,8 +510,9 @@ window.fetchRequests = function() {
 
             let actions = "-";
             if(data.status === 'pending' && (window.currentUserRole === 'admin' || window.currentUserRole === 'rh')) {
-                actions = `<button onclick="updateRequest('${docSnap.id}', 'approved', '${data.employeeEmail}', '${data.type}')" style="background:var(--success); padding:5px; width:auto; font-size:0.8em; margin-right:5px; color:white; border:none; border-radius:3px;">✔️</button>
-                           <button onclick="updateRequest('${docSnap.id}', 'rejected', null, null)" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">❌</button>`;
+                actions = `
+                <button onclick="updateRequest('${docSnap.id}', 'approved', '${data.employeeEmail}', '${data.type}')" style="background:var(--success); padding:5px; width:auto; font-size:0.8em; margin-right:5px; color:white; border:none; border-radius:3px;">✔️</button>
+                <button onclick="updateRequest('${docSnap.id}', 'rejected', null, null)" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">❌</button>`;
             }
 
             html += `<tr>
@@ -384,7 +540,6 @@ window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
     }
 };
 
-
 /* ==================== 7. MACHINE A CAFE (TCHAT) ==================== */
 let unsubChat = null;
 
@@ -392,6 +547,7 @@ window.sendChatMessage = async function() {
     const input = document.getElementById("chatInput");
     const text = input.value.trim();
     if(!text) return;
+    
     try {
         await addDoc(collection(db, "messages"), {
             text: text,
@@ -400,18 +556,24 @@ window.sendChatMessage = async function() {
             createdAt: serverTimestamp() 
         });
         input.value = "";
-    } catch(e) { alert("Erreur chat"); }
+    } catch(e) { 
+        alert("Erreur d'envoi du message"); 
+    }
 };
 
 window.handleChatKeyPress = function(e) { 
-    if(e.key === 'Enter') sendChatMessage(); 
+    if(e.key === 'Enter') {
+        sendChatMessage(); 
+    }
 };
 
 window.fetchChatMessages = function() {
     if(unsubChat) return;
+    
     unsubChat = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snapshot) => {
         const container = document.getElementById("chatMessages");
         let html = "";
+        
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const isMine = data.authorEmail === window.currentUserEmail;
@@ -428,20 +590,26 @@ window.fetchChatMessages = function() {
                 <div class="chat-bubble">${data.text}</div>
             </div>`;
         });
+        
         container.innerHTML = html;
-        container.scrollTop = container.scrollHeight; // Scroll en bas automatique
+        container.scrollTop = container.scrollHeight; 
     });
 };
-
 
 /* ==================== 8. RESSOURCES HUMAINES & DOSSIERS ==================== */
 window.postAnnouncement = async function() {
     const title = document.getElementById("annTitle").value;
     const content = document.getElementById("annContent").value;
+    
     if(!title || !content) return;
+    
     await addDoc(collection(db, "announcements"), { 
-        title, content, author: window.currentUserName, createdAt: new Date().toISOString() 
+        title: title, 
+        content: content, 
+        author: window.currentUserName, 
+        createdAt: new Date().toISOString() 
     });
+    
     document.getElementById("annTitle").value = ""; 
     document.getElementById("annContent").value = "";
 };
@@ -461,13 +629,20 @@ window.fetchAnnouncements = function() {
                 <div class="ann-footer"><span>Par ${d.data().author}</span>${deleteHTML}</div>
             </div>`; 
         });
-        if(document.getElementById("homeAnnouncementsGrid")) document.getElementById("homeAnnouncementsGrid").innerHTML = html;
+        const grid = document.getElementById("homeAnnouncementsGrid");
+        if(grid) grid.innerHTML = html;
     });
 };
 
-window.openNewEmployeeModal = () => document.getElementById("newEmployeeModal").classList.remove("hidden");
-window.closeNewEmployeeModal = () => document.getElementById("newEmployeeModal").classList.add("hidden");
-window.closeHrEmployeeModal = () => document.getElementById("hrEmployeeModal").classList.add("hidden");
+window.openNewEmployeeModal = function() {
+    document.getElementById("newEmployeeModal").classList.remove("hidden");
+};
+window.closeNewEmployeeModal = function() {
+    document.getElementById("newEmployeeModal").classList.add("hidden");
+};
+window.closeHrEmployeeModal = function() {
+    document.getElementById("hrEmployeeModal").classList.add("hidden");
+};
 
 window.saveNewEmployee = async function() {
     await addDoc(collection(db, "employees"), {
@@ -477,11 +652,14 @@ window.saveNewEmployee = async function() {
         phone: document.getElementById("ne_phone").value,
         salary: document.getElementById("ne_salary").value, 
         status: "hors_service", 
-        totalServiceSeconds: 0,
+        weeklyServiceSeconds: 0, 
+        lastSessionSeconds: 0, 
+        currentWeek: window.getIsoWeek(),
         currentServiceStart: null, 
         hiredDate: new Date().toISOString().split('T')[0], 
         hrNotes: ""
     });
+    
     closeNewEmployeeModal();
     document.getElementById("ne_name").value = ""; 
     document.getElementById("ne_email").value = ""; 
@@ -491,6 +669,7 @@ window.saveNewEmployee = async function() {
 let unsubscribeEmployees = null;
 window.fetchEmployees = function() {
     if(unsubscribeEmployees) return;
+    
     unsubscribeEmployees = onSnapshot(collection(db, "employees"), (snap) => {
         let html = "";
         snap.forEach((d) => {
@@ -507,13 +686,16 @@ window.fetchEmployees = function() {
                 <td>${dt.phone}</td>
             </tr>`;
         });
-        if(document.getElementById("employeeListBody")) document.getElementById("employeeListBody").innerHTML = html || "<tr><td colspan='4'>Aucun dossier.</td></tr>";
+        
+        const tbody = document.getElementById("employeeListBody");
+        if(tbody) tbody.innerHTML = html || "<tr><td colspan='4'>Aucun dossier.</td></tr>";
     });
 };
 
 window.openHrEmployeeModal = async function(id) {
     const modal = document.getElementById("hrEmployeeModal");
     modal.classList.remove("hidden");
+    
     const docSnap = await getDoc(doc(db, "employees", id));
     const data = docSnap.data();
     
@@ -526,13 +708,28 @@ window.openHrEmployeeModal = async function(id) {
     document.getElementById("hre_date").innerText = data.hiredDate || "N/A";
     document.getElementById("hre_status").value = data.status || "hors_service";
     document.getElementById("hre_notes").value = data.hrNotes || "";
-    document.getElementById("hre_service_time").innerText = formatTime(data.totalServiceSeconds || 0);
+    document.getElementById("hre_old_status").value = data.status || "hors_service";
+    document.getElementById("hre_current_start").value = data.currentServiceStart || "";
+
+    const currentWeekStr = window.getIsoWeek();
+    let baseWeekly = (data.currentWeek === currentWeekStr) ? (data.weeklyServiceSeconds || 0) : 0;
+    
+    document.getElementById("hre_weekly_seconds").value = baseWeekly;
+
+    const updateTimerDisplay = () => {
+        let currentSecs = baseWeekly;
+        if (data.status === 'en_service' && data.currentServiceStart) { 
+            currentSecs += Math.floor((Date.now() - data.currentServiceStart) / 1000); 
+        }
+        document.getElementById("hre_service_time").innerText = formatTime(currentSecs);
+    };
+    updateTimerDisplay();
 
     // CHARGEMENT DE L'HISTORIQUE DE CE MEC
     const logSnap = await getDocs(query(collection(db, "timelogs"), where("employeeId", "==", id)));
     let logHtml = "";
-    if(logSnap.empty) {
-        logHtml = "<p style='color:var(--subtext);'>Aucun pointage enregistré.</p>";
+    if(logSnap.empty) { 
+        logHtml = "<p style='color:var(--subtext);'>Aucun pointage enregistré.</p>"; 
     } else {
         logSnap.forEach(l => {
             const d = l.data();
@@ -545,22 +742,42 @@ window.openHrEmployeeModal = async function(id) {
 };
 
 window.updateEmployeeDossier = async function() {
-    await updateDoc(doc(db, "employees", document.getElementById("hre_id").value), {
-        status: document.getElementById("hre_status").value, 
+    const id = document.getElementById("hre_id").value;
+    const oldStatus = document.getElementById("hre_old_status").value;
+    const newStatus = document.getElementById("hre_status").value;
+    
+    let weeklySecs = parseInt(document.getElementById("hre_weekly_seconds").value) || 0;
+    
+    let updates = { 
+        status: newStatus, 
         email: document.getElementById("hre_email").value, 
-        hrNotes: document.getElementById("hre_notes").value
-    });
+        hrNotes: document.getElementById("hre_notes").value 
+    };
+
+    if (oldStatus !== 'en_service' && newStatus === 'en_service') {
+        updates.currentServiceStart = Date.now();
+        updates.currentWeek = window.getIsoWeek();
+    } 
+    else if (oldStatus === 'en_service' && newStatus !== 'en_service') {
+        const currentStart = document.getElementById("hre_current_start").value;
+        if (currentStart) { 
+            updates.weeklyServiceSeconds = weeklySecs + Math.floor((Date.now() - parseInt(currentStart)) / 1000); 
+        }
+        updates.currentServiceStart = null; 
+    }
+
+    await updateDoc(doc(db, "employees", id), updates);
     closeHrEmployeeModal();
 };
 
 window.deleteEmployeeDossier = async function() { 
-    if(confirm("Virer ?")) { 
+    if(confirm("Virer l'employé définitivement ?")) { 
         await deleteDoc(doc(db, "employees", document.getElementById("hre_id").value)); 
         closeHrEmployeeModal(); 
     } 
 };
 
-window.searchRH = () => { 
+window.searchRH = function() { 
     const f = document.getElementById("rhSearch").value.toUpperCase(); 
     const tr = document.getElementById("rhTable").getElementsByTagName("tr"); 
     for(let i=1; i<tr.length; i++) { 
@@ -568,117 +785,144 @@ window.searchRH = () => {
     } 
 };
 
-
 /* ==================== 9. AUTRES (DOCS / COMPTA / PARAMETRES) ==================== */
-let unsubscribeDocs = null;
 window.createAdminDoc = async function() {
     const title = document.getElementById("docTitle").value;
     const content = document.getElementById("docContent").value;
+    
     if(!title || !content) return;
+    
     try {
-        await addDoc(collection(db, "admin_docs"), { title: title, content: content, createdAt: new Date().toISOString() });
+        await addDoc(collection(db, "admin_docs"), { 
+            title: title, 
+            content: content, 
+            createdAt: new Date().toISOString() 
+        });
         document.getElementById("docMsg").innerText = "✅ Sauvegardé !"; 
         document.getElementById("docTitle").value = ""; 
         document.getElementById("docContent").value = "";
-    } catch(e) {}
+    } catch(e) {
+        console.error(e);
+    }
 };
 
+let unsubscribeDocs = null;
 window.fetchAdminDocs = function() {
     const container = document.getElementById("docsGrid");
     if(!container || unsubscribeDocs) return; 
+    
     unsubscribeDocs = onSnapshot(query(collection(db, "admin_docs"), orderBy("createdAt", "desc")), (snapshot) => {
-        let html = "";
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
+        let html = ""; 
+        snapshot.forEach((d) => { 
             html += `
             <div class="doc-card">
                 <div class="doc-icon">📁</div>
-                <h4>${data.title}</h4>
-                <p>${data.content}</p>
-                <button onclick="deleteDoc(doc(db,'admin_docs','${docSnap.id}'))" class="delete-doc-btn">Supprimer</button>
-            </div>`;
+                <h4>${d.data().title}</h4>
+                <p>${d.data().content}</p>
+                <button onclick="deleteDoc(doc(db,'admin_docs','${d.id}'))" class="delete-doc-btn">Supprimer</button>
+            </div>`; 
         });
         container.innerHTML = html || "<p>Aucun document.</p>";
     });
 };
 
-window.toggleTheme = () => { 
+window.toggleTheme = function() { 
     document.body.classList.toggle('light-mode'); 
     const isL = document.body.classList.contains('light-mode'); 
     localStorage.setItem('theme', isL ? 'light' : 'dark'); 
     document.getElementById('themeBtn').innerText = isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"; 
 };
 
-window.saveProfileSettings = async () => { 
-    const newName = document.getElementById("settingsDisplayName").value;
-    const newPhotoURL = document.getElementById("settingsPhotoURL").value;
-    const user = auth.currentUser;
-    if (!user || !newName) return;
+window.saveProfileSettings = async function() { 
+    const newName = document.getElementById("settingsDisplayName").value; 
+    const newPhotoURL = document.getElementById("settingsPhotoURL").value; 
+    
+    if (!auth.currentUser || !newName) return; 
+    
     try {
-        await setDoc(doc(db, "users", user.uid), { displayName: newName, photoURL: newPhotoURL || "" }, { merge: true });
+        await setDoc(doc(db, "users", auth.currentUser.uid), { 
+            displayName: newName, 
+            photoURL: newPhotoURL || "" 
+        }, { merge: true }); 
+        
         document.getElementById("settingsMsg").innerText = "✅ Sauvegardé !"; 
-        document.getElementById("sidebarUserName").innerText = newName;
-    } catch (error) {}
+        document.getElementById("sidebarUserName").innerText = newName; 
+    } catch(e) {
+        console.error(e);
+    }
 };
 
-window.deleteMyAccount = async () => { 
-    const user = auth.currentUser;
-    if (!user) return;
-    if (!confirm("⚠️ DÉFINITIF.\nVeux-tu continuer ?") || !confirm("Vraiment sûr ?")) return;
+window.deleteMyAccount = async function() { 
+    if (!auth.currentUser) return; 
+    if (!confirm("⚠️ DÉFINITIF.\nVeux-tu continuer ?") || !confirm("Vraiment sûr ?")) return; 
+    
     try { 
-        await deleteDoc(doc(db, "users", user.uid)); 
-        await deleteUser(user); 
+        await deleteDoc(doc(db, "users", auth.currentUser.uid)); 
+        await deleteUser(auth.currentUser); 
         window.location.reload(); 
     } catch (error) { 
         if (error.code === 'auth/requires-recent-login') { 
             alert("🔒 Reconnecte-toi d'abord."); 
             await signOut(auth); 
         } 
+    } 
+};
+
+window.updateDashboardStats = async function() { 
+    setInterval(() => { 
+        const dDate = document.getElementById("statDate");
+        const dTime = document.getElementById("statTime");
+        if(dDate) dDate.innerText = new Date().toLocaleDateString('fr-FR'); 
+        if(dTime) dTime.innerText = new Date().toLocaleTimeString('fr-FR'); 
+    }, 1000); 
+    
+    try { 
+        const empEl = document.getElementById("statEmployees");
+        const usrEl = document.getElementById("statUsers");
+        
+        if(empEl) empEl.innerText = (await getDocs(collection(db, "employees"))).size; 
+        if(usrEl) usrEl.innerText = (await getDocs(collection(db, "users"))).size; 
+    } catch (e) { 
+        console.error(e);
+    } 
+};
+
+window.toggleCompta = function(m) { 
+    document.getElementById("sheetFrame").classList.toggle("hidden", m !== 'iframe'); 
+    document.getElementById("nativeTableContainer").classList.toggle("hidden", m === 'iframe'); 
+    if(m !== 'iframe') {
+        window.loadSheetData(); 
     }
 };
 
-window.updateDashboardStats = async () => { 
-    setInterval(() => { 
-        document.getElementById("statDate").innerText = new Date().toLocaleDateString('fr-FR'); 
-        document.getElementById("statTime").innerText = new Date().toLocaleTimeString('fr-FR'); 
-    }, 1000);
-    try {
-        const snapEmp = await getDocs(collection(db, "employees"));
-        document.getElementById("statEmployees").innerText = snapEmp.size;
-        const snapUsers = await getDocs(collection(db, "users"));
-        document.getElementById("statUsers").innerText = snapUsers.size;
-    } catch (e) { }
-};
-
-window.toggleCompta = (m) => { 
-    document.getElementById("sheetFrame").classList.toggle("hidden", m!=='iframe'); 
-    document.getElementById("nativeTableContainer").classList.toggle("hidden", m==='iframe'); 
-    if(m!=='iframe') window.loadSheetData(); 
-};
-
-window.loadSheetData = async () => { 
+window.loadSheetData = async function() { 
     try { 
         const r = await fetch(SHEET_CSV_URL); 
         const t = await r.text(); 
-        let rows = t.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c=>c.replace(/^"|"$/g,'').trim())); 
+        let rows = t.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g,'').trim())); 
+        
         let html="<thead><tr>"; 
-        rows[0].forEach(c=>html+=`<th>${c}</th>`); 
+        rows[0].forEach(c => html += `<th>${c}</th>`); 
         html+="</tr></thead><tbody>"; 
-        for(let i=1;i<rows.length;i++){ 
-            if(rows[i].length>1){ 
+        
+        for(let i=1; i<rows.length; i++){ 
+            if(rows[i].length > 1){ 
                 html+="<tr>"; 
-                rows[0].forEach((_,j)=>html+=`<td>${rows[i][j]||""}</td>`); 
+                rows[0].forEach((_, j) => html += `<td>${rows[i][j]||""}</td>`); 
                 html+="</tr>"; 
             } 
         } 
-        document.getElementById("sheetTable").innerHTML = html+"</tbody>"; 
-    } catch(e){} 
+        document.getElementById("sheetTable").innerHTML = html + "</tbody>"; 
+    } catch(e) {
+        console.error(e);
+    } 
 };
 
-window.searchTable = () => { 
+window.searchTable = function() { 
     const f = document.getElementById("tableSearch").value.toUpperCase(); 
     const tr = document.getElementById("sheetTable").getElementsByTagName("tr"); 
+    
     for(let i=1; i<tr.length; i++){ 
-        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td=>td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
+        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
     } 
 };
