@@ -30,7 +30,6 @@ if (localStorage.getItem('theme') === 'light') {
 }
 
 /* ==================== OUTILS GLOBAUX ==================== */
-// Calcule la semaine actuelle (ex: "2026-W08"). Change tous les Lundi à 00h00.
 window.getIsoWeek = function() {
     const date = new Date();
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -79,31 +78,18 @@ window.showSection = function(id) {
     const sectionToShow = document.getElementById(id);
     if(sectionToShow) sectionToShow.classList.add("active");
   
-    if(id === 'home') { 
-        window.updateDashboardStats(); 
-        window.fetchAnnouncements(); 
-    }
-    if(id === 'users') {
-        window.fetchUsers();
-    }
-    if(id === 'rh') { 
-        window.fetchEmployees(); 
-        window.fetchAnnouncements(); 
-    }
-    if(id === 'compta') {
-        window.toggleCompta('data');
-    }
-    if(id === 'docs') {
-        window.fetchAdminDocs(); 
-    }
-    if(id === 'service') {
-        window.loadMyService(); 
-    }
-    if(id === 'requests') {
-        window.fetchRequests(); 
-    }
-    if(id === 'chat') {
+    if(id === 'home') { window.updateDashboardStats(); window.fetchAnnouncements(); }
+    if(id === 'users') { window.fetchUsers(); }
+    if(id === 'rh') { window.fetchEmployees(); window.fetchAnnouncements(); }
+    if(id === 'compta') { window.toggleCompta('data'); }
+    if(id === 'docs') { window.fetchAdminDocs(); }
+    if(id === 'service') { window.loadMyService(); }
+    if(id === 'requests') { window.fetchRequests(); }
+    if(id === 'chat') { 
         window.fetchChatMessages(); 
+        // Si on ouvre le chat, on cache la notif
+        const badgeChat = document.getElementById("badgeChat");
+        if(badgeChat) badgeChat.classList.add("hidden");
     }
 };
 
@@ -128,15 +114,8 @@ async function loadUserProfile(user) {
 
         // Forcer le Super Admin
         if (user.email === SUPER_ADMIN && (!docSnap.exists() || docSnap.data().role !== 'admin')) {
-            await setDoc(docRef, { 
-                email: user.email, 
-                role: 'admin', 
-                displayName: "Le Boss", 
-                photoURL: "", 
-                createdAt: new Date().toISOString().split('T')[0] 
-            }, { merge: true });
-            location.reload(); 
-            return;
+            await setDoc(docRef, { email: user.email, role: 'admin', displayName: "Le Boss", photoURL: "", createdAt: new Date().toISOString().split('T')[0] }, { merge: true });
+            location.reload(); return;
         }
 
         // Fusionner si connexion Google
@@ -144,21 +123,10 @@ async function loadUserProfile(user) {
             const q = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
             if (!q.empty) {
                 const existingDoc = q.docs[0];
-                await setDoc(docRef, { 
-                    ...existingDoc.data(), 
-                    displayName: user.displayName, 
-                    photoURL: user.photoURL, 
-                    uid: user.uid 
-                });
+                await setDoc(docRef, { ...existingDoc.data(), displayName: user.displayName, photoURL: user.photoURL, uid: user.uid });
                 await deleteDoc(existingDoc.ref);
             } else {
-                await setDoc(docRef, { 
-                    email: user.email, 
-                    displayName: user.displayName, 
-                    photoURL: user.photoURL, 
-                    role: 'guest', 
-                    createdAt: new Date().toISOString().split('T')[0] 
-                });
+                await setDoc(docRef, { email: user.email, displayName: user.displayName, photoURL: user.photoURL, role: 'guest', createdAt: new Date().toISOString().split('T')[0] });
             }
             docSnap = await getDoc(docRef);
         }
@@ -172,9 +140,11 @@ async function loadUserProfile(user) {
         window.currentUserEmail = data.email;
         
         applyPermissions(data.role);
-    } catch (e) { 
-        console.error(e); 
-    }
+        
+        // NOUVEAU : On lance le système de notifications
+        listenForNotifications();
+        
+    } catch (e) { console.error(e); }
 }
 
 function applyPermissions(role) {
@@ -184,44 +154,50 @@ function applyPermissions(role) {
         "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox"
     ];
     
-    menusToHide.forEach(id => { 
-        const el = document.getElementById(id);
-        if(el) el.style.display = "none"; 
-    });
-    
+    menusToHide.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = "none"; });
     const homeMsg = document.querySelector(".home-header p");
 
     if (role === 'admin') {
-        menusToHide.forEach(id => { 
-            const el = document.getElementById(id);
-            if(el) el.style.display = ""; 
-        });
+        menusToHide.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ""; });
         document.getElementById("employeeRequestBox").style.display = "none"; 
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
     } 
     else if (role === 'employee') {
-        ["btn-service", "btn-requests", "btn-chat", "perso-title-menu", "employeeRequestBox"].forEach(id => { 
-            const el = document.getElementById(id);
-            if(el) el.style.display = ""; 
-        });
+        ["btn-service", "btn-requests", "btn-chat", "perso-title-menu", "employeeRequestBox"].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ""; });
         if(homeMsg) homeMsg.innerText = "N'oublie pas de pointer pour commencer ta journée.";
     } 
     else if (role === 'rh') {
-        ["btn-rh", "btn-service", "btn-requests", "btn-chat", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox"].forEach(id => { 
-            const el = document.getElementById(id);
-            if(el) el.style.display = ""; 
-        });
+        ["btn-rh", "btn-service", "btn-requests", "btn-chat", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox"].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ""; });
         if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
     } 
     else if (role === 'compta') {
-        ["btn-compta", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { 
-            const el = document.getElementById(id);
-            if(el) el.style.display = ""; 
-        });
+        ["btn-compta", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { const el = document.getElementById(id); if(el) el.style.display = ""; });
         if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
     }
     else {
         if(homeMsg) homeMsg.innerText = "⛔ Ton compte n'a pas encore d'accès. Demande à ton Boss.";
+    }
+}
+
+/* ==================== SYSTEME DE NOTIFICATIONS (BADGES) ==================== */
+let unsubNotifs = null;
+function listenForNotifications() {
+    if(unsubNotifs) unsubNotifs();
+    
+    // Uniquement Admin et RH voient les demandes en attente
+    if(window.currentUserRole === 'admin' || window.currentUserRole === 'rh') {
+        unsubNotifs = onSnapshot(query(collection(db, "requests"), where("status", "==", "pending")), (snap) => {
+            const count = snap.size;
+            const badge = document.getElementById("badgeRequests");
+            if(badge) {
+                if(count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove("hidden");
+                } else {
+                    badge.classList.add("hidden");
+                }
+            }
+        });
     }
 }
 
@@ -234,10 +210,7 @@ window.createNewUser = async function() {
     const role = document.getElementById("newRole").value;
     const msg = document.getElementById("userMsg");
     
-    if(!email || !password) { 
-        msg.innerText = "Remplis tout !"; 
-        return; 
-    }
+    if(!email || !password) { msg.innerText = "Remplis tout !"; return; }
     msg.innerText = "Création...";
     
     try {
@@ -246,19 +219,12 @@ window.createNewUser = async function() {
         const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
         
         await setDoc(doc(db, "users", cred.user.uid), { 
-            email: email, 
-            role: role, 
-            createdAt: new Date().toISOString().split('T')[0], 
-            displayName: "En attente", 
-            photoURL: "" 
+            email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" 
         });
         
         await signOut(secondaryAuth);
-        msg.innerText = `✅ Ajouté !`; 
-        msg.style.color = "var(--success)";
-    } catch (error) { 
-        msg.innerText = "Erreur: " + error.message; 
-    }
+        msg.innerText = `✅ Ajouté !`; msg.style.color = "var(--success)";
+    } catch (error) { msg.innerText = "Erreur: " + error.message; }
 };
 
 window.fetchUsers = function() {
@@ -299,21 +265,10 @@ window.fetchUsers = function() {
     });
 };
 
-window.updateUserRole = async function(uid, newRole) { 
-    try { 
-        await updateDoc(doc(db, "users", uid), { role: newRole }); 
-    } catch (e) { 
-        alert("Erreur: " + e.message); 
-    } 
-};
-
+window.updateUserRole = async function(uid, newRole) { try { await updateDoc(doc(db, "users", uid), { role: newRole }); } catch (e) { alert("Erreur: " + e.message); } };
 window.deleteUser = async function(uid) {
-    if (auth.currentUser && auth.currentUser.uid === uid) {
-        return alert("Utilise les Paramètres pour supprimer ton propre compte.");
-    }
-    if(confirm("⚠️ EXCLURE définitivement cette personne ?")) { 
-        await deleteDoc(doc(db, "users", uid)); 
-    }
+    if (auth.currentUser && auth.currentUser.uid === uid) { return alert("Utilise les Paramètres pour supprimer ton propre compte."); }
+    if(confirm("⚠️ EXCLURE définitivement cette personne ?")) { await deleteDoc(doc(db, "users", uid)); }
 };
 
 window.openUserProfile = async function(uid) {
@@ -322,21 +277,17 @@ window.openUserProfile = async function(uid) {
     if(d.exists()) { 
         document.getElementById("m_name").innerText = d.data().displayName || "Sans nom"; 
         document.getElementById("m_email").innerText = d.data().email; 
-        
         let roleText = "Invité";
         if(d.data().role === 'admin') roleText = "👑 Admin";
         if(d.data().role === 'rh') roleText = "🤝 RH";
         if(d.data().role === 'employee') roleText = "👷 Employé";
         if(d.data().role === 'compta') roleText = "📊 Compta";
-        
         document.getElementById("m_role").innerText = roleText; 
         document.getElementById("m_photo").src = d.data().photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     } 
 };
 
-window.closeUserProfile = function() { 
-    document.getElementById("profileModal").classList.add("hidden"); 
-};
+window.closeUserProfile = function() { document.getElementById("profileModal").classList.add("hidden"); };
 
 /* ==================== 5. POINTAGE (MON SERVICE EMPLOYE) ==================== */
 let myPersonalTimer = null;
@@ -348,22 +299,12 @@ window.loadMyService = async function() {
     const container = document.getElementById("myServiceContainer");
     
     const snap = await getDocs(query(collection(db, "employees"), where("email", "==", user.email)));
-    
-    if (snap.empty) { 
-        container.innerHTML = `
-        <div class="pointage-card">
-            <h3 style="color:var(--error);">⚠️ Dossier introuvable</h3>
-            <p>Aucun dossier RH relié à <b>${user.email}</b>.</p>
-        </div>`; 
-        return; 
-    }
+    if (snap.empty) { container.innerHTML = `<div class="pointage-card"><h3 style="color:var(--error);">⚠️ Dossier introuvable</h3><p>Aucun dossier RH relié à <b>${user.email}</b>.</p></div>`; return; }
     
     myEmployeeDocId = snap.docs[0].id;
     
     onSnapshot(doc(db, "employees", myEmployeeDocId), (docSnap) => { 
-        if(docSnap.exists()) {
-            renderMyServiceUI(docSnap.data()); 
-        }
+        if(docSnap.exists()) { renderMyServiceUI(docSnap.data()); }
     });
 };
 
@@ -393,9 +334,7 @@ function renderMyServiceUI(data) {
             
             <div style="margin: 20px 0; padding-top: 20px; border-top: 1px solid var(--border);">
                 <p style="color:var(--subtext); margin:0; font-size: 0.9em;">⏱️ Service total de la semaine :</p>
-                <div id="my_weekly_clock" style="font-size: 1.5em; color:var(--text); font-weight: bold; font-family: monospace;">
-                    0h 0m
-                </div>
+                <div id="my_weekly_clock" style="font-size: 1.5em; color:var(--text); font-weight: bold; font-family: monospace;">0h 0m</div>
             </div>
             
             ${buttonHtml}
@@ -410,19 +349,13 @@ function renderMyServiceUI(data) {
             weeklySecs += sessionSecs;
         }
         
-        if (isEnService && document.getElementById("my_session_clock")) {
-            document.getElementById("my_session_clock").innerText = formatTime(sessionSecs);
-        }
-        if (document.getElementById("my_weekly_clock")) {
-            document.getElementById("my_weekly_clock").innerText = formatTime(weeklySecs);
-        }
+        if (isEnService && document.getElementById("my_session_clock")) { document.getElementById("my_session_clock").innerText = formatTime(sessionSecs); }
+        if (document.getElementById("my_weekly_clock")) { document.getElementById("my_weekly_clock").innerText = formatTime(weeklySecs); }
     };
     
     updateMyTimer();
     
-    if (isEnService) {
-        myPersonalTimer = setInterval(updateMyTimer, 60000);
-    }
+    if (isEnService) { myPersonalTimer = setInterval(updateMyTimer, 60000); }
 }
 
 window.toggleMyService = async function(newStatus) {
@@ -445,7 +378,6 @@ window.toggleMyService = async function(newStatus) {
         updates.lastSessionSeconds = durationSecs;
         updates.currentServiceStart = null; 
         
-        // SAUVEGARDE HISTORIQUE (POINTEUSE)
         await addDoc(collection(db, "timelogs"), {
             employeeId: myEmployeeDocId,
             date: new Date().toLocaleDateString('fr-FR'),
@@ -465,28 +397,16 @@ window.submitRequest = async function() {
     const motif = document.getElementById("reqMotif").value;
     const msg = document.getElementById("reqMsg");
     
-    if(!dates || !motif) { 
-        msg.innerText = "Remplis tout !"; 
-        return; 
-    }
+    if(!dates || !motif) { msg.innerText = "Remplis tout !"; return; }
     
     try {
         await addDoc(collection(db, "requests"), {
-            employeeName: window.currentUserName,
-            employeeEmail: window.currentUserEmail,
-            type: type,
-            dates: dates,
-            motif: motif,
-            status: 'pending',
-            createdAt: new Date().toISOString()
+            employeeName: window.currentUserName, employeeEmail: window.currentUserEmail,
+            type: type, dates: dates, motif: motif, status: 'pending', createdAt: new Date().toISOString()
         });
-        msg.innerText = "✅ Demande envoyée !"; 
-        msg.style.color = "var(--success)";
-        document.getElementById("reqDates").value = ""; 
-        document.getElementById("reqMotif").value = "";
-    } catch(e) { 
-        msg.innerText = "Erreur de soumission."; 
-    }
+        msg.innerText = "✅ Demande envoyée !"; msg.style.color = "var(--success)";
+        document.getElementById("reqDates").value = ""; document.getElementById("reqMotif").value = "";
+    } catch(e) { msg.innerText = "Erreur de soumission."; }
 };
 
 let unsubReq = null;
@@ -499,10 +419,7 @@ window.fetchRequests = function() {
             const data = docSnap.data();
             const dateStr = new Date(data.createdAt).toLocaleDateString('fr-FR');
             
-            // L'employé ne voit que ses propres demandes
-            if(window.currentUserRole === 'employee' && data.employeeEmail !== window.currentUserEmail) {
-                return;
-            }
+            if(window.currentUserRole === 'employee' && data.employeeEmail !== window.currentUserEmail) { return; }
 
             let badge = `<span class="status-badge status-pending">⏳ En attente</span>`;
             if(data.status === 'approved') badge = `<span class="status-badge status-en_service">✅ Approuvé</span>`;
@@ -516,11 +433,9 @@ window.fetchRequests = function() {
             }
 
             html += `<tr>
-                <td>${dateStr}</td>
-                <td><b>${data.employeeName}</b></td>
+                <td>${dateStr}</td><td><b>${data.employeeName}</b></td>
                 <td><span style="color:var(--accent); font-weight:bold;">${data.type}</span><br><small>${data.dates}</small><br><i>"${data.motif}"</i></td>
-                <td>${badge}</td>
-                ${window.currentUserRole !== 'employee' ? `<td>${actions}</td>` : ''}
+                <td>${badge}</td>${window.currentUserRole !== 'employee' ? `<td>${actions}</td>` : ''}
             </tr>`;
         });
         document.getElementById("requestsListBody").innerHTML = html || "<tr><td colspan='5'>Aucune demande.</td></tr>";
@@ -530,7 +445,6 @@ window.fetchRequests = function() {
 window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
     await updateDoc(doc(db, "requests", reqId), { status: newStatus });
     
-    // Si approuvé et que c'est des vacances, on met le dossier à jour
     if(newStatus === 'approved' && reqType === 'Vacances' && empEmail) {
         const snap = await getDocs(query(collection(db, "employees"), where("email", "==", empEmail)));
         if(!snap.empty) {
@@ -550,23 +464,15 @@ window.sendChatMessage = async function() {
     
     try {
         await addDoc(collection(db, "messages"), {
-            text: text,
-            authorName: window.currentUserName,
-            authorEmail: window.currentUserEmail,
-            createdAt: serverTimestamp() 
+            text: text, authorName: window.currentUserName, authorEmail: window.currentUserEmail, createdAt: serverTimestamp() 
         });
         input.value = "";
-    } catch(e) { 
-        alert("Erreur d'envoi du message"); 
-    }
+    } catch(e) { alert("Erreur d'envoi du message"); }
 };
 
-window.handleChatKeyPress = function(e) { 
-    if(e.key === 'Enter') {
-        sendChatMessage(); 
-    }
-};
+window.handleChatKeyPress = function(e) { if(e.key === 'Enter') { sendChatMessage(); } };
 
+let isFirstChatLoad = true;
 window.fetchChatMessages = function() {
     if(unsubChat) return;
     
@@ -579,20 +485,21 @@ window.fetchChatMessages = function() {
             const isMine = data.authorEmail === window.currentUserEmail;
             const alignClass = isMine ? 'mine' : 'other';
             let timeStr = "";
+            if(data.createdAt) { timeStr = new Date(data.createdAt.toMillis()).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}); }
             
-            if(data.createdAt) {
-                timeStr = new Date(data.createdAt.toMillis()).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-            }
-            
-            html += `
-            <div class="chat-row ${alignClass}">
-                <div class="chat-meta"><b>${isMine ? 'Moi' : data.authorName}</b> • ${timeStr}</div>
-                <div class="chat-bubble">${data.text}</div>
-            </div>`;
+            html += `<div class="chat-row ${alignClass}"><div class="chat-meta"><b>${isMine ? 'Moi' : data.authorName}</b> • ${timeStr}</div><div class="chat-bubble">${data.text}</div></div>`;
         });
         
         container.innerHTML = html;
         container.scrollTop = container.scrollHeight; 
+
+        // GESTION DU BADGE DE NOTIFICATION TCHAT
+        const chatSection = document.getElementById('chat');
+        const badgeChat = document.getElementById('badgeChat');
+        if(!isFirstChatLoad && chatSection && !chatSection.classList.contains('active')) {
+            if(badgeChat) badgeChat.classList.remove('hidden');
+        }
+        isFirstChatLoad = false;
     });
 };
 
@@ -604,10 +511,7 @@ window.postAnnouncement = async function() {
     if(!title || !content) return;
     
     await addDoc(collection(db, "announcements"), { 
-        title: title, 
-        content: content, 
-        author: window.currentUserName, 
-        createdAt: new Date().toISOString() 
+        title: title, content: content, author: window.currentUserName, createdAt: new Date().toISOString() 
     });
     
     document.getElementById("annTitle").value = ""; 
@@ -619,51 +523,29 @@ window.fetchAnnouncements = function() {
         let html = "";
         snap.forEach((d) => { 
             let deleteHTML = "";
-            if(window.currentUserRole === 'admin') {
-                deleteHTML = `<span class="ann-delete" onclick="deleteDoc(doc(db, 'announcements', '${d.id}'))">❌</span>`;
-            }
-            html += `
-            <div class="ann-card">
-                <h4 class="ann-title">${d.data().title}</h4>
-                <p class="ann-content">${d.data().content}</p>
-                <div class="ann-footer"><span>Par ${d.data().author}</span>${deleteHTML}</div>
-            </div>`; 
+            if(window.currentUserRole === 'admin') { deleteHTML = `<span class="ann-delete" onclick="deleteDoc(doc(db, 'announcements', '${d.id}'))">❌</span>`; }
+            html += `<div class="ann-card"><h4 class="ann-title">${d.data().title}</h4><p class="ann-content">${d.data().content}</p><div class="ann-footer"><span>Par ${d.data().author}</span>${deleteHTML}</div></div>`; 
         });
         const grid = document.getElementById("homeAnnouncementsGrid");
         if(grid) grid.innerHTML = html;
     });
 };
 
-window.openNewEmployeeModal = function() {
-    document.getElementById("newEmployeeModal").classList.remove("hidden");
-};
-window.closeNewEmployeeModal = function() {
-    document.getElementById("newEmployeeModal").classList.add("hidden");
-};
-window.closeHrEmployeeModal = function() {
-    document.getElementById("hrEmployeeModal").classList.add("hidden");
-};
+window.openNewEmployeeModal = function() { document.getElementById("newEmployeeModal").classList.remove("hidden"); };
+window.closeNewEmployeeModal = function() { document.getElementById("newEmployeeModal").classList.add("hidden"); };
+window.closeHrEmployeeModal = function() { document.getElementById("hrEmployeeModal").classList.add("hidden"); };
 
 window.saveNewEmployee = async function() {
     await addDoc(collection(db, "employees"), {
-        name: document.getElementById("ne_name").value, 
-        email: document.getElementById("ne_email").value,
-        grade: document.getElementById("ne_grade").value, 
-        phone: document.getElementById("ne_phone").value,
-        salary: document.getElementById("ne_salary").value, 
-        status: "hors_service", 
-        weeklyServiceSeconds: 0, 
-        lastSessionSeconds: 0, 
-        currentWeek: window.getIsoWeek(),
-        currentServiceStart: null, 
-        hiredDate: new Date().toISOString().split('T')[0], 
-        hrNotes: ""
+        name: document.getElementById("ne_name").value, email: document.getElementById("ne_email").value,
+        grade: document.getElementById("ne_grade").value, phone: document.getElementById("ne_phone").value,
+        salary: document.getElementById("ne_salary").value, status: "hors_service", 
+        weeklyServiceSeconds: 0, lastSessionSeconds: 0, currentWeek: window.getIsoWeek(),
+        currentServiceStart: null, hiredDate: new Date().toISOString().split('T')[0], hrNotes: ""
     });
     
     closeNewEmployeeModal();
-    document.getElementById("ne_name").value = ""; 
-    document.getElementById("ne_email").value = ""; 
-    document.getElementById("ne_grade").value = "";
+    document.getElementById("ne_name").value = ""; document.getElementById("ne_email").value = ""; document.getElementById("ne_grade").value = "";
 };
 
 let unsubscribeEmployees = null;
@@ -679,12 +561,7 @@ window.fetchEmployees = function() {
             if(dt.status === 'absent') b = `<span class="status-badge status-absent">🔴 Absent</span>`;
             if(dt.status === 'vacation') b = `<span class="status-badge status-vacation">🟠 Congés</span>`;
             
-            html += `<tr>
-                <td>${b}</td>
-                <td><span class="clickable-name" onclick="window.openHrEmployeeModal('${d.id}')">${dt.name}</span></td>
-                <td><span style="color:#facc15;">${dt.grade}</span></td>
-                <td>${dt.phone}</td>
-            </tr>`;
+            html += `<tr><td>${b}</td><td><span class="clickable-name" onclick="window.openHrEmployeeModal('${d.id}')">${dt.name}</span></td><td><span style="color:#facc15;">${dt.grade}</span></td><td>${dt.phone}</td></tr>`;
         });
         
         const tbody = document.getElementById("employeeListBody");
@@ -718,9 +595,7 @@ window.openHrEmployeeModal = async function(id) {
 
     const updateTimerDisplay = () => {
         let currentSecs = baseWeekly;
-        if (data.status === 'en_service' && data.currentServiceStart) { 
-            currentSecs += Math.floor((Date.now() - data.currentServiceStart) / 1000); 
-        }
+        if (data.status === 'en_service' && data.currentServiceStart) { currentSecs += Math.floor((Date.now() - data.currentServiceStart) / 1000); }
         document.getElementById("hre_service_time").innerText = formatTime(currentSecs);
     };
     updateTimerDisplay();
@@ -728,9 +603,7 @@ window.openHrEmployeeModal = async function(id) {
     // CHARGEMENT DE L'HISTORIQUE DE CE MEC
     const logSnap = await getDocs(query(collection(db, "timelogs"), where("employeeId", "==", id)));
     let logHtml = "";
-    if(logSnap.empty) { 
-        logHtml = "<p style='color:var(--subtext);'>Aucun pointage enregistré.</p>"; 
-    } else {
+    if(logSnap.empty) { logHtml = "<p style='color:var(--subtext);'>Aucun pointage enregistré.</p>"; } else {
         logSnap.forEach(l => {
             const d = l.data();
             const startStr = new Date(d.startTime).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
@@ -745,14 +618,8 @@ window.updateEmployeeDossier = async function() {
     const id = document.getElementById("hre_id").value;
     const oldStatus = document.getElementById("hre_old_status").value;
     const newStatus = document.getElementById("hre_status").value;
-    
     let weeklySecs = parseInt(document.getElementById("hre_weekly_seconds").value) || 0;
-    
-    let updates = { 
-        status: newStatus, 
-        email: document.getElementById("hre_email").value, 
-        hrNotes: document.getElementById("hre_notes").value 
-    };
+    let updates = { status: newStatus, email: document.getElementById("hre_email").value, hrNotes: document.getElementById("hre_notes").value };
 
     if (oldStatus !== 'en_service' && newStatus === 'en_service') {
         updates.currentServiceStart = Date.now();
@@ -760,9 +627,7 @@ window.updateEmployeeDossier = async function() {
     } 
     else if (oldStatus === 'en_service' && newStatus !== 'en_service') {
         const currentStart = document.getElementById("hre_current_start").value;
-        if (currentStart) { 
-            updates.weeklyServiceSeconds = weeklySecs + Math.floor((Date.now() - parseInt(currentStart)) / 1000); 
-        }
+        if (currentStart) { updates.weeklyServiceSeconds = weeklySecs + Math.floor((Date.now() - parseInt(currentStart)) / 1000); }
         updates.currentServiceStart = null; 
     }
 
@@ -770,159 +635,40 @@ window.updateEmployeeDossier = async function() {
     closeHrEmployeeModal();
 };
 
-window.deleteEmployeeDossier = async function() { 
-    if(confirm("Virer l'employé définitivement ?")) { 
-        await deleteDoc(doc(db, "employees", document.getElementById("hre_id").value)); 
-        closeHrEmployeeModal(); 
-    } 
-};
-
-window.searchRH = function() { 
-    const f = document.getElementById("rhSearch").value.toUpperCase(); 
-    const tr = document.getElementById("rhTable").getElementsByTagName("tr"); 
-    for(let i=1; i<tr.length; i++) { 
-        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
-    } 
-};
+window.deleteEmployeeDossier = async function() { if(confirm("Virer l'employé définitivement ?")) { await deleteDoc(doc(db, "employees", document.getElementById("hre_id").value)); closeHrEmployeeModal(); } };
+window.searchRH = function() { const f = document.getElementById("rhSearch").value.toUpperCase(); const tr = document.getElementById("rhTable").getElementsByTagName("tr"); for(let i=1; i<tr.length; i++) { tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; } };
 
 /* ==================== 9. AUTRES (DOCS / COMPTA / PARAMETRES) ==================== */
 window.createAdminDoc = async function() {
-    const title = document.getElementById("docTitle").value;
-    const content = document.getElementById("docContent").value;
-    
+    const title = document.getElementById("docTitle").value; const content = document.getElementById("docContent").value;
     if(!title || !content) return;
-    
     try {
-        await addDoc(collection(db, "admin_docs"), { 
-            title: title, 
-            content: content, 
-            createdAt: new Date().toISOString() 
-        });
-        document.getElementById("docMsg").innerText = "✅ Sauvegardé !"; 
-        document.getElementById("docTitle").value = ""; 
-        document.getElementById("docContent").value = "";
-    } catch(e) {
-        console.error(e);
-    }
+        await addDoc(collection(db, "admin_docs"), { title: title, content: content, createdAt: new Date().toISOString() });
+        document.getElementById("docMsg").innerText = "✅ Sauvegardé !"; document.getElementById("docTitle").value = ""; document.getElementById("docContent").value = "";
+    } catch(e) { console.error(e); }
 };
 
 let unsubscribeDocs = null;
 window.fetchAdminDocs = function() {
     const container = document.getElementById("docsGrid");
     if(!container || unsubscribeDocs) return; 
-    
     unsubscribeDocs = onSnapshot(query(collection(db, "admin_docs"), orderBy("createdAt", "desc")), (snapshot) => {
-        let html = ""; 
-        snapshot.forEach((d) => { 
-            html += `
-            <div class="doc-card">
-                <div class="doc-icon">📁</div>
-                <h4>${d.data().title}</h4>
-                <p>${d.data().content}</p>
-                <button onclick="deleteDoc(doc(db,'admin_docs','${d.id}'))" class="delete-doc-btn">Supprimer</button>
-            </div>`; 
-        });
+        let html = ""; snapshot.forEach((d) => { html += `<div class="doc-card"><div class="doc-icon">📁</div><h4>${d.data().title}</h4><p>${d.data().content}</p><button onclick="deleteDoc(doc(db,'admin_docs','${d.id}'))" class="delete-doc-btn">Supprimer</button></div>`; });
         container.innerHTML = html || "<p>Aucun document.</p>";
     });
 };
 
-window.toggleTheme = function() { 
-    document.body.classList.toggle('light-mode'); 
-    const isL = document.body.classList.contains('light-mode'); 
-    localStorage.setItem('theme', isL ? 'light' : 'dark'); 
-    document.getElementById('themeBtn').innerText = isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"; 
-};
-
-window.saveProfileSettings = async function() { 
-    const newName = document.getElementById("settingsDisplayName").value; 
-    const newPhotoURL = document.getElementById("settingsPhotoURL").value; 
-    
-    if (!auth.currentUser || !newName) return; 
-    
-    try {
-        await setDoc(doc(db, "users", auth.currentUser.uid), { 
-            displayName: newName, 
-            photoURL: newPhotoURL || "" 
-        }, { merge: true }); 
-        
-        document.getElementById("settingsMsg").innerText = "✅ Sauvegardé !"; 
-        document.getElementById("sidebarUserName").innerText = newName; 
-    } catch(e) {
-        console.error(e);
-    }
-};
-
-window.deleteMyAccount = async function() { 
-    if (!auth.currentUser) return; 
-    if (!confirm("⚠️ DÉFINITIF.\nVeux-tu continuer ?") || !confirm("Vraiment sûr ?")) return; 
-    
-    try { 
-        await deleteDoc(doc(db, "users", auth.currentUser.uid)); 
-        await deleteUser(auth.currentUser); 
-        window.location.reload(); 
-    } catch (error) { 
-        if (error.code === 'auth/requires-recent-login') { 
-            alert("🔒 Reconnecte-toi d'abord."); 
-            await signOut(auth); 
-        } 
-    } 
-};
+window.toggleTheme = function() { document.body.classList.toggle('light-mode'); const isL = document.body.classList.contains('light-mode'); localStorage.setItem('theme', isL ? 'light' : 'dark'); document.getElementById('themeBtn').innerText = isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"; };
+window.saveProfileSettings = async function() { const newName = document.getElementById("settingsDisplayName").value; const newPhotoURL = document.getElementById("settingsPhotoURL").value; if (!auth.currentUser || !newName) return; try { await setDoc(doc(db, "users", auth.currentUser.uid), { displayName: newName, photoURL: newPhotoURL || "" }, { merge: true }); document.getElementById("settingsMsg").innerText = "✅ Sauvegardé !"; document.getElementById("sidebarUserName").innerText = newName; } catch(e) { console.error(e); } };
+window.deleteMyAccount = async function() { if (!auth.currentUser) return; if (!confirm("⚠️ DÉFINITIF.\nVeux-tu continuer ?") || !confirm("Vraiment sûr ?")) return; try { await deleteDoc(doc(db, "users", auth.currentUser.uid)); await deleteUser(auth.currentUser); window.location.reload(); } catch (error) { if (error.code === 'auth/requires-recent-login') { alert("🔒 Reconnecte-toi d'abord."); await signOut(auth); } } };
 
 window.updateDashboardStats = async function() { 
-    setInterval(() => { 
-        const dDate = document.getElementById("statDate");
-        const dTime = document.getElementById("statTime");
-        if(dDate) dDate.innerText = new Date().toLocaleDateString('fr-FR'); 
-        if(dTime) dTime.innerText = new Date().toLocaleTimeString('fr-FR'); 
-    }, 1000); 
-    
-    try { 
-        const empEl = document.getElementById("statEmployees");
-        const usrEl = document.getElementById("statUsers");
-        
-        if(empEl) empEl.innerText = (await getDocs(collection(db, "employees"))).size; 
-        if(usrEl) usrEl.innerText = (await getDocs(collection(db, "users"))).size; 
-    } catch (e) { 
-        console.error(e);
-    } 
+    setInterval(() => { const dDate = document.getElementById("statDate"); const dTime = document.getElementById("statTime"); if(dDate) dDate.innerText = new Date().toLocaleDateString('fr-FR'); if(dTime) dTime.innerText = new Date().toLocaleTimeString('fr-FR'); }, 1000); 
+    try { const empEl = document.getElementById("statEmployees"); const usrEl = document.getElementById("statUsers"); if(empEl) empEl.innerText = (await getDocs(collection(db, "employees"))).size; if(usrEl) usrEl.innerText = (await getDocs(collection(db, "users"))).size; } catch (e) { console.error(e); } 
 };
 
-window.toggleCompta = function(m) { 
-    document.getElementById("sheetFrame").classList.toggle("hidden", m !== 'iframe'); 
-    document.getElementById("nativeTableContainer").classList.toggle("hidden", m === 'iframe'); 
-    if(m !== 'iframe') {
-        window.loadSheetData(); 
-    }
-};
+window.toggleCompta = function(m) { document.getElementById("sheetFrame").classList.toggle("hidden", m !== 'iframe'); document.getElementById("nativeTableContainer").classList.toggle("hidden", m === 'iframe'); if(m !== 'iframe') { window.loadSheetData(); } };
 
-window.loadSheetData = async function() { 
-    try { 
-        const r = await fetch(SHEET_CSV_URL); 
-        const t = await r.text(); 
-        let rows = t.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g,'').trim())); 
-        
-        let html="<thead><tr>"; 
-        rows[0].forEach(c => html += `<th>${c}</th>`); 
-        html+="</tr></thead><tbody>"; 
-        
-        for(let i=1; i<rows.length; i++){ 
-            if(rows[i].length > 1){ 
-                html+="<tr>"; 
-                rows[0].forEach((_, j) => html += `<td>${rows[i][j]||""}</td>`); 
-                html+="</tr>"; 
-            } 
-        } 
-        document.getElementById("sheetTable").innerHTML = html + "</tbody>"; 
-    } catch(e) {
-        console.error(e);
-    } 
-};
+window.loadSheetData = async function() { try { const r = await fetch(SHEET_CSV_URL); const t = await r.text(); let rows = t.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g,'').trim())); let html="<thead><tr>"; rows[0].forEach(c => html += `<th>${c}</th>`); html+="</tr></thead><tbody>"; for(let i=1; i<rows.length; i++){ if(rows[i].length > 1){ html+="<tr>"; rows[0].forEach((_, j) => html += `<td>${rows[i][j]||""}</td>`); html+="</tr>"; } } document.getElementById("sheetTable").innerHTML = html + "</tbody>"; } catch(e) { console.error(e); } };
 
-window.searchTable = function() { 
-    const f = document.getElementById("tableSearch").value.toUpperCase(); 
-    const tr = document.getElementById("sheetTable").getElementsByTagName("tr"); 
-    
-    for(let i=1; i<tr.length; i++){ 
-        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
-    } 
-};
+window.searchTable = function() { const f = document.getElementById("tableSearch").value.toUpperCase(); const tr = document.getElementById("sheetTable").getElementsByTagName("tr"); for(let i=1; i<tr.length; i++){ tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; } };
