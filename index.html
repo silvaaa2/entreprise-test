@@ -13,25 +13,11 @@
 <div id="loginBox">
   <div class="login-card">
     <h2>Espace Membre</h2>
-    <div class="input-group">
-      <input id="email" type="email" required>
-      <label>Email</label>
-    </div>
-    <div class="input-group">
-      <input id="password" type="password" required>
-      <label>Mot de passe</label>
-    </div>
+    <div class="input-group"><input id="email" type="email" required><label>Email</label></div>
+    <div class="input-group"><input id="password" type="password" required><label>Mot de passe</label></div>
     <button onclick="login()">CONNEXION 🚀</button>
-    
-    <div class="separator">
-        <span>OU</span>
-    </div>
-  
-    <button class="google-btn" onclick="loginWithGoogle()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
-        Continuer avec Google
-    </button>
-
+    <div class="separator"><span>OU</span></div>
+    <button class="google-btn" onclick="loginWithGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"> Continuer avec Google</button>
     <p id="error"></p>
   </div>
 </div>
@@ -42,12 +28,18 @@
     <h3>Dashboard</h3>
     <button id="btn-home" onclick="showSection('home')">🏠 Accueil</button>
     
+    <div class="spacer" style="flex: 0.1;"></div>
+    <span style="color:var(--subtext); font-size:0.7em; margin-left:10px; text-transform:uppercase; letter-spacing:1px;">Espace Perso</span>
     <button id="btn-service" onclick="showSection('service')" style="color: #10b981;">⏱️ Mon Pointage</button>
-
+    <button id="btn-requests" onclick="showSection('requests')" style="color: #f59e0b;">🎫 Demandes & Congés</button>
+    <button id="btn-chat" onclick="showSection('chat')" style="color: #3b82f6;">💬 Machine à café</button>
+    
+    <div class="spacer" style="flex: 0.1;"></div>
+    <span id="admin-title-menu" style="color:var(--subtext); font-size:0.7em; margin-left:10px; text-transform:uppercase; letter-spacing:1px;">Administration</span>
     <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
-    <button id="btn-docs" onclick="showSection('docs')" style="color: #facc15;">📂 Documents Admin</button>
+    <button id="btn-docs" onclick="showSection('docs')">📂 Documents Admin</button>
     
     <div class="spacer"></div>
 
@@ -65,31 +57,66 @@
   <main class="content">
 
     <section id="home" class="section active">
-      <div class="home-header">
-        <h1>Bienvenue. 👋</h1>
-        <p>Voici l'état actuel de ton entreprise.</p>
-      </div>
-
+      <div class="home-header"><h1>Bienvenue. 👋</h1><p>Voici l'état actuel de ton entreprise.</p></div>
       <div class="stats-grid" id="mainStatsGrid">
-        <div class="stat-card card-rh"><div class="icon">👥</div><div class="info"><h3>Effectif Total</h3><p id="statEmployees">Chargement...</p></div></div>
-        <div class="stat-card card-users"><div class="icon">🔐</div><div class="info"><h3>Comptes Actifs</h3><p id="statUsers">Chargement...</p></div></div>
+        <div class="stat-card card-rh"><div class="icon">👥</div><div class="info"><h3>Effectif Total</h3><p id="statEmployees">...</p></div></div>
+        <div class="stat-card card-users"><div class="icon">🔐</div><div class="info"><h3>Comptes Actifs</h3><p id="statUsers">...</p></div></div>
         <div class="stat-card card-time"><div class="icon">🕒</div><div class="info"><h3 id="statDate">--/--/----</h3><p id="statTime">--:--:--</p></div></div>
       </div>
-
       <div style="margin-top: 40px;">
           <h3>📢 Annonces de la Direction</h3>
-          <div id="homeAnnouncementsGrid" class="announcements-grid">
-              <p style="color: var(--subtext);">Chargement des annonces...</p>
-          </div>
+          <div id="homeAnnouncementsGrid" class="announcements-grid"><p style="color: var(--subtext);">Chargement...</p></div>
       </div>
     </section>
 
     <section id="service" class="section">
         <h1>Mon Pointage ⏱️</h1>
         <p>Gère tes heures de service directement ici.</p>
+        <div id="myServiceContainer" style="margin-top: 40px; text-align: center;"><p>Chargement...</p></div>
+    </section>
 
-        <div id="myServiceContainer" style="margin-top: 40px; text-align: center;">
-            <p>Chargement de ton dossier...</p>
+    <section id="requests" class="section">
+        <h1>Demandes & Congés 🎫</h1>
+        
+        <div class="create-user-box" id="employeeRequestBox">
+            <h3>Faire une nouvelle demande</h3>
+            <div class="form-grid">
+                <div class="input-group">
+                    <select id="reqType" class="cyber-select">
+                        <option value="Congés Payés">🌴 Congés Payés</option>
+                        <option value="Arrêt Maladie">💊 Arrêt Maladie</option>
+                        <option value="Autre Demande">❓ Autre Demande</option>
+                    </select>
+                </div>
+                <div class="input-group"><input id="reqDates" type="text" placeholder="Ex: du 12/08 au 25/08" required><label>Dates concernées</label></div>
+                <div class="input-group"><input id="reqMotif" type="text" required><label>Motif / Détails</label></div>
+            </div>
+            <button onclick="submitRequest()">Envoyer la demande</button>
+            <p id="reqMsg"></p>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <h3>Historique & Statut des demandes</h3>
+            <div class="table-wrapper">
+                <table class="cyber-table">
+                    <thead><tr><th>Date demande</th><th>Employé</th><th>Type & Dates</th><th>Statut</th><th id="thActionsReq">Actions</th></tr></thead>
+                    <tbody id="requestsListBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="chat" class="section">
+        <h1>Machine à café 💬</h1>
+        <p>Discute en direct avec toute l'équipe.</p>
+        
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                </div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Écris un message..." onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendChatMessage()" style="width: 100px; margin:0;">Envoyer</button>
+            </div>
         </div>
     </section>
 
@@ -110,17 +137,10 @@
             </select>
           </div>
         </div>
-        <button onclick="createNewUser()">Ajouter (+)</button>
-        <p id="userMsg"></p>
+        <button onclick="createNewUser()">Ajouter (+)</button><p id="userMsg"></p>
       </div>
       <div style="margin-top: 40px;">
-        <h3>L'Équipe</h3>
-        <div class="table-wrapper">
-          <table class="cyber-table">
-            <thead><tr><th>Profil</th><th>Rôle</th><th>Date Arrivée</th><th>Actions</th></tr></thead>
-            <tbody id="userListBody"></tbody>
-          </table>
-        </div>
+        <div class="table-wrapper"><table class="cyber-table"><thead><tr><th>Profil</th><th>Rôle</th><th>Date Arrivée</th><th>Actions</th></tr></thead><tbody id="userListBody"></tbody></table></div>
       </div>
     </section>
 
@@ -128,39 +148,26 @@
       <h1>Ressources Humaines 🤝</h1>
       <div class="hr-top-grid">
           <div class="create-user-box hr-box">
-            <h3>📢 Publier une Annonce Interne</h3>
-            <div class="input-group" style="margin-top:15px;"><input id="annTitle" type="text" required><label>Titre de l'annonce</label></div>
+            <h3>📢 Publier une Annonce</h3>
+            <div class="input-group" style="margin-top:15px;"><input id="annTitle" type="text" required><label>Titre</label></div>
             <div class="input-group"><textarea id="annContent" placeholder="Contenu..." class="cyber-textarea"></textarea></div>
-            <button onclick="postAnnouncement()">Publier l'annonce</button>
-            <p id="annMsg"></p>
+            <button onclick="postAnnouncement()">Publier</button><p id="annMsg"></p>
           </div>
           <div class="create-user-box hr-box" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
             <h3>Dossiers Employés</h3>
             <button onclick="openNewEmployeeModal()" style="margin-top: 20px; background: #10b981;">➕ Recruter un employé</button>
           </div>
       </div>
-
       <div style="margin-top: 40px;">
-        <h3>Registre du Personnel & Pointage</h3>
-        <div class="search-container"><input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher un employé..."></div>
-        <div class="table-wrapper">
-          <table class="cyber-table" id="rhTable">
-            <thead><tr><th>Statut</th><th>Identité</th><th>Poste</th><th>Téléphone</th></tr></thead>
-            <tbody id="employeeListBody"></tbody>
-          </table>
-        </div>
+        <div class="search-container"><input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher..."></div>
+        <div class="table-wrapper"><table class="cyber-table" id="rhTable"><thead><tr><th>Statut</th><th>Identité</th><th>Poste</th><th>Téléphone</th></tr></thead><tbody id="employeeListBody"></tbody></table></div>
       </div>
     </section>
 
     <section id="compta" class="section">
       <h1>Comptabilité</h1>
-      <div class="compta-controls">
-        <button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier</button>
-        <button onclick="toggleCompta('data')" class="small-btn">📊 Vue Tableau</button>
-      </div>
-      <div id="sheetFrame" class="iframe-container" style="height: 750px;">
-         <iframe src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340" width="100%" height="100%" style="border:none;"></iframe>
-      </div>
+      <div class="compta-controls"><button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier</button><button onclick="toggleCompta('data')" class="small-btn">📊 Vue Tableau</button></div>
+      <div id="sheetFrame" class="iframe-container" style="height: 750px;"><iframe src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340" width="100%" height="100%" style="border:none;"></iframe></div>
       <div id="nativeTableContainer" class="hidden">
         <div class="search-container"><input type="text" id="tableSearch" onkeyup="searchTable()" placeholder="🔍 Rechercher..."></div>
         <div class="table-wrapper"><table id="sheetTable" class="cyber-table"><tr><td>Chargement...</td></tr></table></div>
@@ -170,12 +177,8 @@
     <section id="docs" class="section">
         <h1>📂 Documents Confidentiels</h1>
         <div class="create-user-box">
-            <div class="form-grid">
-                <div class="input-group"><input id="docTitle" type="text" required><label>Titre</label></div>
-                <div class="input-group" style="grid-column: span 2;"><input id="docContent" type="text" required><label>Contenu</label></div>
-            </div>
-            <button onclick="createAdminDoc()">Sauvegarder dans le Cloud ☁️</button>
-            <p id="docMsg"></p>
+            <div class="form-grid"><div class="input-group"><input id="docTitle" type="text" required><label>Titre</label></div><div class="input-group" style="grid-column: span 2;"><input id="docContent" type="text" required><label>Contenu</label></div></div>
+            <button onclick="createAdminDoc()">Sauvegarder dans le Cloud ☁️</button><p id="docMsg"></p>
         </div>
         <div id="docsGrid" class="docs-grid"></div>
     </section>
@@ -186,11 +189,8 @@
         <h3>👤 Mon Profil</h3>
         <div class="input-group"><input id="settingsDisplayName" type="text"><label>Nom d'affichage</label></div>
         <div class="input-group" style="margin-top: 20px;"><input id="settingsPhotoURL" type="url"><label>URL Photo</label></div>
-        <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
-        <p id="settingsMsg"></p>
-        <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;">
-            <button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button>
-        </div>
+        <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button><p id="settingsMsg"></p>
+        <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;"><button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button></div>
       </div>
     </section>
 
@@ -200,63 +200,54 @@
 <div id="newEmployeeModal" class="modal hidden">
   <div class="modal-content" style="width: 500px; text-align: left;">
     <span class="close-btn" onclick="closeNewEmployeeModal()">&times;</span>
-    <h2 style="margin-top:0;">📝 Nouveau Dossier Employé</h2>
-    
+    <h2 style="margin-top:0;">📝 Nouveau Dossier</h2>
     <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
         <div class="input-group"><input id="ne_name" type="text" required><label>Nom & Prénom</label></div>
-        <div class="input-group"><input id="ne_email" type="email" required><label>Email (Pour relier le compte)</label></div>
+        <div class="input-group"><input id="ne_email" type="email" required><label>Email (Liaison Compte)</label></div>
         <div class="input-group"><input id="ne_grade" type="text" required><label>Poste / Grade</label></div>
         <div class="input-group"><input id="ne_phone" type="text" required><label>Téléphone</label></div>
         <div class="input-group" style="grid-column: span 2;"><input id="ne_salary" type="text" required><label>Salaire</label></div>
     </div>
-    
-    <button onclick="saveNewEmployee()">Créer le dossier</button>
-    <p id="ne_msg" style="text-align:center; font-weight:bold;"></p>
+    <button onclick="saveNewEmployee()">Créer le dossier</button><p id="ne_msg" style="text-align:center; font-weight:bold;"></p>
   </div>
 </div>
 
 <div id="hrEmployeeModal" class="modal hidden">
-  <div class="modal-content" style="width: 600px; text-align: left;">
+  <div class="modal-content" style="width: 700px; text-align: left;">
     <span class="close-btn" onclick="closeHrEmployeeModal()">&times;</span>
     
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:15px;">
-        <div>
-            <h2 id="hre_name" style="margin:0; color:var(--text);">Nom Employé</h2>
-            <p id="hre_grade" style="margin:5px 0 0 0; color:var(--accent);">Poste</p>
-        </div>
+        <div><h2 id="hre_name" style="margin:0; color:var(--text);">Nom Employé</h2><p id="hre_grade" style="margin:5px 0 0 0; color:var(--accent);">Poste</p></div>
         <div style="text-align: right;">
             <label style="color:var(--subtext); font-size:0.8em; display:block; margin-bottom:5px;">Statut actuel :</label>
             <select id="hre_status" class="cyber-select" style="width:150px; border:1px solid var(--border);">
-                <option value="en_service">🟢 En service</option>
-                <option value="hors_service">⚪ Hors service</option>
-                <option value="absent">🔴 Absent / Malade</option>
-                <option value="vacation">🟠 En Congés</option>
+                <option value="en_service">🟢 En service</option><option value="hors_service">⚪ Hors service</option>
+                <option value="absent">🔴 Absent / Malade</option><option value="vacation">🟠 En Congés</option>
             </select>
         </div>
     </div>
 
-    <input type="hidden" id="hre_id">
-    <input type="hidden" id="hre_old_status">
-    <input type="hidden" id="hre_current_start">
-    <input type="hidden" id="hre_total_seconds">
+    <input type="hidden" id="hre_id"><input type="hidden" id="hre_old_status">
+    <input type="hidden" id="hre_current_start"><input type="hidden" id="hre_total_seconds">
 
     <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
-        <div class="input-group" style="grid-column: span 2; margin-bottom:10px;"><input id="hre_email" type="email" required><label>Email de l'employé (Liaison Compte)</label></div>
-        
+        <div class="input-group" style="grid-column: span 2; margin-bottom:10px;"><input id="hre_email" type="email" required><label>Email (Liaison)</label></div>
         <div class="info-row" style="border:none;"><span class="label">Téléphone:</span><span id="hre_phone" class="value">...</span></div>
         <div class="info-row" style="border:none;"><span class="label">Salaire:</span><span id="hre_salary" class="value">...</span></div>
         <div class="info-row" style="border:none; grid-column: span 2;"><span class="label">Embauché le:</span><span id="hre_date" class="value">...</span></div>
-
         <div class="info-row" style="border:none; grid-column: span 2; background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px;">
-            <span class="label">⏱️ Temps total :</span>
-            <span id="hre_service_time" class="value" style="color:var(--accent); font-size: 1.2em;">0h 0m</span>
+            <span class="label">⏱️ Temps total :</span><span id="hre_service_time" class="value" style="color:var(--accent); font-size: 1.2em;">0h 0m</span>
         </div>
     </div>
 
     <div style="margin-top: 20px;">
-        <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH</h3>
-        <textarea id="hre_notes" class="cyber-textarea" style="height: 100px;"></textarea>
+        <h3 style="color:var(--text); font-size:1.1em; border-bottom: 1px solid var(--border); padding-bottom:5px;">📅 Historique des Sessions</h3>
+        <div id="hre_timelogs" style="max-height: 120px; overflow-y: auto; font-size: 0.85em; background: var(--hover-bg); padding: 10px; border-radius: 8px;">
+            <p style="color:var(--subtext); margin:0;">Chargement de l'historique...</p>
+        </div>
     </div>
+
+    <div style="margin-top: 20px;"><h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH</h3><textarea id="hre_notes" class="cyber-textarea" style="height: 80px;"></textarea></div>
 
     <div style="display:flex; gap:10px; margin-top:20px;">
         <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer</button>
@@ -268,14 +259,8 @@
 <div id="profileModal" class="modal hidden">
   <div class="modal-content">
     <span class="close-btn" onclick="closeUserProfile()">&times;</span>
-    <div class="modal-header">
-      <img id="m_photo" src="" alt="Avatar">
-      <h2 id="m_name">Chargement...</h2>
-      <p id="m_email" class="subtext">...</p>
-    </div>
-    <div class="modal-body">
-      <div class="info-row"><span class="label">Rôle Actuel :</span><span id="m_role" class="value badge">...</span></div>
-    </div>
+    <div class="modal-header"><img id="m_photo" src="" alt="Avatar"><h2 id="m_name">...</h2><p id="m_email" class="subtext">...</p></div>
+    <div class="modal-body"><div class="info-row"><span class="label">Rôle Actuel :</span><span id="m_role" class="value badge">...</span></div></div>
     <div class="modal-footer"><button onclick="closeUserProfile()" class="secondary-btn">Fermer</button></div>
   </div>
 </div>
