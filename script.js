@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebas
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+/* ==================== 1. CONFIGURATION FIREBASE ==================== */
 const firebaseConfig = {
   apiKey: "AIzaSyA5Ec_JPneE1Pwx53MmCwUDrgw0vfeFfDo",
   authDomain: "entreprise-test-admin.firebaseapp.com",
@@ -21,49 +22,67 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRkyHGb-H
 const loginBox = document.getElementById("loginBox");
 const adminDashboard = document.getElementById("adminDashboard");
 
-if (localStorage.getItem('theme') === 'light') { document.body.classList.add('light-mode'); document.getElementById('themeBtn').innerText = "🌙 Mode Sombre"; }
+/* INIT THEME */
+if (localStorage.getItem('theme') === 'light') { 
+    document.body.classList.add('light-mode'); 
+    document.getElementById('themeBtn').innerText = "🌙 Mode Sombre"; 
+}
 
-window.login = async function() { try { await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value); } catch(e){ alert("Erreur de connexion");} };
-window.loginWithGoogle = async function() { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch(e){ alert("Erreur Google");} };
-window.logout = function() { signOut(auth).then(() => window.location.reload()); };
+/* ==================== 2. AUTHENTIFICATION & NAVIGATION ==================== */
+window.login = async function() { 
+    try { await signInWithEmailAndPassword(auth, document.getElementById("email").value, document.getElementById("password").value); } 
+    catch(e){ document.getElementById("error").innerText = "❌ Erreur de connexion";} 
+};
+
+window.loginWithGoogle = async function() { 
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
+    catch(e){ document.getElementById("error").innerText = "❌ Erreur Google";} 
+};
+
+window.logout = function() { 
+    signOut(auth).then(() => window.location.reload()); 
+};
 
 window.showSection = function(id) {
-  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-  document.getElementById(id)?.classList.add("active");
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.getElementById(id)?.classList.add("active");
   
-  if(id === 'home') { window.updateDashboardStats(); window.fetchAnnouncements(); }
-  if(id === 'users') window.fetchUsers();
-  if(id === 'rh') { window.fetchEmployees(); window.fetchAnnouncements(); }
-  if(id === 'compta') window.toggleCompta('data');
-  if(id === 'docs') window.fetchAdminDocs(); 
-  if(id === 'service') window.loadMyService(); 
-  if(id === 'requests') window.fetchRequests(); // NOUVEAU
-  if(id === 'chat') window.fetchChatMessages(); // NOUVEAU
+    if(id === 'home') { window.updateDashboardStats(); window.fetchAnnouncements(); }
+    if(id === 'users') window.fetchUsers();
+    if(id === 'rh') { window.fetchEmployees(); window.fetchAnnouncements(); }
+    if(id === 'compta') window.toggleCompta('data');
+    if(id === 'docs') window.fetchAdminDocs(); 
+    if(id === 'service') window.loadMyService(); 
+    if(id === 'requests') window.fetchRequests(); 
+    if(id === 'chat') window.fetchChatMessages(); 
 };
 
 onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    if(loginBox) loginBox.classList.add("hidden");
-    if(adminDashboard) adminDashboard.classList.remove("hidden");
-    window.showSection('home');
-    await loadUserProfile(user);
-    window.updateDashboardStats(); 
-  } else {
-    if(loginBox) loginBox.classList.remove("hidden");
-    if(adminDashboard) adminDashboard.classList.add("hidden");
-  }
+    if (user) {
+        if(loginBox) loginBox.classList.add("hidden");
+        if(adminDashboard) adminDashboard.classList.remove("hidden");
+        window.showSection('home');
+        await loadUserProfile(user);
+        window.updateDashboardStats(); 
+    } else {
+        if(loginBox) loginBox.classList.remove("hidden");
+        if(adminDashboard) adminDashboard.classList.add("hidden");
+    }
 });
 
+/* ==================== 3. GESTION DES PROFILS & PERMISSIONS ==================== */
 async function loadUserProfile(user) {
     try {
         const docRef = doc(db, "users", user.uid);
         let docSnap = await getDoc(docRef);
 
+        // Forcer le Super Admin
         if (user.email === SUPER_ADMIN && (!docSnap.exists() || docSnap.data().role !== 'admin')) {
             await setDoc(docRef, { email: user.email, role: 'admin', displayName: "Le Boss", photoURL: "", createdAt: new Date().toISOString().split('T')[0] }, { merge: true });
             location.reload(); return;
         }
 
+        // Fusionner si connexion Google
         if (!docSnap.exists()) {
             const q = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
             if (!q.empty) {
@@ -78,33 +97,138 @@ async function loadUserProfile(user) {
         const data = docSnap.data();
         document.getElementById("sidebarUserName").innerText = data.displayName || "Utilisateur";
         document.getElementById("sidebarUserImg").src = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+        
         window.currentUserRole = data.role;
         window.currentUserName = data.displayName || "Utilisateur";
         window.currentUserEmail = data.email;
+        
         applyPermissions(data.role);
     } catch (e) { console.error(e); }
 }
 
 function applyPermissions(role) {
-    const hides = ["btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-service", "mainStatsGrid", "admin-title-menu", "thActionsReq", "employeeRequestBox"];
-    hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = "none"; });
+    const menusToHide = ["btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-service", "btn-requests", "btn-chat", "mainStatsGrid", "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox"];
+    menusToHide.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = "none"; });
     
+    const homeMsg = document.querySelector(".home-header p");
+
     if(role === 'admin') {
-        hides.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
-        document.getElementById("employeeRequestBox").style.display = "none"; // Admin n'a pas besoin de faire de requête
-    } else if(role === 'employee') {
-        document.getElementById("btn-service").style.display = "block";
-        document.getElementById("employeeRequestBox").style.display = "block"; // L'employé peut faire une demande
-    } else if(role === 'rh') {
-        ["btn-rh", "btn-service", "admin-title-menu", "thActionsReq", "employeeRequestBox"].forEach(id => document.getElementById(id).style.display = "");
-    } else if(role === 'compta') {
-        document.getElementById("btn-compta").style.display = "block";
+        menusToHide.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+        document.getElementById("employeeRequestBox").style.display = "none"; // Admin ne fait pas de demande de congés
+        if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
+    } 
+    else if(role === 'employee') {
+        ["btn-service", "btn-requests", "btn-chat", "perso-title-menu", "employeeRequestBox"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+        if(homeMsg) homeMsg.innerText = "N'oublie pas de pointer pour commencer ta journée.";
+    } 
+    else if(role === 'rh') {
+        ["btn-rh", "btn-service", "btn-requests", "btn-chat", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+        if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
+    } 
+    else if(role === 'compta') {
+        ["btn-compta", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
+        if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
+    }
+    else {
+        if(homeMsg) homeMsg.innerText = "⛔ Ton compte n'a pas encore d'accès. Demande à ton Boss.";
     }
 }
 
-function formatTime(totalSeconds) { const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); return `${h}h ${m}m`; }
+function formatTime(totalSeconds) { 
+    const h = Math.floor(totalSeconds / 3600); 
+    const m = Math.floor((totalSeconds % 3600) / 60); 
+    return `${h}h ${m}m`; 
+}
 
-/* ==================== 1. POINTAGE & HISTORIQUE ==================== */
+/* ==================== 4. GESTION DES UTILISATEURS (COMPTES) ==================== */
+let unsubscribeUsers = null;
+
+window.createNewUser = async function() {
+    const email = document.getElementById("newEmail").value;
+    const password = document.getElementById("newPassword").value;
+    const role = document.getElementById("newRole").value;
+    const msg = document.getElementById("userMsg");
+    if(!email || !password) { msg.innerText = "Remplis tout !"; return; }
+    msg.innerText = "Création...";
+    try {
+        const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+        const secondaryAuth = getAuth(secondaryApp);
+        const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+        await setDoc(doc(db, "users", cred.user.uid), { email: email, role: role, createdAt: new Date().toISOString().split('T')[0], displayName: "En attente", photoURL: "" });
+        await signOut(secondaryAuth);
+        msg.innerText = `✅ Ajouté !`; msg.style.color = "var(--success)";
+    } catch (error) { msg.innerText = "Erreur: " + error.message; }
+};
+
+window.fetchUsers = function() {
+  const tbody = document.getElementById("userListBody");
+  if(!tbody || unsubscribeUsers) return;
+  
+  tbody.innerHTML = "<tr><td colspan='4'>Chargement... 📡</td></tr>";
+  
+  unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      let html = "";
+      snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const uid = docSnap.id;
+          const r = data.role;
+          
+          const roleSelect = `
+            <select onchange="window.updateUserRole('${uid}', this.value)" style="background:var(--panel); color:var(--text); border:1px solid var(--border); padding:5px; border-radius:5px;">
+                <option value="guest" ${(!r || r === 'guest') ? 'selected' : ''}>⛔ Aucun accès</option>
+                <option value="employee" ${r === 'employee' ? 'selected' : ''}>👷 Employé</option>
+                <option value="rh" ${r === 'rh' ? 'selected' : ''}>🤝 RH</option>
+                <option value="compta" ${r === 'compta' ? 'selected' : ''}>📊 Compta</option>
+                <option value="admin" ${r === 'admin' ? 'selected' : ''}>👑 Admin</option>
+            </select>`;
+            
+          html += `<tr>
+            <td>
+                <div onclick="window.openUserProfile('${uid}')" class="clickable-name">${data.displayName || "Sans nom"}</div>
+                <div style="font-size:0.8em; color:var(--subtext);">${data.email}</div>
+            </td>
+            <td>${roleSelect}</td>
+            <td>${data.createdAt || "-"}</td>
+            <td>
+                <button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em; color:white; border:none; border-radius:5px;">🗑️ Exclure</button>
+            </td>
+          </tr>`;
+      });
+      tbody.innerHTML = html;
+  });
+};
+
+window.updateUserRole = async function(uid, newRole) { 
+    try { await updateDoc(doc(db, "users", uid), { role: newRole }); } 
+    catch (e) { alert("Erreur: " + e.message); } 
+};
+
+window.deleteUser = async function(uid) {
+    if (auth.currentUser && auth.currentUser.uid === uid) return alert("Utilise les Paramètres.");
+    if(confirm("⚠️ EXCLURE définitivement cette personne ?")) { await deleteDoc(doc(db, "users", uid)); }
+};
+
+window.openUserProfile = async function(uid) {
+    document.getElementById("profileModal").classList.remove("hidden"); 
+    const d = await getDoc(doc(db, "users", uid)); 
+    if(d.exists()) { 
+        document.getElementById("m_name").innerText = d.data().displayName || "Sans nom"; 
+        document.getElementById("m_email").innerText = d.data().email; 
+        
+        let roleText = "Invité";
+        if(d.data().role === 'admin') roleText = "👑 Admin";
+        if(d.data().role === 'rh') roleText = "🤝 RH";
+        if(d.data().role === 'employee') roleText = "👷 Employé";
+        if(d.data().role === 'compta') roleText = "📊 Compta";
+        
+        document.getElementById("m_role").innerText = roleText; 
+        document.getElementById("m_photo").src = d.data().photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    } 
+};
+window.closeUserProfile = () => document.getElementById("profileModal").classList.add("hidden");
+
+
+/* ==================== 5. POINTAGE (MON SERVICE EMPLOYE) ==================== */
 let myPersonalTimer = null;
 let myEmployeeDocId = null;
 
@@ -112,35 +236,55 @@ window.loadMyService = async function() {
     const user = auth.currentUser;
     if (!user) return;
     const container = document.getElementById("myServiceContainer");
+    
     const snap = await getDocs(query(collection(db, "employees"), where("email", "==", user.email)));
-    if (snap.empty) { container.innerHTML = `<div class="pointage-card"><h3 style="color:var(--error);">⚠️ Dossier introuvable</h3><p>Aucun dossier RH relié à <b>${user.email}</b>.</p></div>`; return; }
+    
+    if (snap.empty) { 
+        container.innerHTML = `<div class="pointage-card"><h3 style="color:var(--error);">⚠️ Dossier introuvable</h3><p>Aucun dossier RH relié à <b>${user.email}</b>.</p></div>`; 
+        return; 
+    }
     
     myEmployeeDocId = snap.docs[0].id;
-    onSnapshot(doc(db, "employees", myEmployeeDocId), (docSnap) => { if(docSnap.exists()) renderMyServiceUI(docSnap.data()); });
+    
+    onSnapshot(doc(db, "employees", myEmployeeDocId), (docSnap) => { 
+        if(docSnap.exists()) renderMyServiceUI(docSnap.data()); 
+    });
 };
 
 function renderMyServiceUI(data) {
     if(myPersonalTimer) clearInterval(myPersonalTimer);
+    
     let isEnService = data.status === 'en_service';
     let statusText = isEnService ? `<span class="status-badge status-en_service" style="font-size:1em;">🟢 EN SERVICE</span>` : `<span class="status-badge status-hors_service" style="font-size:1em;">⚪ HORS SERVICE</span>`;
     let buttonHtml = isEnService ? `<button class="btn-clock-out" onclick="toggleMyService('hors_service')">🔴 Terminer mon service</button>` : `<button class="btn-clock-in" onclick="toggleMyService('en_service')">🟢 Prendre mon service</button>`;
 
     document.getElementById("myServiceContainer").innerHTML = `
         <div class="pointage-card">
-            <h2 style="margin-top:0;">${data.name}</h2><p style="color:var(--subtext); margin-bottom: 20px;">${data.grade}</p>
+            <h2 style="margin-top:0;">${data.name}</h2>
+            <p style="color:var(--subtext); margin-bottom: 20px;">${data.grade}</p>
             <div style="margin-bottom: 30px;">${statusText}</div>
             <p style="color:var(--subtext); margin:0;">Temps de service total :</p>
-            <div id="my_live_clock" class="live-clock">0h 0m</div>${buttonHtml}
+            <div id="my_live_clock" class="live-clock">0h 0m</div>
+            ${buttonHtml}
         </div>`;
 
     let baseSeconds = data.totalServiceSeconds || 0;
+    
     const updateMyTimer = () => {
         let currentSecs = baseSeconds;
-        if (isEnService && data.currentServiceStart) currentSecs += Math.floor((Date.now() - data.currentServiceStart) / 1000);
-        if(document.getElementById("my_live_clock")) document.getElementById("my_live_clock").innerText = formatTime(currentSecs);
+        if (isEnService && data.currentServiceStart) {
+            currentSecs += Math.floor((Date.now() - data.currentServiceStart) / 1000);
+        }
+        if(document.getElementById("my_live_clock")) {
+            document.getElementById("my_live_clock").innerText = formatTime(currentSecs);
+        }
     };
+    
     updateMyTimer();
-    if (isEnService) myPersonalTimer = setInterval(updateMyTimer, 60000);
+    
+    if (isEnService) {
+        myPersonalTimer = setInterval(updateMyTimer, 60000);
+    }
 }
 
 window.toggleMyService = async function(newStatus) {
@@ -156,7 +300,7 @@ window.toggleMyService = async function(newStatus) {
         updates.totalServiceSeconds = (data.totalServiceSeconds || 0) + durationSecs;
         updates.currentServiceStart = null; 
         
-        // SAUVEGARDE DANS L'HISTORIQUE
+        // SAUVEGARDE HISTORIQUE (POINTEUSE)
         await addDoc(collection(db, "timelogs"), {
             employeeId: myEmployeeDocId,
             date: new Date().toLocaleDateString('fr-FR'),
@@ -168,40 +312,8 @@ window.toggleMyService = async function(newStatus) {
     await updateDoc(doc(db, "employees", myEmployeeDocId), updates);
 };
 
-/* --- DANS LA MODALE RH (HISTORIQUE) --- */
-window.openHrEmployeeModal = async function(id) {
-    const modal = document.getElementById("hrEmployeeModal");
-    modal.classList.remove("hidden");
-    const docSnap = await getDoc(doc(db, "employees", id));
-    const data = docSnap.data();
-    
-    document.getElementById("hre_id").value = id;
-    document.getElementById("hre_name").innerText = data.name;
-    document.getElementById("hre_email").value = data.email || ""; 
-    document.getElementById("hre_grade").innerText = data.grade;
-    document.getElementById("hre_phone").innerText = data.phone || "N/A";
-    document.getElementById("hre_salary").innerText = data.salary || "N/A";
-    document.getElementById("hre_date").innerText = data.hiredDate || "N/A";
-    document.getElementById("hre_status").value = data.status || "hors_service";
-    document.getElementById("hre_notes").value = data.hrNotes || "";
-    document.getElementById("hre_service_time").innerText = formatTime(data.totalServiceSeconds || 0);
 
-    // Charger l'historique de ce mec
-    const logSnap = await getDocs(query(collection(db, "timelogs"), where("employeeId", "==", id)));
-    let logHtml = "";
-    if(logSnap.empty) logHtml = "<p style='color:var(--subtext);'>Aucun pointage enregistré.</p>";
-    else {
-        logSnap.forEach(l => {
-            const d = l.data();
-            const startStr = new Date(d.startTime).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-            const endStr = new Date(d.endTime).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-            logHtml += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:5px 0;"><b>${d.date}</b> : De ${startStr} à ${endStr} <i>(+${d.durationText})</i></div>`;
-        });
-    }
-    document.getElementById("hre_timelogs").innerHTML = logHtml;
-};
-
-/* ==================== 2. DEMANDES & CONGES ==================== */
+/* ==================== 6. DEMANDES ET CONGÉS ==================== */
 window.submitRequest = async function() {
     const type = document.getElementById("reqType").value;
     const dates = document.getElementById("reqDates").value;
@@ -220,7 +332,8 @@ window.submitRequest = async function() {
             createdAt: new Date().toISOString()
         });
         msg.innerText = "✅ Demande envoyée !"; msg.style.color = "var(--success)";
-        document.getElementById("reqDates").value = ""; document.getElementById("reqMotif").value = "";
+        document.getElementById("reqDates").value = ""; 
+        document.getElementById("reqMotif").value = "";
     } catch(e) { msg.innerText = "Erreur."; }
 };
 
@@ -233,7 +346,7 @@ window.fetchRequests = function() {
             const data = docSnap.data();
             const dateStr = new Date(data.createdAt).toLocaleDateString('fr-FR');
             
-            // L'employé ne voit que ses demandes
+            // L'employé ne voit que ses propres demandes
             if(window.currentUserRole === 'employee' && data.employeeEmail !== window.currentUserEmail) return;
 
             let badge = `<span class="status-badge status-pending">⏳ En attente</span>`;
@@ -242,11 +355,17 @@ window.fetchRequests = function() {
 
             let actions = "-";
             if(data.status === 'pending' && (window.currentUserRole === 'admin' || window.currentUserRole === 'rh')) {
-                actions = `<button onclick="updateRequest('${docSnap.id}', 'approved', '${data.employeeEmail}', '${data.type}')" style="background:var(--success); padding:5px; width:auto; font-size:0.8em;">✔️</button>
-                           <button onclick="updateRequest('${docSnap.id}', 'rejected', null, null)" style="background:var(--error); padding:5px; width:auto; font-size:0.8em;">❌</button>`;
+                actions = `<button onclick="updateRequest('${docSnap.id}', 'approved', '${data.employeeEmail}', '${data.type}')" style="background:var(--success); padding:5px; width:auto; font-size:0.8em; margin-right:5px; color:white; border:none; border-radius:3px;">✔️</button>
+                           <button onclick="updateRequest('${docSnap.id}', 'rejected', null, null)" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">❌</button>`;
             }
 
-            html += `<tr><td>${dateStr}</td><td><b>${data.employeeName}</b></td><td><span style="color:var(--accent);">${data.type}</span><br><small>${data.dates}</small><br><i>"${data.motif}"</i></td><td>${badge}</td>${window.currentUserRole !== 'employee' ? `<td>${actions}</td>` : ''}</tr>`;
+            html += `<tr>
+                <td>${dateStr}</td>
+                <td><b>${data.employeeName}</b></td>
+                <td><span style="color:var(--accent); font-weight:bold;">${data.type}</span><br><small>${data.dates}</small><br><i>"${data.motif}"</i></td>
+                <td>${badge}</td>
+                ${window.currentUserRole !== 'employee' ? `<td>${actions}</td>` : ''}
+            </tr>`;
         });
         document.getElementById("requestsListBody").innerHTML = html || "<tr><td colspan='5'>Aucune demande.</td></tr>";
     });
@@ -254,7 +373,8 @@ window.fetchRequests = function() {
 
 window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
     await updateDoc(doc(db, "requests", reqId), { status: newStatus });
-    // Si approuvé et que c'est des congés, on passe le mec en vacances
+    
+    // Si approuvé et que c'est des congés, on met le dossier à jour
     if(newStatus === 'approved' && reqType === 'Congés Payés' && empEmail) {
         const snap = await getDocs(query(collection(db, "employees"), where("email", "==", empEmail)));
         if(!snap.empty) {
@@ -264,8 +384,10 @@ window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
     }
 };
 
-/* ==================== 3. MESSAGERIE (CHAT) ==================== */
+
+/* ==================== 7. MACHINE A CAFE (TCHAT) ==================== */
 let unsubChat = null;
+
 window.sendChatMessage = async function() {
     const input = document.getElementById("chatInput");
     const text = input.value.trim();
@@ -275,12 +397,15 @@ window.sendChatMessage = async function() {
             text: text,
             authorName: window.currentUserName,
             authorEmail: window.currentUserEmail,
-            createdAt: serverTimestamp() // Time server Firebase
+            createdAt: serverTimestamp() 
         });
         input.value = "";
     } catch(e) { alert("Erreur chat"); }
 };
-window.handleChatKeyPress = function(e) { if(e.key === 'Enter') sendChatMessage(); };
+
+window.handleChatKeyPress = function(e) { 
+    if(e.key === 'Enter') sendChatMessage(); 
+};
 
 window.fetchChatMessages = function() {
     if(unsubChat) return;
@@ -292,7 +417,10 @@ window.fetchChatMessages = function() {
             const isMine = data.authorEmail === window.currentUserEmail;
             const alignClass = isMine ? 'mine' : 'other';
             let timeStr = "";
-            if(data.createdAt) timeStr = new Date(data.createdAt.toMillis()).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+            
+            if(data.createdAt) {
+                timeStr = new Date(data.createdAt.toMillis()).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+            }
             
             html += `
             <div class="chat-row ${alignClass}">
@@ -305,17 +433,34 @@ window.fetchChatMessages = function() {
     });
 };
 
-/* ==================== FONCTIONS DE BASE ==================== */
+
+/* ==================== 8. RESSOURCES HUMAINES & DOSSIERS ==================== */
 window.postAnnouncement = async function() {
-    const title = document.getElementById("annTitle").value, content = document.getElementById("annContent").value;
+    const title = document.getElementById("annTitle").value;
+    const content = document.getElementById("annContent").value;
     if(!title || !content) return;
-    await addDoc(collection(db, "announcements"), { title, content, author: window.currentUserName, createdAt: new Date().toISOString() });
-    document.getElementById("annTitle").value = ""; document.getElementById("annContent").value = "";
+    await addDoc(collection(db, "announcements"), { 
+        title, content, author: window.currentUserName, createdAt: new Date().toISOString() 
+    });
+    document.getElementById("annTitle").value = ""; 
+    document.getElementById("annContent").value = "";
 };
+
 window.fetchAnnouncements = function() {
     onSnapshot(query(collection(db, "announcements"), orderBy("createdAt", "desc")), (snap) => {
         let html = "";
-        snap.forEach((d) => { html += `<div class="ann-card"><h4 class="ann-title">${d.data().title}</h4><p class="ann-content">${d.data().content}</p><div class="ann-footer"><span>Par ${d.data().author}</span>${window.currentUserRole === 'admin' ? `<span class="ann-delete" onclick="deleteDoc(doc(db, 'announcements', '${d.id}'))">❌</span>`:''}</div></div>`; });
+        snap.forEach((d) => { 
+            let deleteHTML = "";
+            if(window.currentUserRole === 'admin') {
+                deleteHTML = `<span class="ann-delete" onclick="deleteDoc(doc(db, 'announcements', '${d.id}'))">❌</span>`;
+            }
+            html += `
+            <div class="ann-card">
+                <h4 class="ann-title">${d.data().title}</h4>
+                <p class="ann-content">${d.data().content}</p>
+                <div class="ann-footer"><span>Par ${d.data().author}</span>${deleteHTML}</div>
+            </div>`; 
+        });
         if(document.getElementById("homeAnnouncementsGrid")) document.getElementById("homeAnnouncementsGrid").innerHTML = html;
     });
 };
@@ -326,16 +471,27 @@ window.closeHrEmployeeModal = () => document.getElementById("hrEmployeeModal").c
 
 window.saveNewEmployee = async function() {
     await addDoc(collection(db, "employees"), {
-        name: document.getElementById("ne_name").value, email: document.getElementById("ne_email").value,
-        grade: document.getElementById("ne_grade").value, phone: document.getElementById("ne_phone").value,
-        salary: document.getElementById("ne_salary").value, status: "hors_service", totalServiceSeconds: 0,
-        currentServiceStart: null, hiredDate: new Date().toISOString().split('T')[0], hrNotes: ""
+        name: document.getElementById("ne_name").value, 
+        email: document.getElementById("ne_email").value,
+        grade: document.getElementById("ne_grade").value, 
+        phone: document.getElementById("ne_phone").value,
+        salary: document.getElementById("ne_salary").value, 
+        status: "hors_service", 
+        totalServiceSeconds: 0,
+        currentServiceStart: null, 
+        hiredDate: new Date().toISOString().split('T')[0], 
+        hrNotes: ""
     });
     closeNewEmployeeModal();
+    document.getElementById("ne_name").value = ""; 
+    document.getElementById("ne_email").value = ""; 
+    document.getElementById("ne_grade").value = "";
 };
 
+let unsubscribeEmployees = null;
 window.fetchEmployees = function() {
-    onSnapshot(collection(db, "employees"), (snap) => {
+    if(unsubscribeEmployees) return;
+    unsubscribeEmployees = onSnapshot(collection(db, "employees"), (snap) => {
         let html = "";
         snap.forEach((d) => {
             const dt = d.data();
@@ -343,50 +499,186 @@ window.fetchEmployees = function() {
             if(dt.status === 'en_service') b = `<span class="status-badge status-en_service">🟢 En service</span>`;
             if(dt.status === 'absent') b = `<span class="status-badge status-absent">🔴 Absent</span>`;
             if(dt.status === 'vacation') b = `<span class="status-badge status-vacation">🟠 Congés</span>`;
-            html += `<tr><td>${b}</td><td><span class="clickable-name" onclick="window.openHrEmployeeModal('${d.id}')">${dt.name}</span></td><td><span style="color:#facc15;">${dt.grade}</span></td><td>${dt.phone}</td></tr>`;
+            
+            html += `<tr>
+                <td>${b}</td>
+                <td><span class="clickable-name" onclick="window.openHrEmployeeModal('${d.id}')">${dt.name}</span></td>
+                <td><span style="color:#facc15;">${dt.grade}</span></td>
+                <td>${dt.phone}</td>
+            </tr>`;
         });
-        if(document.getElementById("employeeListBody")) document.getElementById("employeeListBody").innerHTML = html;
+        if(document.getElementById("employeeListBody")) document.getElementById("employeeListBody").innerHTML = html || "<tr><td colspan='4'>Aucun dossier.</td></tr>";
     });
+};
+
+window.openHrEmployeeModal = async function(id) {
+    const modal = document.getElementById("hrEmployeeModal");
+    modal.classList.remove("hidden");
+    const docSnap = await getDoc(doc(db, "employees", id));
+    const data = docSnap.data();
+    
+    document.getElementById("hre_id").value = id;
+    document.getElementById("hre_name").innerText = data.name;
+    document.getElementById("hre_email").value = data.email || ""; 
+    document.getElementById("hre_grade").innerText = data.grade;
+    document.getElementById("hre_phone").innerText = data.phone || "N/A";
+    document.getElementById("hre_salary").innerText = data.salary || "N/A";
+    document.getElementById("hre_date").innerText = data.hiredDate || "N/A";
+    document.getElementById("hre_status").value = data.status || "hors_service";
+    document.getElementById("hre_notes").value = data.hrNotes || "";
+    document.getElementById("hre_service_time").innerText = formatTime(data.totalServiceSeconds || 0);
+
+    // CHARGEMENT DE L'HISTORIQUE DE CE MEC
+    const logSnap = await getDocs(query(collection(db, "timelogs"), where("employeeId", "==", id)));
+    let logHtml = "";
+    if(logSnap.empty) {
+        logHtml = "<p style='color:var(--subtext);'>Aucun pointage enregistré.</p>";
+    } else {
+        logSnap.forEach(l => {
+            const d = l.data();
+            const startStr = new Date(d.startTime).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+            const endStr = new Date(d.endTime).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+            logHtml += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:5px 0;"><b>${d.date}</b> : De ${startStr} à ${endStr} <i style="color:var(--accent);"> (+${d.durationText})</i></div>`;
+        });
+    }
+    document.getElementById("hre_timelogs").innerHTML = logHtml;
 };
 
 window.updateEmployeeDossier = async function() {
     await updateDoc(doc(db, "employees", document.getElementById("hre_id").value), {
-        status: document.getElementById("hre_status").value, email: document.getElementById("hre_email").value, hrNotes: document.getElementById("hre_notes").value
+        status: document.getElementById("hre_status").value, 
+        email: document.getElementById("hre_email").value, 
+        hrNotes: document.getElementById("hre_notes").value
     });
     closeHrEmployeeModal();
 };
-window.deleteEmployeeDossier = async function() { if(confirm("Virer ?")) { await deleteDoc(doc(db, "employees", document.getElementById("hre_id").value)); closeHrEmployeeModal(); } };
-window.searchRH = () => { /* Raccourci pour gagner de la place */ const f = document.getElementById("rhSearch").value.toUpperCase(); const tr = document.getElementById("rhTable").getElementsByTagName("tr"); for(let i=1; i<tr.length; i++) { tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; } };
 
-window.createNewUser = async function() {
-    const sApp = initializeApp(firebaseConfig, "Sec"); const sAuth = getAuth(sApp);
-    const c = await createUserWithEmailAndPassword(sAuth, document.getElementById("newEmail").value, document.getElementById("newPassword").value);
-    await setDoc(doc(db, "users", c.user.uid), { email: c.user.email, role: document.getElementById("newRole").value, createdAt: new Date().toISOString().split('T')[0] });
-    await signOut(sAuth); document.getElementById("userMsg").innerText = "✅";
+window.deleteEmployeeDossier = async function() { 
+    if(confirm("Virer ?")) { 
+        await deleteDoc(doc(db, "employees", document.getElementById("hre_id").value)); 
+        closeHrEmployeeModal(); 
+    } 
 };
 
-window.fetchUsers = () => {
-    onSnapshot(collection(db, "users"), (s) => {
-        let h=""; s.forEach(d => {
-            const r = d.data().role; const uid=d.id;
-            h += `<tr><td><div onclick="window.openUserProfile('${uid}')" class="clickable-name">${d.data().displayName||"Sans nom"}</div><small>${d.data().email}</small></td>
-            <td><select onchange="updateDoc(doc(db,'users','${uid}'),{role:this.value})"><option value="guest" ${r=='guest'?'selected':''}>Aucun</option><option value="employee" ${r=='employee'?'selected':''}>Employé</option><option value="admin" ${r=='admin'?'selected':''}>Admin</option></select></td>
-            <td>${d.data().createdAt||"-"}</td><td><button onclick="if(confirm('Exclure?')) deleteDoc(doc(db,'users','${uid}'))">🗑️</button></td></tr>`;
+window.searchRH = () => { 
+    const f = document.getElementById("rhSearch").value.toUpperCase(); 
+    const tr = document.getElementById("rhTable").getElementsByTagName("tr"); 
+    for(let i=1; i<tr.length; i++) { 
+        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
+    } 
+};
+
+
+/* ==================== 9. AUTRES (DOCS / COMPTA / PARAMETRES) ==================== */
+let unsubscribeDocs = null;
+window.createAdminDoc = async function() {
+    const title = document.getElementById("docTitle").value;
+    const content = document.getElementById("docContent").value;
+    if(!title || !content) return;
+    try {
+        await addDoc(collection(db, "admin_docs"), { title: title, content: content, createdAt: new Date().toISOString() });
+        document.getElementById("docMsg").innerText = "✅ Sauvegardé !"; 
+        document.getElementById("docTitle").value = ""; 
+        document.getElementById("docContent").value = "";
+    } catch(e) {}
+};
+
+window.fetchAdminDocs = function() {
+    const container = document.getElementById("docsGrid");
+    if(!container || unsubscribeDocs) return; 
+    unsubscribeDocs = onSnapshot(query(collection(db, "admin_docs"), orderBy("createdAt", "desc")), (snapshot) => {
+        let html = "";
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            html += `
+            <div class="doc-card">
+                <div class="doc-icon">📁</div>
+                <h4>${data.title}</h4>
+                <p>${data.content}</p>
+                <button onclick="deleteDoc(doc(db,'admin_docs','${docSnap.id}'))" class="delete-doc-btn">Supprimer</button>
+            </div>`;
         });
-        if(document.getElementById("userListBody")) document.getElementById("userListBody").innerHTML = h;
+        container.innerHTML = html || "<p>Aucun document.</p>";
     });
 };
 
-window.openUserProfile = async (uid) => { document.getElementById("profileModal").classList.remove("hidden"); const d = await getDoc(doc(db, "users", uid)); if(d.exists()) { document.getElementById("m_name").innerText = d.data().displayName||"Sans nom"; document.getElementById("m_email").innerText = d.data().email; document.getElementById("m_role").innerText = d.data().role; } };
-window.closeUserProfile = () => document.getElementById("profileModal").classList.add("hidden");
+window.toggleTheme = () => { 
+    document.body.classList.toggle('light-mode'); 
+    const isL = document.body.classList.contains('light-mode'); 
+    localStorage.setItem('theme', isL ? 'light' : 'dark'); 
+    document.getElementById('themeBtn').innerText = isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"; 
+};
 
-window.createAdminDoc = async () => { await addDoc(collection(db, "admin_docs"), { title: document.getElementById("docTitle").value, content: document.getElementById("docContent").value, createdAt: new Date().toISOString()}); document.getElementById("docTitle").value=""; document.getElementById("docContent").value=""; };
-window.fetchAdminDocs = () => { onSnapshot(query(collection(db, "admin_docs"), orderBy("createdAt", "desc")), (s) => { let h=""; s.forEach(d => h+=`<div class="doc-card"><h4>${d.data().title}</h4><p>${d.data().content}</p><button onclick="deleteDoc(doc(db,'admin_docs','${d.id}'))" class="delete-doc-btn">Supprimer</button></div>`); if(document.getElementById("docsGrid")) document.getElementById("docsGrid").innerHTML = h; }); };
+window.saveProfileSettings = async () => { 
+    const newName = document.getElementById("settingsDisplayName").value;
+    const newPhotoURL = document.getElementById("settingsPhotoURL").value;
+    const user = auth.currentUser;
+    if (!user || !newName) return;
+    try {
+        await setDoc(doc(db, "users", user.uid), { displayName: newName, photoURL: newPhotoURL || "" }, { merge: true });
+        document.getElementById("settingsMsg").innerText = "✅ Sauvegardé !"; 
+        document.getElementById("sidebarUserName").innerText = newName;
+    } catch (error) {}
+};
 
-window.toggleTheme = () => { document.body.classList.toggle('light-mode'); const isL = document.body.classList.contains('light-mode'); localStorage.setItem('theme', isL ? 'light' : 'dark'); document.getElementById('themeBtn').innerText = isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"; };
-window.saveProfileSettings = async () => { await setDoc(doc(db, "users", auth.currentUser.uid), { displayName: document.getElementById("settingsDisplayName").value, photoURL: document.getElementById("settingsPhotoURL").value }, { merge: true }); alert("Sauvegardé!"); };
-window.deleteMyAccount = async () => { if(confirm("Sûr ?")) { await deleteDoc(doc(db, "users", auth.currentUser.uid)); await deleteUser(auth.currentUser); window.location.reload(); } };
-window.updateDashboardStats = async () => { setInterval(() => { document.getElementById("statDate").innerText = new Date().toLocaleDateString('fr-FR'); document.getElementById("statTime").innerText = new Date().toLocaleTimeString('fr-FR'); }, 1000); };
-window.toggleCompta = (m) => { document.getElementById("sheetFrame").classList.toggle("hidden", m!=='iframe'); document.getElementById("nativeTableContainer").classList.toggle("hidden", m==='iframe'); if(m!=='iframe') window.loadSheetData(); };
-window.loadSheetData = async () => { try { const r = await fetch(SHEET_CSV_URL); const t = await r.text(); let rows = t.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c=>c.replace(/^"|"$/g,'').trim())); let html="<thead><tr>"; rows[0].forEach(c=>html+=`<th>${c}</th>`); html+="</tr></thead><tbody>"; for(let i=1;i<rows.length;i++){ if(rows[i].length>1){ html+="<tr>"; rows[0].forEach((_,j)=>html+=`<td>${rows[i][j]||""}</td>`); html+="</tr>"; } } document.getElementById("sheetTable").innerHTML = html+"</tbody>"; } catch(e){} };
-window.searchTable = () => { const f = document.getElementById("tableSearch").value.toUpperCase(); const tr = document.getElementById("sheetTable").getElementsByTagName("tr"); for(let i=1; i<tr.length; i++){ tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td=>td.textContent.toUpperCase().includes(f)) ? "" : "none"; } };
+window.deleteMyAccount = async () => { 
+    const user = auth.currentUser;
+    if (!user) return;
+    if (!confirm("⚠️ DÉFINITIF.\nVeux-tu continuer ?") || !confirm("Vraiment sûr ?")) return;
+    try { 
+        await deleteDoc(doc(db, "users", user.uid)); 
+        await deleteUser(user); 
+        window.location.reload(); 
+    } catch (error) { 
+        if (error.code === 'auth/requires-recent-login') { 
+            alert("🔒 Reconnecte-toi d'abord."); 
+            await signOut(auth); 
+        } 
+    }
+};
+
+window.updateDashboardStats = async () => { 
+    setInterval(() => { 
+        document.getElementById("statDate").innerText = new Date().toLocaleDateString('fr-FR'); 
+        document.getElementById("statTime").innerText = new Date().toLocaleTimeString('fr-FR'); 
+    }, 1000);
+    try {
+        const snapEmp = await getDocs(collection(db, "employees"));
+        document.getElementById("statEmployees").innerText = snapEmp.size;
+        const snapUsers = await getDocs(collection(db, "users"));
+        document.getElementById("statUsers").innerText = snapUsers.size;
+    } catch (e) { }
+};
+
+window.toggleCompta = (m) => { 
+    document.getElementById("sheetFrame").classList.toggle("hidden", m!=='iframe'); 
+    document.getElementById("nativeTableContainer").classList.toggle("hidden", m==='iframe'); 
+    if(m!=='iframe') window.loadSheetData(); 
+};
+
+window.loadSheetData = async () => { 
+    try { 
+        const r = await fetch(SHEET_CSV_URL); 
+        const t = await r.text(); 
+        let rows = t.split(/\r?\n/).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c=>c.replace(/^"|"$/g,'').trim())); 
+        let html="<thead><tr>"; 
+        rows[0].forEach(c=>html+=`<th>${c}</th>`); 
+        html+="</tr></thead><tbody>"; 
+        for(let i=1;i<rows.length;i++){ 
+            if(rows[i].length>1){ 
+                html+="<tr>"; 
+                rows[0].forEach((_,j)=>html+=`<td>${rows[i][j]||""}</td>`); 
+                html+="</tr>"; 
+            } 
+        } 
+        document.getElementById("sheetTable").innerHTML = html+"</tbody>"; 
+    } catch(e){} 
+};
+
+window.searchTable = () => { 
+    const f = document.getElementById("tableSearch").value.toUpperCase(); 
+    const tr = document.getElementById("sheetTable").getElementsByTagName("tr"); 
+    for(let i=1; i<tr.length; i++){ 
+        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td=>td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
+    } 
+};
