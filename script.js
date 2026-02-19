@@ -222,7 +222,7 @@ window.deleteAnnouncement = async function(id) {
 
 /* ==================== RESSOURCES HUMAINES (POINTEUSE) ==================== */
 let unsubscribeEmployees = null;
-let liveServiceTimer = null; // Pour actualiser l'horloge en live
+let liveServiceTimer = null; 
 
 window.openNewEmployeeModal = function() { document.getElementById("newEmployeeModal").classList.remove("hidden"); };
 window.closeNewEmployeeModal = function() { document.getElementById("newEmployeeModal").classList.add("hidden"); };
@@ -243,9 +243,9 @@ window.saveNewEmployee = async function() {
             grade: grade,
             phone: phone || "Non renseigné",
             salary: salary || "Non défini",
-            status: "hors_service", // NOUVEAU: Par défaut, hors service
-            totalServiceSeconds: 0, // NOUVEAU: Compteur de temps
-            currentServiceStart: null, // NOUVEAU: Timestamp de début de service
+            status: "hors_service", 
+            totalServiceSeconds: 0, 
+            currentServiceStart: null, 
             hiredDate: new Date().toISOString().split('T')[0],
             hrNotes: ""
         });
@@ -269,7 +269,6 @@ window.fetchEmployees = function() {
             const data = docSnap.data();
             const id = docSnap.id;
             
-            // Affichage du statut
             let badgeHtml = "";
             if(data.status === 'en_service') badgeHtml = `<span class="status-badge status-en_service">🟢 En service</span>`;
             else if(data.status === 'absent') badgeHtml = `<span class="status-badge status-absent">🔴 Absent/Malade</span>`;
@@ -287,7 +286,6 @@ window.fetchEmployees = function() {
     });
 };
 
-/* --- FONCTION POUR FORMATER LE TEMPS --- */
 function formatTime(totalSeconds) {
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -298,7 +296,6 @@ window.openHrEmployeeModal = async function(id) {
     const modal = document.getElementById("hrEmployeeModal");
     if(!modal) return;
     
-    // Nettoyer l'ancien timer si on l'avait ouvert sur un autre
     if(liveServiceTimer) clearInterval(liveServiceTimer);
 
     document.getElementById("hre_name").innerText = "Chargement...";
@@ -318,7 +315,6 @@ window.openHrEmployeeModal = async function(id) {
             document.getElementById("hre_status").value = data.status || "hors_service";
             document.getElementById("hre_notes").value = data.hrNotes || "";
 
-            // --- GESTION DE LA POINTEUSE (LECTURE) ---
             document.getElementById("hre_old_status").value = data.status || "hors_service";
             document.getElementById("hre_total_seconds").value = data.totalServiceSeconds || 0;
             document.getElementById("hre_current_start").value = data.currentServiceStart || "";
@@ -326,20 +322,16 @@ window.openHrEmployeeModal = async function(id) {
             let baseSeconds = data.totalServiceSeconds || 0;
             let startTimestamp = data.currentServiceStart;
 
-            // Fonction pour mettre à jour l'affichage en live
             const updateTimerDisplay = () => {
                 let currentSeconds = baseSeconds;
                 if (data.status === 'en_service' && startTimestamp) {
-                    // Ajoute le temps écoulé depuis le début de son service
                     currentSeconds += Math.floor((Date.now() - startTimestamp) / 1000);
                 }
                 document.getElementById("hre_service_time").innerText = formatTime(currentSeconds);
             };
 
-            // Appel immédiat
             updateTimerDisplay();
             
-            // Si le gars est en service, on actualise l'horloge toutes les minutes
             if (data.status === 'en_service') {
                 liveServiceTimer = setInterval(updateTimerDisplay, 60000);
             }
@@ -366,18 +358,15 @@ window.updateEmployeeDossier = async function() {
         hrNotes: newNotes
     };
 
-    // --- LOGIQUE DE CALCUL DU TEMPS (LE CERVEAU) ---
     if (oldStatus !== 'en_service' && newStatus === 'en_service') {
-        // Le mec commence son service ! On déclenche le chrono.
         updates.currentServiceStart = Date.now();
     } 
     else if (oldStatus === 'en_service' && newStatus !== 'en_service') {
-        // Le mec termine son service ! On coupe le chrono et on additionne.
         if (currentStart) {
             const timeDiffSeconds = Math.floor((Date.now() - parseInt(currentStart)) / 1000);
             updates.totalServiceSeconds = totalSeconds + timeDiffSeconds;
         }
-        updates.currentServiceStart = null; // Remise à zéro du départ
+        updates.currentServiceStart = null; 
     }
     
     try {
@@ -581,7 +570,7 @@ window.updateDashboardStats = async function() {
     } catch (e) { }
 };
 
-/* COMPTA (Inchangée) */
+/* COMPTA */
 window.toggleCompta = function(mode) {
   const frame = document.getElementById("sheetFrame");
   const table = document.getElementById("nativeTableContainer");
