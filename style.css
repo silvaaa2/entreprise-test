@@ -55,7 +55,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 10px;
 }
-/* Style de la scrollbar pour qu'elle soit propre */
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--subtext); }
@@ -355,7 +355,7 @@ button:hover {
   color: var(--accent); 
   border-bottom: 2px solid var(--accent); 
   white-space: nowrap; 
-  position: sticky; /* L'en-tête reste en haut au scroll */
+  position: sticky; 
   top: 0;
   z-index: 10;
 }
@@ -752,7 +752,7 @@ button:hover {
 .status-vacation { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
 .status-pending { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.3); }
 
-/* NOUVEAU : BADGES SANCTIONS */
+/* BADGES SANCTIONS */
 .badge-avert-verbal { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
 .badge-avert-ecrit { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
 .badge-mise-pied { background: rgba(185, 28, 28, 0.2); color: #fca5a5; border: 1px solid #b91c1c; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
