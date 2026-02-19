@@ -100,6 +100,18 @@ body {
   color: var(--accent); 
 }
 
+.forgot-pw {
+  color: var(--accent);
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.forgot-pw:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
+}
+
 /* ==================== BOUTONS ==================== */
 button { 
   width: 100%; 
