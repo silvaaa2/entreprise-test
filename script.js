@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, addDoc, deleteDoc, updateDoc, collection, getDocs, query, where, onSnapshot, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 /* ==================== 1. CONFIGURATION FIREBASE ==================== */
@@ -55,8 +55,37 @@ window.login = async function() {
     try { 
         await signInWithEmailAndPassword(auth, emailInput, passwordInput); 
     } catch(e) { 
-        if(errorMsg) errorMsg.innerText = "❌ Erreur de connexion";
+        if(errorMsg) {
+            errorMsg.innerText = "❌ Erreur de connexion";
+            errorMsg.style.color = "var(--error)";
+        }
     } 
+};
+
+window.resetPassword = async function() {
+    const emailInput = document.getElementById("email").value;
+    const errorMsg = document.getElementById("error");
+    
+    if(!emailInput) {
+        if(errorMsg) { 
+            errorMsg.innerText = "⚠️ Tape ton email d'abord, puis clique ici !"; 
+            errorMsg.style.color = "var(--warning)"; 
+        }
+        return;
+    }
+    
+    try {
+        await sendPasswordResetEmail(auth, emailInput);
+        if(errorMsg) { 
+            errorMsg.innerText = "✅ Lien envoyé ! Vérifie tes spams."; 
+            errorMsg.style.color = "var(--success)"; 
+        }
+    } catch(e) {
+        if(errorMsg) { 
+            errorMsg.innerText = "❌ Email introuvable ou erreur."; 
+            errorMsg.style.color = "var(--error)"; 
+        }
+    }
 };
 
 window.loginWithGoogle = async function() { 
@@ -87,7 +116,6 @@ window.showSection = function(id) {
     if(id === 'requests') { window.fetchRequests(); }
     if(id === 'chat') { 
         window.fetchChatMessages(); 
-        // Si on ouvre le chat, on cache la notif
         const badgeChat = document.getElementById("badgeChat");
         if(badgeChat) badgeChat.classList.add("hidden");
     }
@@ -112,13 +140,11 @@ async function loadUserProfile(user) {
         const docRef = doc(db, "users", user.uid);
         let docSnap = await getDoc(docRef);
 
-        // Forcer le Super Admin
         if (user.email === SUPER_ADMIN && (!docSnap.exists() || docSnap.data().role !== 'admin')) {
             await setDoc(docRef, { email: user.email, role: 'admin', displayName: "Le Boss", photoURL: "", createdAt: new Date().toISOString().split('T')[0] }, { merge: true });
             location.reload(); return;
         }
 
-        // Fusionner si connexion Google
         if (!docSnap.exists()) {
             const q = await getDocs(query(collection(db, "users"), where("email", "==", user.email)));
             if (!q.empty) {
@@ -140,8 +166,6 @@ async function loadUserProfile(user) {
         window.currentUserEmail = data.email;
         
         applyPermissions(data.role);
-        
-        // NOUVEAU : On lance le système de notifications
         listenForNotifications();
         
     } catch (e) { console.error(e); }
@@ -184,7 +208,6 @@ let unsubNotifs = null;
 function listenForNotifications() {
     if(unsubNotifs) unsubNotifs();
     
-    // Uniquement Admin et RH voient les demandes en attente
     if(window.currentUserRole === 'admin' || window.currentUserRole === 'rh') {
         unsubNotifs = onSnapshot(query(collection(db, "requests"), where("status", "==", "pending")), (snap) => {
             const count = snap.size;
@@ -493,7 +516,6 @@ window.fetchChatMessages = function() {
         container.innerHTML = html;
         container.scrollTop = container.scrollHeight; 
 
-        // GESTION DU BADGE DE NOTIFICATION TCHAT
         const chatSection = document.getElementById('chat');
         const badgeChat = document.getElementById('badgeChat');
         if(!isFirstChatLoad && chatSection && !chatSection.classList.contains('active')) {
