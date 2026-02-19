@@ -1,29 +1,13 @@
 :root {
-  --bg: #05070a;
-  --panel: #0f172a;
-  --text: #e2e8f0;
-  --subtext: #94a3b8;
-  --border: rgba(255, 255, 255, 0.1);
-  --input-bg: transparent;
-  --input-border: #334155;
-  --hover-bg: rgba(255, 255, 255, 0.05);
-  --accent: #3b82f6;
-  --accent-hover: #60a5fa;
-  --glow: rgba(59, 130, 246, 0.5);
-  --error: #ef4444;
-  --success: #10b981;
-  --warning: #f59e0b;
+  --bg: #05070a; --panel: #0f172a; --text: #e2e8f0; --subtext: #94a3b8;
+  --border: rgba(255, 255, 255, 0.1); --input-bg: transparent; --input-border: #334155; --hover-bg: rgba(255, 255, 255, 0.05);
+  --accent: #3b82f6; --accent-hover: #60a5fa; --glow: rgba(59, 130, 246, 0.5);
+  --error: #ef4444; --success: #10b981; --warning: #f59e0b;
 }
 
 body.light-mode {
-  --bg: #f1f5f9;         
-  --panel: #ffffff;      
-  --text: #0f172a;       
-  --subtext: #64748b;    
-  --border: #cbd5e1;     
-  --input-bg: #f8fafc;   
-  --input-border: #cbd5e1;
-  --hover-bg: #e2e8f0;
+  --bg: #f1f5f9; --panel: #ffffff; --text: #0f172a; --subtext: #64748b;
+  --border: #cbd5e1; --input-bg: #f8fafc; --input-border: #cbd5e1; --hover-bg: #e2e8f0;
   --glow: rgba(59, 130, 246, 0.2); 
 }
 
@@ -75,7 +59,6 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .search-container { margin-bottom: 15px; }
 #tableSearch, #rhSearch { width: 100%; padding: 15px; font-size: 16px; background-color: var(--panel); border: 1px solid var(--border); border-radius: 8px; color: var(--text); outline: none; transition: all 0.3s ease; }
 #tableSearch:focus, #rhSearch:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--glow); background-color: var(--input-bg); }
-#tableSearch::placeholder, #rhSearch::placeholder { color: var(--subtext); }
 
 .home-header { margin-bottom: 30px; }
 .home-header h1 { font-size: 2.5em; margin: 0; background: linear-gradient(90deg, var(--text), var(--subtext)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -86,12 +69,9 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .stat-card .icon { font-size: 3em; margin-right: 20px; background: var(--hover-bg); width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; border-radius: 15px; }
 .stat-card .info h3 { margin: 0; font-size: 1em; color: var(--subtext); font-weight: normal; }
 .stat-card .info p { margin: 5px 0 0 0; font-size: 1.8em; font-weight: bold; color: var(--text); }
-.card-rh { border-bottom: 4px solid #facc15; }
-.card-rh .icon { color: #facc15; }
-.card-users { border-bottom: 4px solid var(--accent); }
-.card-users .icon { color: var(--accent); }
-.card-time { border-bottom: 4px solid #a855f7; }
-.card-time .icon { color: #a855f7; }
+.card-rh { border-bottom: 4px solid #facc15; } .card-rh .icon { color: #facc15; }
+.card-users { border-bottom: 4px solid var(--accent); } .card-users .icon { color: var(--accent); }
+.card-time { border-bottom: 4px solid #a855f7; } .card-time .icon { color: #a855f7; }
 
 .google-btn { background: white !important; color: #1e293b !important; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; margin-top: 10px; border: 1px solid #cbd5e1; }
 .google-btn:hover { background: #f1f5f9 !important; transform: translateY(-2px); }
@@ -141,14 +121,30 @@ button:hover { background: var(--accent-hover); box-shadow: 0 0 20px var(--glow)
 .status-hors_service { background: rgba(148, 163, 184, 0.1); color: var(--subtext); border: 1px solid var(--border); }
 .status-absent { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
 .status-vacation { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+.status-pending { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.3); }
 
 .clickable-name { font-weight: bold; color: var(--accent); cursor: pointer; text-decoration: none; }
 .clickable-name:hover { text-decoration: underline; }
 
-/* BOUTONS POINTAGE EMPLOYE */
 .pointage-card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 .btn-clock-in { background: var(--success); font-size: 1.2em; padding: 20px; border-radius: 15px; margin-top: 20px; }
 .btn-clock-in:hover { background: #059669; box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); }
 .btn-clock-out { background: transparent; border: 2px solid var(--error); color: var(--error); font-size: 1.2em; padding: 20px; border-radius: 15px; margin-top: 20px; }
 .btn-clock-out:hover { background: var(--error); color: white; box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); }
 .live-clock { font-size: 3em; font-family: monospace; color: var(--accent); font-weight: bold; margin: 20px 0; text-shadow: 0 0 15px var(--glow); }
+
+/* --- TCHAT CSS --- */
+.chat-container { display: flex; flex-direction: column; height: 600px; background: var(--panel); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
+.chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: var(--bg); }
+.chat-input-area { padding: 15px; background: var(--panel); border-top: 1px solid var(--border); display: flex; gap: 10px; }
+.chat-input-area input { flex: 1; padding: 15px; border-radius: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text); outline: none; }
+.chat-input-area input:focus { border-color: var(--accent); }
+
+.chat-bubble { max-width: 70%; padding: 12px 18px; border-radius: 15px; position: relative; font-size: 0.95em; line-height: 1.4; }
+.chat-meta { font-size: 0.75em; color: var(--subtext); margin-bottom: 5px; }
+.chat-row { display: flex; width: 100%; flex-direction: column; }
+.chat-row.mine { align-items: flex-end; }
+.chat-row.other { align-items: flex-start; }
+.chat-row.mine .chat-bubble { background: var(--accent); color: white; border-bottom-right-radius: 2px; }
+.chat-row.other .chat-bubble { background: var(--panel); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 2px; }
+.chat-row.mine .chat-meta { text-align: right; }
