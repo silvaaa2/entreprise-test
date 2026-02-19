@@ -348,8 +348,7 @@
 <div id="newEmployeeModal" class="modal hidden">
   <div class="modal-content" style="width: 500px; text-align: left;">
     <span class="close-btn" onclick="closeNewEmployeeModal()">&times;</span>
-    <h2 style="margin-top:0;">📝 Nouveau Dossier Employé</h2>
-    
+    <h2 style="margin-top:0;">📝 Nouveau Dossier</h2>
     <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
         <div class="input-group"><input id="ne_name" type="text" required><label>Nom & Prénom</label></div>
         <div class="input-group"><input id="ne_email" type="email" required><label>Email (Pour relier le compte)</label></div>
@@ -357,7 +356,6 @@
         <div class="input-group"><input id="ne_phone" type="text" required><label>Téléphone</label></div>
         <div class="input-group" style="grid-column: span 2;"><input id="ne_salary" type="text" required><label>Salaire</label></div>
     </div>
-    
     <button onclick="saveNewEmployee()">Créer le dossier</button>
     <p id="ne_msg" style="text-align:center; font-weight:bold;"></p>
   </div>
@@ -386,20 +384,19 @@
     <input type="hidden" id="hre_id">
     <input type="hidden" id="hre_old_status">
     <input type="hidden" id="hre_current_start">
-    <input type="hidden" id="hre_total_seconds">
+    <input type="hidden" id="hre_weekly_seconds">
 
     <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
         <div class="input-group" style="grid-column: span 2; margin-bottom:10px;">
             <input id="hre_email" type="email" required>
             <label>Email de l'employé (Liaison Compte)</label>
         </div>
-        
         <div class="info-row" style="border:none;"><span class="label">Téléphone:</span><span id="hre_phone" class="value">...</span></div>
         <div class="info-row" style="border:none;"><span class="label">Salaire:</span><span id="hre_salary" class="value">...</span></div>
         <div class="info-row" style="border:none; grid-column: span 2;"><span class="label">Embauché le:</span><span id="hre_date" class="value">...</span></div>
 
         <div class="info-row" style="border:none; grid-column: span 2; background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px;">
-            <span class="label">⏱️ Temps total de service :</span>
+            <span class="label">⏱️ Temps de la semaine :</span>
             <span id="hre_service_time" class="value" style="color:var(--accent); font-size: 1.2em;">0h 0m</span>
         </div>
     </div>
@@ -407,17 +404,17 @@
     <div style="margin-top: 20px;">
         <h3 style="color:var(--text); font-size:1.1em; border-bottom: 1px solid var(--border); padding-bottom:5px;">📅 Historique des Sessions</h3>
         <div id="hre_timelogs" style="max-height: 120px; overflow-y: auto; font-size: 0.85em; background: var(--hover-bg); padding: 10px; border-radius: 8px;">
-            <p style="color:var(--subtext); margin:0;">Chargement de l'historique...</p>
+            <p style="color:var(--subtext); margin:0;">Chargement...</p>
         </div>
     </div>
 
     <div style="margin-top: 20px;">
-        <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH (Confidentiel)</h3>
-        <textarea id="hre_notes" class="cyber-textarea" style="height: 80px;" placeholder="Écrire une note secrète..."></textarea>
+        <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH</h3>
+        <textarea id="hre_notes" class="cyber-textarea" style="height: 80px;"></textarea>
     </div>
-
+    
     <div style="display:flex; gap:10px; margin-top:20px;">
-        <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer les modifs</button>
+        <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer</button>
         <button onclick="deleteEmployeeDossier()" style="flex:1; background:transparent; border:1px solid var(--error); color:var(--error);">🗑️ Virer</button>
     </div>
   </div>
