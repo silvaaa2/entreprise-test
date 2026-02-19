@@ -114,7 +114,7 @@ function applyPermissions(role) {
 
     if(role === 'admin') {
         menusToHide.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = ""; });
-        document.getElementById("employeeRequestBox").style.display = "none"; // Admin ne fait pas de demande de congés
+        document.getElementById("employeeRequestBox").style.display = "none"; 
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
     } 
     else if(role === 'employee') {
@@ -163,16 +163,16 @@ window.createNewUser = async function() {
 window.fetchUsers = function() {
   const tbody = document.getElementById("userListBody");
   if(!tbody || unsubscribeUsers) return;
-  
+
   tbody.innerHTML = "<tr><td colspan='4'>Chargement... 📡</td></tr>";
-  
+
   unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
       let html = "";
       snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const uid = docSnap.id;
           const r = data.role;
-          
+
           const roleSelect = `
             <select onchange="window.updateUserRole('${uid}', this.value)" style="background:var(--panel); color:var(--text); border:1px solid var(--border); padding:5px; border-radius:5px;">
                 <option value="guest" ${(!r || r === 'guest') ? 'selected' : ''}>⛔ Aucun accès</option>
@@ -181,7 +181,7 @@ window.fetchUsers = function() {
                 <option value="compta" ${r === 'compta' ? 'selected' : ''}>📊 Compta</option>
                 <option value="admin" ${r === 'admin' ? 'selected' : ''}>👑 Admin</option>
             </select>`;
-            
+
           html += `<tr>
             <td>
                 <div onclick="window.openUserProfile('${uid}')" class="clickable-name">${data.displayName || "Sans nom"}</div>
@@ -374,8 +374,8 @@ window.fetchRequests = function() {
 window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
     await updateDoc(doc(db, "requests", reqId), { status: newStatus });
     
-    // Si approuvé et que c'est des congés, on met le dossier à jour
-    if(newStatus === 'approved' && reqType === 'Congés Payés' && empEmail) {
+    // Si approuvé et que c'est des vacances, on met le dossier à jour
+    if(newStatus === 'approved' && reqType === 'Vacances' && empEmail) {
         const snap = await getDocs(query(collection(db, "employees"), where("email", "==", empEmail)));
         if(!snap.empty) {
             await updateDoc(doc(db, "employees", snap.docs[0].id), { status: 'vacation' });
