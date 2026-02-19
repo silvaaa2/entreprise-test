@@ -184,12 +184,26 @@ button:hover {
   color: var(--subtext); 
   text-align: left; 
   margin-bottom: 10px; 
+  position: relative; /* Pour positionner les badges si besoin */
 }
 
 .sidebar button:hover { 
   background: var(--hover-bg); 
   color: var(--text); 
   transform: translateX(5px); 
+}
+
+/* BADGES NOTIFICATIONS MENU */
+.nav-badge {
+  background: var(--error);
+  color: white;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 0.75em;
+  font-weight: bold;
+  margin-left: 5px;
+  box-shadow: 0 0 8px var(--error);
+  vertical-align: middle;
 }
 
 .content { 
