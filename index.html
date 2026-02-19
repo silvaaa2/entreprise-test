@@ -49,7 +49,6 @@
     <div class="spacer"></div>
 
     <button onclick="toggleTheme()" id="themeBtn">☀️ Mode Clair</button>
-
     <button id="btn-settings" onclick="showSection('settings')">⚙️ Paramètres</button>
     
     <div class="user-profile-section">
@@ -64,7 +63,7 @@
 
     <section id="home" class="section active">
       <div class="home-header">
-        <h1>Bienvenue, Boss.</h1>
+        <h1>Bienvenue, Boss. 👋</h1>
         <p>Voici l'état actuel de ton entreprise.</p>
       </div>
 
@@ -90,6 +89,13 @@
                 <p id="statTime">--:--:--</p>
             </div>
         </div>
+      </div>
+
+      <div style="margin-top: 40px;">
+          <h3>📢 Annonces de la Direction</h3>
+          <div id="homeAnnouncementsGrid" class="announcements-grid">
+              <p style="color: var(--subtext);">Chargement des annonces...</p>
+          </div>
       </div>
     </section>
 
@@ -137,28 +143,33 @@
     </section>
 
    <section id="rh" class="section">
-      <h1>Ressources Humaines</h1>
-      <p>Gestion des effectifs de l'entreprise.</p>
-      <div class="create-user-box">
-        <h3>📝 Nouveau Contrat d'Embauche</h3>
-        <div class="form-grid">
-          <div class="input-group">
-            <input id="empName" type="text" required>
-            <label>Nom & Prénom</label>
-          </div>
-          <div class="input-group">
-            <input id="empGrade" type="text" required>
-            <label>Poste / Grade (ex: Vendeur)</label>
-          </div>
-          <div class="input-group">
-            <input id="empDate" type="date" required>
+      <h1>Ressources Humaines 🤝</h1>
+      <p>Gestion du personnel, absences et annonces.</p>
+
+      <div class="hr-top-grid">
+          <div class="create-user-box hr-box">
+            <h3>📢 Publier une Annonce Interne</h3>
+            <p style="font-size:0.85em; color:var(--subtext); margin-top:-10px;">Visible par tous sur l'accueil.</p>
+            <div class="input-group" style="margin-top:15px;">
+                <input id="annTitle" type="text" required>
+                <label>Titre de l'annonce</label>
             </div>
-        </div>
-        <button onclick="createEmployee()">✍️ Signer le contrat (Ajouter)</button>
-        <p id="rhMsg"></p>
+            <div class="input-group">
+                <textarea id="annContent" placeholder="Contenu du message..." class="cyber-textarea"></textarea>
+            </div>
+            <button onclick="postAnnouncement()">Publier l'annonce</button>
+            <p id="annMsg"></p>
+          </div>
+
+          <div class="create-user-box hr-box" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <h3>Dossiers Employés</h3>
+            <p style="font-size:0.9em; color:var(--subtext);">Ajoute un membre à ton registre pour gérer ses infos, son salaire et ses absences.</p>
+            <button onclick="openNewEmployeeModal()" style="margin-top: 20px; background: #10b981;">➕ Recruter un employé</button>
+          </div>
       </div>
+
       <div style="margin-top: 40px;">
-        <h3>Registre du Personnel</h3>
+        <h3>Registre du Personnel & Absences</h3>
         <div class="search-container">
             <input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher un employé...">
         </div>
@@ -166,10 +177,10 @@
           <table class="cyber-table" id="rhTable">
             <thead>
               <tr>
-                <th>Identité</th>
+                <th>Statut</th>
+                <th>Identité (Dossier complet)</th>
                 <th>Poste</th>
-                <th>Embauché le</th>
-                <th>Actions</th>
+                <th>Téléphone</th>
               </tr>
             </thead>
             <tbody id="employeeListBody"></tbody>
@@ -230,7 +241,7 @@
         <p id="settingsMsg"></p>
 
         <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;">
-            <h3 style="color: #ef4444; margin-top:0;">⚠️ Suppression de Compte</h3>
+            <h3 style="color: #ef4444; margin-top:0;">⚠️ Zone de Danger</h3>
             <p style="font-size: 0.85em; color: var(--subtext); margin-bottom: 15px;">La suppression de votre compte est définitive.</p>
             <button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button>
         </div>
@@ -249,21 +260,67 @@
       <p id="m_email" class="subtext">...</p>
     </div>
     <div class="modal-body">
-      <div class="info-row">
-        <span class="label">Rôle Actuel :</span>
-        <span id="m_role" class="value badge">...</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Date d'arrivée :</span>
-        <span id="m_date" class="value">...</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Identifiant (UID) :</span>
-        <span id="m_uid" class="value tiny">...</span>
-      </div>
+      <div class="info-row"><span class="label">Rôle Actuel :</span><span id="m_role" class="value badge">...</span></div>
+      <div class="info-row"><span class="label">Date d'arrivée :</span><span id="m_date" class="value">...</span></div>
+      <div class="info-row"><span class="label">UID :</span><span id="m_uid" class="value tiny">...</span></div>
     </div>
-    <div class="modal-footer">
-      <button onclick="closeUserProfile()" class="secondary-btn">Fermer</button>
+    <div class="modal-footer"><button onclick="closeUserProfile()" class="secondary-btn">Fermer</button></div>
+  </div>
+</div>
+
+<div id="newEmployeeModal" class="modal hidden">
+  <div class="modal-content" style="width: 500px; text-align: left;">
+    <span class="close-btn" onclick="closeNewEmployeeModal()">&times;</span>
+    <h2 style="margin-top:0;">📝 Nouveau Dossier Employé</h2>
+    
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+        <div class="input-group"><input id="ne_name" type="text" required><label>Nom & Prénom</label></div>
+        <div class="input-group"><input id="ne_grade" type="text" required><label>Poste / Grade</label></div>
+        <div class="input-group"><input id="ne_phone" type="text" required><label>Téléphone</label></div>
+        <div class="input-group"><input id="ne_salary" type="text" required><label>Salaire</label></div>
+    </div>
+    
+    <button onclick="saveNewEmployee()">Créer le dossier</button>
+    <p id="ne_msg" style="text-align:center; font-weight:bold;"></p>
+  </div>
+</div>
+
+<div id="hrEmployeeModal" class="modal hidden">
+  <div class="modal-content" style="width: 600px; text-align: left;">
+    <span class="close-btn" onclick="closeHrEmployeeModal()">&times;</span>
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:15px;">
+        <div>
+            <h2 id="hre_name" style="margin:0; color:var(--text);">Nom Employé</h2>
+            <p id="hre_grade" style="margin:5px 0 0 0; color:var(--accent);">Poste</p>
+        </div>
+        <div style="text-align: right;">
+            <label style="color:var(--subtext); font-size:0.8em; display:block; margin-bottom:5px;">Statut actuel :</label>
+            <select id="hre_status" class="cyber-select" style="width:150px; border:1px solid var(--border);">
+                <option value="present">🟢 Présent</option>
+                <option value="absent">🔴 Absent / Malade</option>
+                <option value="vacation">🟠 En Congés</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="info-row" style="border:none;"><span class="label">Téléphone:</span><span id="hre_phone" class="value">...</span></div>
+        <div class="info-row" style="border:none;"><span class="label">Salaire:</span><span id="hre_salary" class="value">...</span></div>
+        <div class="info-row" style="border:none;"><span class="label">Embauché le:</span><span id="hre_date" class="value">...</span></div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH (Confidentiel)</h3>
+        <p style="font-size:0.8em; color:var(--subtext); margin-top:-10px;">Avertissements, historique, requêtes...</p>
+        <textarea id="hre_notes" class="cyber-textarea" style="height: 120px;" placeholder="Écrire une note secrète..."></textarea>
+    </div>
+
+    <input type="hidden" id="hre_id">
+
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer les modifs</button>
+        <button onclick="deleteEmployeeDossier()" style="flex:1; background:transparent; border:1px solid var(--error); color:var(--error);">🗑️ Virer</button>
     </div>
   </div>
 </div>
