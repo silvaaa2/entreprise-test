@@ -112,7 +112,6 @@ async function loadUserProfile(user) {
             sidebarName.innerText = data.displayName || user.displayName || "Utilisateur";
             sidebarImg.src = data.photoURL || user.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
             
-            // On stocke le rôle globalement pour l'utiliser lors de la création d'annonces
             window.currentUserRole = data.role;
             window.currentUserName = data.displayName || "Admin";
 
@@ -158,7 +157,7 @@ function applyPermissions(role) {
     if(role === 'compta') if(btnCompta) btnCompta.style.display = "block";
 }
 
-/* ==================== ANNONCES (NOUVEAU) ==================== */
+/* ==================== ANNONCES ==================== */
 let unsubscribeAnn = null;
 
 window.postAnnouncement = async function() {
@@ -185,7 +184,7 @@ window.postAnnouncement = async function() {
 window.fetchAnnouncements = function() {
     const homeGrid = document.getElementById("homeAnnouncementsGrid");
     if(!homeGrid) return;
-    if(unsubscribeAnn) return; // Evite de lancer 2 écoutes
+    if(unsubscribeAnn) return; 
 
     const q = query(collection(db, "announcements"), orderBy("createdAt", "desc"));
     
@@ -196,7 +195,6 @@ window.fetchAnnouncements = function() {
             const id = docSnap.id;
             const dateStr = new Date(data.createdAt).toLocaleDateString('fr-FR');
             
-            // Seuls RH et Admin voient le bouton supprimer
             let deleteBtn = "";
             if(window.currentUserRole === 'admin' || window.currentUserRole === 'rh') {
                 deleteBtn = `<span class="ann-delete" onclick="window.deleteAnnouncement('${id}')">❌ Supprimer</span>`;
@@ -222,15 +220,12 @@ window.deleteAnnouncement = async function(id) {
 };
 
 
-/* ==================== RESSOURCES HUMAINES (NOUVEAU) ==================== */
+/* ==================== RESSOURCES HUMAINES (POINTEUSE) ==================== */
 let unsubscribeEmployees = null;
+let liveServiceTimer = null; // Pour actualiser l'horloge en live
 
-window.openNewEmployeeModal = function() {
-    document.getElementById("newEmployeeModal").classList.remove("hidden");
-};
-window.closeNewEmployeeModal = function() {
-    document.getElementById("newEmployeeModal").classList.add("hidden");
-};
+window.openNewEmployeeModal = function() { document.getElementById("newEmployeeModal").classList.remove("hidden"); };
+window.closeNewEmployeeModal = function() { document.getElementById("newEmployeeModal").classList.add("hidden"); };
 
 window.saveNewEmployee = async function() {
     const name = document.getElementById("ne_name").value;
@@ -248,7 +243,9 @@ window.saveNewEmployee = async function() {
             grade: grade,
             phone: phone || "Non renseigné",
             salary: salary || "Non défini",
-            status: "present", // Statut par défaut
+            status: "hors_service", // NOUVEAU: Par défaut, hors service
+            totalServiceSeconds: 0, // NOUVEAU: Compteur de temps
+            currentServiceStart: null, // NOUVEAU: Timestamp de début de service
             hiredDate: new Date().toISOString().split('T')[0],
             hrNotes: ""
         });
@@ -272,11 +269,12 @@ window.fetchEmployees = function() {
             const data = docSnap.data();
             const id = docSnap.id;
             
-            // Génération du badge de statut
+            // Affichage du statut
             let badgeHtml = "";
-            if(data.status === 'absent') badgeHtml = `<span class="status-badge status-absent">🔴 Malade/Absent</span>`;
+            if(data.status === 'en_service') badgeHtml = `<span class="status-badge status-en_service">🟢 En service</span>`;
+            else if(data.status === 'absent') badgeHtml = `<span class="status-badge status-absent">🔴 Absent/Malade</span>`;
             else if(data.status === 'vacation') badgeHtml = `<span class="status-badge status-vacation">🟠 En congés</span>`;
-            else badgeHtml = `<span class="status-badge status-present">🟢 Présent</span>`;
+            else badgeHtml = `<span class="status-badge status-hors_service">⚪ Hors service</span>`;
 
             html += `<tr>
                 <td>${badgeHtml}</td>
@@ -286,7 +284,112 @@ window.fetchEmployees = function() {
             </tr>`;
         });
         tbody.innerHTML = html || "<tr><td colspan='4'>Aucun dossier employé.</td></tr>";
-    }, (error) => { console.error("Erreur RH Live:", error); });
+    });
+};
+
+/* --- FONCTION POUR FORMATER LE TEMPS --- */
+function formatTime(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    return `${h}h ${m}m`;
+}
+
+window.openHrEmployeeModal = async function(id) {
+    const modal = document.getElementById("hrEmployeeModal");
+    if(!modal) return;
+    
+    // Nettoyer l'ancien timer si on l'avait ouvert sur un autre
+    if(liveServiceTimer) clearInterval(liveServiceTimer);
+
+    document.getElementById("hre_name").innerText = "Chargement...";
+    modal.classList.remove("hidden");
+    
+    try {
+        const docSnap = await getDoc(doc(db, "employees", id));
+        if(docSnap.exists()) {
+            const data = docSnap.data();
+            
+            document.getElementById("hre_id").value = id;
+            document.getElementById("hre_name").innerText = data.name;
+            document.getElementById("hre_grade").innerText = data.grade;
+            document.getElementById("hre_phone").innerText = data.phone || "N/A";
+            document.getElementById("hre_salary").innerText = data.salary || "N/A";
+            document.getElementById("hre_date").innerText = data.hiredDate || "N/A";
+            document.getElementById("hre_status").value = data.status || "hors_service";
+            document.getElementById("hre_notes").value = data.hrNotes || "";
+
+            // --- GESTION DE LA POINTEUSE (LECTURE) ---
+            document.getElementById("hre_old_status").value = data.status || "hors_service";
+            document.getElementById("hre_total_seconds").value = data.totalServiceSeconds || 0;
+            document.getElementById("hre_current_start").value = data.currentServiceStart || "";
+
+            let baseSeconds = data.totalServiceSeconds || 0;
+            let startTimestamp = data.currentServiceStart;
+
+            // Fonction pour mettre à jour l'affichage en live
+            const updateTimerDisplay = () => {
+                let currentSeconds = baseSeconds;
+                if (data.status === 'en_service' && startTimestamp) {
+                    // Ajoute le temps écoulé depuis le début de son service
+                    currentSeconds += Math.floor((Date.now() - startTimestamp) / 1000);
+                }
+                document.getElementById("hre_service_time").innerText = formatTime(currentSeconds);
+            };
+
+            // Appel immédiat
+            updateTimerDisplay();
+            
+            // Si le gars est en service, on actualise l'horloge toutes les minutes
+            if (data.status === 'en_service') {
+                liveServiceTimer = setInterval(updateTimerDisplay, 60000);
+            }
+        }
+    } catch(e) { alert("Erreur: " + e.message); }
+};
+
+window.closeHrEmployeeModal = function() { 
+    if(liveServiceTimer) clearInterval(liveServiceTimer);
+    document.getElementById("hrEmployeeModal").classList.add("hidden"); 
+};
+
+window.updateEmployeeDossier = async function() {
+    const id = document.getElementById("hre_id").value;
+    const newStatus = document.getElementById("hre_status").value;
+    const newNotes = document.getElementById("hre_notes").value;
+
+    const oldStatus = document.getElementById("hre_old_status").value;
+    let totalSeconds = parseInt(document.getElementById("hre_total_seconds").value) || 0;
+    let currentStart = document.getElementById("hre_current_start").value;
+
+    let updates = {
+        status: newStatus,
+        hrNotes: newNotes
+    };
+
+    // --- LOGIQUE DE CALCUL DU TEMPS (LE CERVEAU) ---
+    if (oldStatus !== 'en_service' && newStatus === 'en_service') {
+        // Le mec commence son service ! On déclenche le chrono.
+        updates.currentServiceStart = Date.now();
+    } 
+    else if (oldStatus === 'en_service' && newStatus !== 'en_service') {
+        // Le mec termine son service ! On coupe le chrono et on additionne.
+        if (currentStart) {
+            const timeDiffSeconds = Math.floor((Date.now() - parseInt(currentStart)) / 1000);
+            updates.totalServiceSeconds = totalSeconds + timeDiffSeconds;
+        }
+        updates.currentServiceStart = null; // Remise à zéro du départ
+    }
+    
+    try {
+        await updateDoc(doc(db, "employees", id), updates);
+        closeHrEmployeeModal();
+    } catch(e) { alert("Erreur de sauvegarde: " + e.message); }
+};
+
+window.deleteEmployeeDossier = async function() {
+    const id = document.getElementById("hre_id").value;
+    if(!confirm("⚠️ ATTENTION : Es-tu sûr de vouloir virer et supprimer cet employé des registres ?")) return;
+    try { await deleteDoc(doc(db, "employees", id)); closeHrEmployeeModal(); } catch(e) { alert("Erreur: " + e.message); }
 };
 
 window.searchRH = function() {
@@ -302,57 +405,6 @@ window.searchRH = function() {
   }
 };
 
-/* --- MODALE DOSSIER RH --- */
-window.openHrEmployeeModal = async function(id) {
-    const modal = document.getElementById("hrEmployeeModal");
-    if(!modal) return;
-    
-    document.getElementById("hre_name").innerText = "Chargement...";
-    modal.classList.remove("hidden");
-    
-    try {
-        const docSnap = await getDoc(doc(db, "employees", id));
-        if(docSnap.exists()) {
-            const data = docSnap.data();
-            
-            document.getElementById("hre_id").value = id;
-            document.getElementById("hre_name").innerText = data.name;
-            document.getElementById("hre_grade").innerText = data.grade;
-            document.getElementById("hre_phone").innerText = data.phone || "N/A";
-            document.getElementById("hre_salary").innerText = data.salary || "N/A";
-            document.getElementById("hre_date").innerText = data.hiredDate || "N/A";
-            document.getElementById("hre_status").value = data.status || "present";
-            document.getElementById("hre_notes").value = data.hrNotes || "";
-        }
-    } catch(e) { alert("Erreur: " + e.message); }
-};
-
-window.closeHrEmployeeModal = function() { document.getElementById("hrEmployeeModal").classList.add("hidden"); };
-
-window.updateEmployeeDossier = async function() {
-    const id = document.getElementById("hre_id").value;
-    const newStatus = document.getElementById("hre_status").value;
-    const newNotes = document.getElementById("hre_notes").value;
-    
-    try {
-        await updateDoc(doc(db, "employees", id), {
-            status: newStatus,
-            hrNotes: newNotes
-        });
-        alert("✅ Dossier mis à jour !");
-        closeHrEmployeeModal();
-    } catch(e) { alert("Erreur de sauvegarde: " + e.message); }
-};
-
-window.deleteEmployeeDossier = async function() {
-    const id = document.getElementById("hre_id").value;
-    if(!confirm("⚠️ ATTENTION : Es-tu sûr de vouloir virer et supprimer cet employé des registres ?")) return;
-    
-    try {
-        await deleteDoc(doc(db, "employees", id));
-        closeHrEmployeeModal();
-    } catch(e) { alert("Erreur: " + e.message); }
-};
 
 /* ==================== UTILISATEURS ==================== */
 let unsubscribeUsers = null;
