@@ -41,6 +41,9 @@
   <aside class="sidebar">
     <h3>Dashboard</h3>
     <button id="btn-home" onclick="showSection('home')">🏠 Accueil</button>
+    
+    <button id="btn-service" onclick="showSection('service')" style="color: #10b981;">⏱️ Mon Pointage</button>
+
     <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
@@ -63,32 +66,14 @@
 
     <section id="home" class="section active">
       <div class="home-header">
-        <h1>Bienvenue, Boss. 👋</h1>
+        <h1>Bienvenue. 👋</h1>
         <p>Voici l'état actuel de ton entreprise.</p>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card card-rh">
-            <div class="icon">👥</div>
-            <div class="info">
-                <h3>Effectif Total</h3>
-                <p id="statEmployees">Chargement...</p>
-            </div>
-        </div>
-        <div class="stat-card card-users">
-            <div class="icon">🔐</div>
-            <div class="info">
-                <h3>Comptes Actifs</h3>
-                <p id="statUsers">Chargement...</p>
-            </div>
-        </div>
-        <div class="stat-card card-time">
-            <div class="icon">🕒</div>
-            <div class="info">
-                <h3 id="statDate">--/--/----</h3>
-                <p id="statTime">--:--:--</p>
-            </div>
-        </div>
+      <div class="stats-grid" id="mainStatsGrid">
+        <div class="stat-card card-rh"><div class="icon">👥</div><div class="info"><h3>Effectif Total</h3><p id="statEmployees">Chargement...</p></div></div>
+        <div class="stat-card card-users"><div class="icon">🔐</div><div class="info"><h3>Comptes Actifs</h3><p id="statUsers">Chargement...</p></div></div>
+        <div class="stat-card card-time"><div class="icon">🕒</div><div class="info"><h3 id="statDate">--/--/----</h3><p id="statTime">--:--:--</p></div></div>
       </div>
 
       <div style="margin-top: 40px;">
@@ -99,25 +84,29 @@
       </div>
     </section>
 
+    <section id="service" class="section">
+        <h1>Mon Pointage ⏱️</h1>
+        <p>Gère tes heures de service directement ici.</p>
+
+        <div id="myServiceContainer" style="margin-top: 40px; text-align: center;">
+            <p>Chargement de ton dossier...</p>
+        </div>
+    </section>
+
     <section id="users" class="section">
       <h1>Gestion des Accès</h1>
       <div class="create-user-box">
         <h3>✨ Ajouter un collaborateur</h3>
         <div class="form-grid">
-          <div class="input-group">
-            <input id="newEmail" type="email" required>
-            <label>Email</label>
-          </div>
-          <div class="input-group">
-            <input id="newPassword" type="password" required>
-            <label>Mot de passe</label>
-          </div>
+          <div class="input-group"><input id="newEmail" type="email" required><label>Email</label></div>
+          <div class="input-group"><input id="newPassword" type="password" required><label>Mot de passe</label></div>
           <div class="input-group">
             <select id="newRole" class="cyber-select">
               <option value="guest">⛔ Aucun accès</option>
-              <option value="admin">Admin (Accès Total)</option>
+              <option value="employee">👷 Employé (Pointage seul)</option>
               <option value="rh">RH (Accès RH)</option>
               <option value="compta">Compta (Accès Compta)</option>
+              <option value="admin">Admin (Accès Total)</option>
             </select>
           </div>
         </div>
@@ -128,14 +117,7 @@
         <h3>L'Équipe</h3>
         <div class="table-wrapper">
           <table class="cyber-table">
-            <thead>
-              <tr>
-                <th>Profil (Clique pour voir)</th>
-                <th>Rôle (Modifier)</th>
-                <th>Date Arrivée</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Profil</th><th>Rôle</th><th>Date Arrivée</th><th>Actions</th></tr></thead>
             <tbody id="userListBody"></tbody>
           </table>
         </div>
@@ -144,45 +126,26 @@
 
    <section id="rh" class="section">
       <h1>Ressources Humaines 🤝</h1>
-      <p>Gestion du personnel, absences et annonces.</p>
-
       <div class="hr-top-grid">
           <div class="create-user-box hr-box">
             <h3>📢 Publier une Annonce Interne</h3>
-            <p style="font-size:0.85em; color:var(--subtext); margin-top:-10px;">Visible par tous sur l'accueil.</p>
-            <div class="input-group" style="margin-top:15px;">
-                <input id="annTitle" type="text" required>
-                <label>Titre de l'annonce</label>
-            </div>
-            <div class="input-group">
-                <textarea id="annContent" placeholder="Contenu du message..." class="cyber-textarea"></textarea>
-            </div>
+            <div class="input-group" style="margin-top:15px;"><input id="annTitle" type="text" required><label>Titre de l'annonce</label></div>
+            <div class="input-group"><textarea id="annContent" placeholder="Contenu..." class="cyber-textarea"></textarea></div>
             <button onclick="postAnnouncement()">Publier l'annonce</button>
             <p id="annMsg"></p>
           </div>
-
           <div class="create-user-box hr-box" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
             <h3>Dossiers Employés</h3>
-            <p style="font-size:0.9em; color:var(--subtext);">Ajoute un membre à ton registre pour gérer ses infos, son salaire et ses absences.</p>
             <button onclick="openNewEmployeeModal()" style="margin-top: 20px; background: #10b981;">➕ Recruter un employé</button>
           </div>
       </div>
 
       <div style="margin-top: 40px;">
         <h3>Registre du Personnel & Pointage</h3>
-        <div class="search-container">
-            <input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher un employé...">
-        </div>
+        <div class="search-container"><input type="text" id="rhSearch" onkeyup="searchRH()" placeholder="🔍 Chercher un employé..."></div>
         <div class="table-wrapper">
           <table class="cyber-table" id="rhTable">
-            <thead>
-              <tr>
-                <th>Statut</th>
-                <th>Identité (Dossier complet)</th>
-                <th>Poste</th>
-                <th>Téléphone</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Statut</th><th>Identité</th><th>Poste</th><th>Téléphone</th></tr></thead>
             <tbody id="employeeListBody"></tbody>
           </table>
         </div>
@@ -199,31 +162,17 @@
          <iframe src="https://docs.google.com/spreadsheets/d/1zCczeHhR5rVWDMbmIgiE5LA4StH2TBYWczMIGPfWDZU/edit?gid=2002987340#gid=2002987340" width="100%" height="100%" style="border:none;"></iframe>
       </div>
       <div id="nativeTableContainer" class="hidden">
-        <div class="search-container">
-            <input type="text" id="tableSearch" onkeyup="searchTable()" placeholder="🔍 Rechercher un nom, un grade, un salaire...">
-        </div>
-        <div class="table-wrapper">
-          <table id="sheetTable" class="cyber-table">
-            <tr><td style="padding:20px; text-align:center">Chargement...</td></tr>
-          </table>
-        </div>
+        <div class="search-container"><input type="text" id="tableSearch" onkeyup="searchTable()" placeholder="🔍 Rechercher..."></div>
+        <div class="table-wrapper"><table id="sheetTable" class="cyber-table"><tr><td>Chargement...</td></tr></table></div>
       </div>
     </section>
 
     <section id="docs" class="section">
         <h1>📂 Documents Confidentiels</h1>
-        <p>Espace de stockage réservé à l'administration.</p>
         <div class="create-user-box">
-            <h3>📌 Ajouter une note / document</h3>
             <div class="form-grid">
-                <div class="input-group">
-                    <input id="docTitle" type="text" required>
-                    <label>Titre du document</label>
-                </div>
-                <div class="input-group" style="grid-column: span 2;">
-                    <input id="docContent" type="text" required>
-                    <label>Contenu (Lien, note, mémo...)</label>
-                </div>
+                <div class="input-group"><input id="docTitle" type="text" required><label>Titre</label></div>
+                <div class="input-group" style="grid-column: span 2;"><input id="docContent" type="text" required><label>Contenu</label></div>
             </div>
             <button onclick="createAdminDoc()">Sauvegarder dans le Cloud ☁️</button>
             <p id="docMsg"></p>
@@ -239,33 +188,13 @@
         <div class="input-group" style="margin-top: 20px;"><input id="settingsPhotoURL" type="url"><label>URL Photo</label></div>
         <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
         <p id="settingsMsg"></p>
-
         <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;">
-            <h3 style="color: #ef4444; margin-top:0;">⚠️ Zone de Danger</h3>
-            <p style="font-size: 0.85em; color: var(--subtext); margin-bottom: 15px;">La suppression de votre compte est définitive.</p>
             <button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button>
         </div>
       </div>
     </section>
 
   </main>
-</div>
-
-<div id="profileModal" class="modal hidden">
-  <div class="modal-content">
-    <span class="close-btn" onclick="closeUserProfile()">&times;</span>
-    <div class="modal-header">
-      <img id="m_photo" src="" alt="Avatar">
-      <h2 id="m_name">Chargement...</h2>
-      <p id="m_email" class="subtext">...</p>
-    </div>
-    <div class="modal-body">
-      <div class="info-row"><span class="label">Rôle Actuel :</span><span id="m_role" class="value badge">...</span></div>
-      <div class="info-row"><span class="label">Date d'arrivée :</span><span id="m_date" class="value">...</span></div>
-      <div class="info-row"><span class="label">UID :</span><span id="m_uid" class="value tiny">...</span></div>
-    </div>
-    <div class="modal-footer"><button onclick="closeUserProfile()" class="secondary-btn">Fermer</button></div>
-  </div>
 </div>
 
 <div id="newEmployeeModal" class="modal hidden">
@@ -275,9 +204,10 @@
     
     <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
         <div class="input-group"><input id="ne_name" type="text" required><label>Nom & Prénom</label></div>
+        <div class="input-group"><input id="ne_email" type="email" required><label>Email (Pour relier le compte)</label></div>
         <div class="input-group"><input id="ne_grade" type="text" required><label>Poste / Grade</label></div>
         <div class="input-group"><input id="ne_phone" type="text" required><label>Téléphone</label></div>
-        <div class="input-group"><input id="ne_salary" type="text" required><label>Salaire</label></div>
+        <div class="input-group" style="grid-column: span 2;"><input id="ne_salary" type="text" required><label>Salaire</label></div>
     </div>
     
     <button onclick="saveNewEmployee()">Créer le dossier</button>
@@ -311,27 +241,42 @@
     <input type="hidden" id="hre_total_seconds">
 
     <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="input-group" style="grid-column: span 2; margin-bottom:10px;"><input id="hre_email" type="email" required><label>Email de l'employé (Liaison Compte)</label></div>
+        
         <div class="info-row" style="border:none;"><span class="label">Téléphone:</span><span id="hre_phone" class="value">...</span></div>
         <div class="info-row" style="border:none;"><span class="label">Salaire:</span><span id="hre_salary" class="value">...</span></div>
-        
         <div class="info-row" style="border:none; grid-column: span 2;"><span class="label">Embauché le:</span><span id="hre_date" class="value">...</span></div>
 
         <div class="info-row" style="border:none; grid-column: span 2; background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px;">
-            <span class="label">⏱️ Temps total de service :</span>
+            <span class="label">⏱️ Temps total :</span>
             <span id="hre_service_time" class="value" style="color:var(--accent); font-size: 1.2em;">0h 0m</span>
         </div>
     </div>
 
     <div style="margin-top: 20px;">
-        <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH (Confidentiel)</h3>
-        <p style="font-size:0.8em; color:var(--subtext); margin-top:-10px;">Avertissements, historique, requêtes...</p>
-        <textarea id="hre_notes" class="cyber-textarea" style="height: 120px;" placeholder="Écrire une note secrète..."></textarea>
+        <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH</h3>
+        <textarea id="hre_notes" class="cyber-textarea" style="height: 100px;"></textarea>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:20px;">
-        <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer les modifs</button>
+        <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer</button>
         <button onclick="deleteEmployeeDossier()" style="flex:1; background:transparent; border:1px solid var(--error); color:var(--error);">🗑️ Virer</button>
     </div>
+  </div>
+</div>
+
+<div id="profileModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeUserProfile()">&times;</span>
+    <div class="modal-header">
+      <img id="m_photo" src="" alt="Avatar">
+      <h2 id="m_name">Chargement...</h2>
+      <p id="m_email" class="subtext">...</p>
+    </div>
+    <div class="modal-body">
+      <div class="info-row"><span class="label">Rôle Actuel :</span><span id="m_role" class="value badge">...</span></div>
+    </div>
+    <div class="modal-footer"><button onclick="closeUserProfile()" class="secondary-btn">Fermer</button></div>
   </div>
 </div>
 
