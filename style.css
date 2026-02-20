@@ -900,6 +900,92 @@ button:hover {
   text-align: right; 
 }
 
+/* ==================== KANBAN (TRELLO) ==================== */
+.kanban-board {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 200px);
+    overflow-x: auto;
+    padding-bottom: 20px;
+}
+
+.kanban-column {
+    background: var(--panel);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    min-width: 300px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.kanban-header {
+    padding: 15px;
+    font-weight: bold;
+    color: var(--text);
+    border-bottom: 3px solid var(--accent);
+    background: var(--hover-bg);
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    text-align: center;
+}
+
+.kanban-cards {
+    padding: 15px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.kanban-card {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    padding: 15px;
+    border-radius: 8px;
+    cursor: grab;
+    transition: 0.2s;
+    position: relative;
+}
+
+.kanban-card:active {
+    cursor: grabbing;
+    transform: scale(0.98);
+}
+
+.kanban-card h4 {
+    margin: 0 0 5px 0;
+    color: var(--text);
+    font-size: 1em;
+}
+
+.kanban-card p {
+    margin: 0 0 10px 0;
+    font-size: 0.85em;
+    color: var(--subtext);
+}
+
+.kanban-card .assignee {
+    font-size: 0.75em;
+    background: var(--hover-bg);
+    padding: 3px 8px;
+    border-radius: 10px;
+    color: var(--accent);
+}
+
+.delete-task {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: var(--error);
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
 /* ==================== GENERATEUR DE FACTURES ==================== */
 .invoice-container {
     background: var(--panel);
@@ -1073,5 +1159,11 @@ button:hover {
     
     .grand-total {
         color: black !important;
+    }
+    
+    /* On force l'affichage du canvas à l'impression */
+    #sigCanvas {
+        border-color: #000 !important;
+        background: transparent !important;
     }
 }
