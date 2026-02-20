@@ -47,7 +47,6 @@ function formatTime(totalSeconds) {
     return `${h}h ${m}m`; 
 }
 
-// Fonction de sécurité ABSOLUE pour ne plus JAMAIS avoir l'erreur "Cannot set properties of null"
 const setElementText = function(id, text) {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
@@ -130,11 +129,16 @@ window.showSection = function(id) {
     else if(id === 'compta') { 
         window.toggleCompta('data'); 
     }
+    else if(id === 'kanban') { 
+        window.fetchTasks(); 
+        window.populateKanbanAssignee();
+    }
     else if(id === 'factures') {
         const dateInput = document.getElementById("invDateCurrent");
         if(dateInput && !dateInput.value) {
             dateInput.value = new Date().toISOString().split('T')[0];
         }
+        window.initSignature(); // Lance le pad de signature
     }
     else if(id === 'docs') { 
         window.fetchAdminDocs(); 
@@ -229,7 +233,7 @@ async function loadUserProfile(user) {
 function applyPermissions(role) {
     const menusToHide = [
         "btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-factures",
-        "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "mainStatsGrid", 
+        "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "btn-kanban", "mainStatsGrid", 
         "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc"
     ];
     
@@ -250,21 +254,21 @@ function applyPermissions(role) {
         if(homeMsg) homeMsg.innerText = "Voici l'état actuel de ton entreprise.";
     } 
     else if (role === 'employee') {
-        ["btn-service", "btn-requests", "btn-sanctions", "btn-chat", "perso-title-menu", "employeeRequestBox"].forEach(id => { 
+        ["btn-service", "btn-requests", "btn-sanctions", "btn-chat", "btn-kanban", "perso-title-menu", "employeeRequestBox"].forEach(id => { 
             const el = document.getElementById(id); 
             if(el) el.style.display = ""; 
         });
         if(homeMsg) homeMsg.innerText = "N'oublie pas de pointer pour commencer ta journée.";
     } 
     else if (role === 'rh') {
-        ["btn-rh", "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc"].forEach(id => { 
+        ["btn-rh", "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "btn-kanban", "perso-title-menu", "admin-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc"].forEach(id => { 
             const el = document.getElementById(id); 
             if(el) el.style.display = ""; 
         });
         if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
     } 
     else if (role === 'compta') {
-        ["btn-compta", "btn-factures", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { 
+        ["btn-compta", "btn-factures", "btn-chat", "btn-kanban", "perso-title-menu", "admin-title-menu"].forEach(id => { 
             const el = document.getElementById(id); 
             if(el) el.style.display = ""; 
         });
@@ -615,7 +619,6 @@ window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
         const snap = await getDocs(query(collection(db, "employees"), where("email", "==", empEmail)));
         if(!snap.empty) {
             await updateDoc(doc(db, "employees", snap.docs[0].id), { status: 'vacation' });
-            // Pas d'alerte pour rester fluide
         }
     }
 };
@@ -781,6 +784,137 @@ window.fetchChatMessages = function() {
         }
         isFirstChatLoad = false;
     });
+};
+
+/* ==================== 7.5 KANBAN (TRELLO) ==================== */
+let unsubTasks = null;
+
+window.openTaskModal = function() {
+    const modal = document.getElementById("newTaskModal");
+    if(modal) modal.classList.remove("hidden");
+};
+
+window.closeTaskModal = function() {
+    const modal = document.getElementById("newTaskModal");
+    if(modal) modal.classList.add("hidden");
+};
+
+window.populateKanbanAssignee = async function() {
+    const select = document.getElementById("taskAssignee");
+    if(!select) return;
+    
+    const snap = await getDocs(collection(db, "users"));
+    let html = "<option value='Pour toute l équipe'>Pour toute l'équipe</option>";
+    
+    snap.forEach(d => {
+        const data = d.data();
+        if(data.displayName) { 
+            html += `<option value="${data.displayName}">${data.displayName}</option>`; 
+        }
+    });
+    select.innerHTML = html;
+};
+
+window.saveNewTask = async function() {
+    const title = document.getElementById("taskTitle").value;
+    const desc = document.getElementById("taskDesc").value;
+    const assignee = document.getElementById("taskAssignee").value;
+    
+    if(!title) return alert("Il faut un titre !");
+    
+    await addDoc(collection(db, "tasks"), {
+        title: title,
+        desc: desc,
+        assignee: assignee,
+        status: "todo", // todo, inprogress, done
+        createdAt: new Date().toISOString()
+    });
+    
+    document.getElementById("taskTitle").value = "";
+    document.getElementById("taskDesc").value = "";
+    window.closeTaskModal();
+};
+
+window.fetchTasks = function() {
+    if(unsubTasks) return;
+    
+    unsubTasks = onSnapshot(collection(db, "tasks"), (snapshot) => {
+        const colTodo = document.getElementById("list-todo");
+        const colInProgress = document.getElementById("list-inprogress");
+        const colDone = document.getElementById("list-done");
+        
+        if(!colTodo || !colInProgress || !colDone) return;
+        
+        colTodo.innerHTML = ""; colInProgress.innerHTML = ""; colDone.innerHTML = "";
+        
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            const card = document.createElement("div");
+            card.className = "kanban-card";
+            card.draggable = true;
+            card.id = id;
+            card.ondragstart = window.drag;
+            
+            let deleteBtn = "";
+            if(window.currentUserRole === 'admin') {
+                deleteBtn = `<span class="delete-task" onclick="window.deleteTask('${id}')">X</span>`;
+            }
+            
+            card.innerHTML = `
+                ${deleteBtn}
+                <h4>${data.title}</h4>
+                <p>${data.desc}</p>
+                <span class="assignee">👤 ${data.assignee}</span>
+            `;
+            
+            if(data.status === 'todo') colTodo.appendChild(card);
+            else if(data.status === 'inprogress') colInProgress.appendChild(card);
+            else if(data.status === 'done') colDone.appendChild(card);
+        });
+    });
+};
+
+window.deleteTask = async function(id) {
+    if(confirm("Supprimer cette tâche ?")) {
+        await deleteDoc(doc(db, "tasks", id));
+    }
+};
+
+window.allowDrop = function(ev) {
+    ev.preventDefault();
+};
+
+window.drag = function(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+};
+
+window.drop = async function(ev) {
+    ev.preventDefault();
+    const dataId = ev.dataTransfer.getData("text");
+    const draggedCard = document.getElementById(dataId);
+    if(!draggedCard) return;
+
+    // Trouver la colonne de destination
+    let targetCol = ev.target;
+    while(targetCol && !targetCol.classList.contains("kanban-column")) {
+        targetCol = targetCol.parentNode;
+    }
+    
+    if(!targetCol) return;
+    
+    const targetList = targetCol.querySelector('.kanban-cards');
+    if(targetList) {
+        targetList.appendChild(draggedCard);
+    }
+    
+    // Mettre à jour Firebase
+    let newStatus = "todo";
+    if(targetCol.id === "col-inprogress") newStatus = "inprogress";
+    if(targetCol.id === "col-done") newStatus = "done";
+    
+    await updateDoc(doc(db, "tasks", dataId), { status: newStatus });
 };
 
 /* ==================== 8. RESSOURCES HUMAINES & DOSSIERS ==================== */
@@ -1008,7 +1142,7 @@ window.searchRH = function() {
     } 
 };
 
-/* ==================== 8.5 CALCULS FACTURES (ANTI-PLANTAGE VIRGULE) ==================== */
+/* ==================== 8.5 CALCULS FACTURES ==================== */
 window.calculateInvoice = function() {
     try {
         const tbody = document.getElementById("invoiceBody");
@@ -1023,7 +1157,6 @@ window.calculateInvoice = function() {
             const rowTotalEl = rows[i].querySelector(".row-total");
             
             if(qtyInput && priceInput && rowTotalEl) {
-                // On remplace la virgule tapée par l'utilisateur par un point (pour JS)
                 const qVal = qtyInput.value.replace(',', '.');
                 const pVal = priceInput.value.replace(',', '.');
                 
@@ -1084,6 +1217,69 @@ window.removeInvoiceRow = function(btn) {
     }
 };
 
+/* ==================== 8.6 SIGNATURE ELECTRONIQUE (POUR BOSS SEULEMENT) ==================== */
+let sigCtx = null;
+let isDrawing = false;
+
+window.initSignature = function() {
+    const canvas = document.getElementById('sigCanvas');
+    const clearBtn = document.getElementById('clearSigBtn');
+    if(!canvas) return;
+
+    // SECURITE : Si c'est pas le Boss, on bloque le dessin
+    if(window.currentUserRole !== 'admin') {
+        canvas.style.pointerEvents = 'none';
+        if(clearBtn) clearBtn.style.display = 'none';
+        return;
+    }
+
+    sigCtx = canvas.getContext('2d');
+    sigCtx.lineWidth = 2;
+    sigCtx.lineCap = 'round';
+    sigCtx.strokeStyle = document.body.classList.contains('light-mode') ? '#000' : '#fff';
+
+    canvas.addEventListener('mousedown', startPos);
+    canvas.addEventListener('mouseup', endPos);
+    canvas.addEventListener('mousemove', drawSig);
+
+    // Support Tactile
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPos(e.touches[0]); });
+    canvas.addEventListener('touchend', endPos);
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawSig(e.touches[0]); });
+};
+
+function startPos(e) {
+    isDrawing = true;
+    drawSig(e);
+}
+
+function endPos() {
+    isDrawing = false;
+    if(sigCtx) sigCtx.beginPath();
+}
+
+function drawSig(e) {
+    if (!isDrawing || !sigCtx) return;
+    
+    const canvas = document.getElementById('sigCanvas');
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    sigCtx.lineTo(x, y);
+    sigCtx.stroke();
+    sigCtx.beginPath();
+    sigCtx.moveTo(x, y);
+}
+
+window.clearSignature = function() {
+    const canvas = document.getElementById('sigCanvas');
+    if(sigCtx && canvas) {
+        sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+        sigCtx.beginPath();
+    }
+};
+
 /* ==================== 9. AUTRES (DOCS / COMPTA / PARAMETRES) ==================== */
 window.createAdminDoc = async function() {
     const titleEl = document.getElementById("docTitle"); 
@@ -1141,6 +1337,9 @@ window.toggleTheme = function() {
     const isL = document.body.classList.contains('light-mode'); 
     localStorage.setItem('theme', isL ? 'light' : 'dark'); 
     setElementText('themeBtn', isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"); 
+    
+    // Maj de l'encre de la signature si le thème change
+    if(sigCtx) sigCtx.strokeStyle = isL ? '#000' : '#fff';
 };
 
 window.saveProfileSettings = async function() { 
