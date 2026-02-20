@@ -47,7 +47,7 @@ function formatTime(totalSeconds) {
     return `${h}h ${m}m`; 
 }
 
-// Fonction de sécurité pour éviter les erreurs "null"
+// Fonction de sécurité
 const setElementText = function(id, text) {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
@@ -129,6 +129,13 @@ window.showSection = function(id) {
     }
     else if(id === 'compta') { 
         window.toggleCompta('data'); 
+    }
+    else if(id === 'factures') {
+        // Init la date du jour sur la facture si c'est vide
+        const dateInput = document.getElementById("invDateCurrent");
+        if(dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
     }
     else if(id === 'docs') { 
         window.fetchAdminDocs(); 
@@ -222,7 +229,7 @@ async function loadUserProfile(user) {
 
 function applyPermissions(role) {
     const menusToHide = [
-        "btn-users", "btn-rh", "btn-compta", "btn-docs", 
+        "btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-factures",
         "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "mainStatsGrid", 
         "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc"
     ];
@@ -258,7 +265,7 @@ function applyPermissions(role) {
         if(homeMsg) homeMsg.innerText = "Sélectionne un menu pour travailler.";
     } 
     else if (role === 'compta') {
-        ["btn-compta", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { 
+        ["btn-compta", "btn-factures", "btn-chat", "perso-title-menu", "admin-title-menu"].forEach(id => { 
             const el = document.getElementById(id); 
             if(el) el.style.display = ""; 
         });
@@ -1000,6 +1007,61 @@ window.searchRH = function() {
     for(let i=1; i<tr.length; i++) { 
         tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
     } 
+};
+
+/* ==================== 8.5 CALCULS FACTURES ==================== */
+window.calculateInvoice = function() {
+    const tbody = document.getElementById("invoiceBody");
+    if(!tbody) return;
+    
+    const rows = tbody.getElementsByTagName("tr");
+    let subtotal = 0;
+    
+    for(let i = 0; i < rows.length; i++) {
+        const qtyInput = rows[i].querySelector(".qty");
+        const priceInput = rows[i].querySelector(".price");
+        const rowTotalEl = rows[i].querySelector(".row-total");
+        
+        if(qtyInput && priceInput && rowTotalEl) {
+            const qty = parseFloat(qtyInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            const total = qty * price;
+            subtotal += total;
+            rowTotalEl.innerText = total.toFixed(2) + " €";
+        }
+    }
+    
+    const taxRateInput = document.getElementById("invTaxRate");
+    const taxRate = taxRateInput ? (parseFloat(taxRateInput.value) || 0) : 20;
+    
+    const taxAmount = subtotal * (taxRate / 100);
+    const grandTotal = subtotal + taxAmount;
+    
+    setElementText("invSubtotal", subtotal.toFixed(2) + " €");
+    setElementText("invTaxAmount", taxAmount.toFixed(2) + " €");
+    setElementText("invTotal", grandTotal.toFixed(2) + " €");
+};
+
+window.addInvoiceRow = function() {
+    const tbody = document.getElementById("invoiceBody");
+    if(!tbody) return;
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td><input type="text" class="inv-input" placeholder="Prestation ou Produit" oninput="window.calculateInvoice()"></td>
+        <td><input type="number" class="inv-input qty" value="1" min="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
+        <td><input type="number" class="inv-input price" value="0.00" min="0" step="0.01" oninput="window.calculateInvoice()" style="text-align:right;"></td>
+        <td class="row-total" style="text-align:right;">0.00 €</td>
+        <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%;">X</button></td>
+    `;
+    tbody.appendChild(tr);
+    window.calculateInvoice();
+};
+
+window.removeInvoiceRow = function(btn) {
+    const row = btn.parentNode.parentNode;
+    row.parentNode.removeChild(row);
+    window.calculateInvoice();
 };
 
 /* ==================== 9. AUTRES (DOCS / COMPTA / PARAMETRES) ==================== */
