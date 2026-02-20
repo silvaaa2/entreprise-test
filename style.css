@@ -1321,3 +1321,50 @@ button:hover {
         background: transparent !important;
     }
 }
+
+/* ==================== STATUT EN LIGNE ==================== */
+.online-dot {
+    width: 12px; height: 12px;
+    background-color: var(--success);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px var(--success);
+}
+.offline-dot {
+    width: 12px; height: 12px;
+    background-color: var(--subtext);
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* ==================== ALERTE GÉNÉRALE (NUCLÉAIRE) ==================== */
+@keyframes shakeAlert {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+.shake-active {
+    animation: shakeAlert 0.4s infinite;
+    border: 5px solid var(--error) !important;
+}
+
+/* Modale plein écran pour l'alerte */
+.alert-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(239, 68, 68, 0.6);
+    z-index: 9999; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+}
+.alert-modal-box {
+    background: var(--panel); padding: 50px; border-radius: 20px;
+    border: 3px solid var(--error); text-align: center;
+    box-shadow: 0 0 80px var(--error); transform: scale(1.1);
+}
