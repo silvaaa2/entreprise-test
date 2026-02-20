@@ -5,7 +5,7 @@
   <title>Admin Dashboard Ultra</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800;900&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -67,6 +67,8 @@
     <button id="btn-factures" onclick="showSection('factures')" style="color: #2dd4bf;">🧾 Factures</button>
     <button id="btn-docs" onclick="showSection('docs')" style="color: #facc15;">📂 Documents Admin</button>
     
+    <button id="btn-logs" onclick="showSection('logs')" style="color: #6ee7b7; border: 1px dashed rgba(110, 231, 183, 0.5);">👁️ Logs (Big Brother)</button>
+    
     <div class="spacer"></div>
 
     <button onclick="toggleTheme()" id="themeBtn">☀️ Mode Clair</button>
@@ -126,7 +128,7 @@
                       <h3 style="margin:0; color: var(--error);">🚨 Alerte Générale</h3>
                   </div>
                   <p style="font-size: 0.8em; color: var(--subtext); margin-top: 5px; margin-bottom: 15px;">Fait trembler l'écran de TOUS les utilisateurs en ligne.</p>
-                  <input type="text" id="alertMessage" class="inv-input" placeholder="Raison de l'alerte..." style="margin-bottom: 15px; border-bottom: 1px solid var(--border);">
+                  <input type="text" id="alertMessage" class="inv-input" placeholder="Raison de l'alerte..." style="margin-bottom: 15px; border-bottom: 1px solid var(--glass-border);">
                   <button onclick="triggerGeneralAlert()" style="background: var(--error); box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);">💥 DÉCLENCHER</button>
               </div>
 
@@ -143,6 +145,28 @@
               </div>
           </div>
       </div>
+    </section>
+
+    <section id="logs" class="section no-print">
+        <h1 style="color: #6ee7b7; text-shadow: 0 0 20px rgba(110, 231, 183, 0.3);">👁️ Mode Big Brother</h1>
+        <p>Historique complet de l'activité du dashboard en temps réel. Les utilisateurs ne savent pas que vous voyez ça.</p>
+        
+        <div style="margin-top: 30px;">
+            <div class="table-wrapper scrollable-table" style="max-height: 600px;">
+                <table class="cyber-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;">Date & Heure</th>
+                            <th style="width: 250px;">Utilisateur</th>
+                            <th>Action réalisée</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsListBody">
+                        <tr><td colspan='3' style='text-align:center;'>Chargement des données satellites...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </section>
 
     <section id="service" class="section no-print">
@@ -203,7 +227,7 @@
         <h1 style="color: var(--error);">Sanctions & Avertissements ⚠️</h1>
         <p>Historique des mesures disciplinaires de l'entreprise.</p>
 
-        <div class="create-user-box" id="hrSanctionBox" style="border-color: var(--error);">
+        <div class="create-user-box" id="hrSanctionBox" style="border-color: rgba(239, 68, 68, 0.3) !important; background: rgba(239, 68, 68, 0.05) !important;">
             <h3 style="color: var(--error);">🔨 Appliquer une sanction</h3>
             <div class="form-grid">
                 <div class="input-group">
@@ -255,7 +279,7 @@
             <div class="chat-sidebar" id="chatSidebar">
                 <h4 style="color: var(--subtext); margin: 0 0 10px 5px; font-size: 0.8em; text-transform: uppercase;">Salons</h4>
                 <div class="chat-contact active" id="contact_general" onclick="window.selectChat('general', 'Général')">
-                    <div class="contact-icon" style="background: var(--accent);">☕</div> 
+                    <div class="contact-icon" style="background: var(--accent); border-color: transparent;">☕</div> 
                     Général
                 </div>
                 
@@ -283,7 +307,7 @@
                 <h1>📋 Tableau des Tâches</h1>
                 <p>Glisse et dépose les missions pour faire avancer les projets.</p>
             </div>
-            <button onclick="openTaskModal()" style="width:auto; padding:10px 20px; background:var(--accent);">+ Nouvelle Mission</button>
+            <button onclick="openTaskModal()" style="width:auto; padding:10px 25px; background:var(--accent);">+ Nouvelle Mission</button>
         </div>
 
         <div class="kanban-board">
@@ -463,13 +487,13 @@
                         <td><input type="text" class="inv-input qty" value="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
                         <td><input type="text" class="inv-input price" value="100.00" oninput="window.calculateInvoice()" style="text-align:right;"></td>
                         <td class="row-total" style="text-align:right;">100.00 €</td>
-                        <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%;">X</button></td>
+                        <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%; border-radius:8px;">X</button></td>
                     </tr>
                 </tbody>
             </table>
             
             <div class="no-print" style="margin-top: 10px;">
-                <button onclick="window.addInvoiceRow()" style="background:var(--panel); border:1px dashed var(--accent); color:var(--accent); width:auto;">+ Ajouter une ligne</button>
+                <button onclick="window.addInvoiceRow()" style="background:var(--glass-bg); border:1px solid var(--accent); color:var(--accent); width:auto; padding:8px 20px;">+ Ajouter une ligne</button>
             </div>
 
             <div class="invoice-footer">
@@ -479,7 +503,7 @@
                     
                     <div style="margin-top: 20px;" class="signature-wrapper">
                         <h4 style="margin:0 0 5px 0; color:var(--subtext);">Signature (Direction)</h4>
-                        <canvas id="sigCanvas" width="300" height="120" style="background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; cursor:crosshair;"></canvas>
+                        <canvas id="sigCanvas" width="300" height="120" style="background:var(--input-bg); border:1px solid var(--input-border); border-radius:12px; cursor:crosshair;"></canvas>
                         <button id="clearSigBtn" onclick="window.clearSignature()" class="no-print" style="width:100px; padding:5px; margin-top:5px; font-size:0.8em; background:transparent; border:1px solid var(--subtext); color:var(--subtext);">Effacer</button>
                     </div>
                 </div>
@@ -487,7 +511,7 @@
                     <div class="tot-row"><span>Sous-total HT :</span> <span id="invSubtotal">100.00 €</span></div>
                     <div class="tot-row">
                         <span>TVA (%) :</span> 
-                        <input type="text" id="invTaxRate" class="inv-input" value="20" style="width:50px; text-align:right; margin-right:5px;" oninput="window.calculateInvoice()">
+                        <input type="text" id="invTaxRate" class="inv-input" value="20" style="width:60px; text-align:right; margin-right:5px;" oninput="window.calculateInvoice()">
                     </div>
                     <div class="tot-row"><span>Montant TVA :</span> <span id="invTaxAmount">20.00 €</span></div>
                     <div class="tot-row grand-total"><span>TOTAL TTC :</span> <span id="invTotal">120.00 €</span></div>
@@ -514,7 +538,7 @@
             <button onclick="createAdminDoc()">Sauvegarder dans le Cloud ☁️</button>
             <p id="docMsg"></p>
         </div>
-        <div id="docsGrid" class="docs-grid scrollable-table"></div>
+        <div id="docsGrid" class="docs-grid scrollable-table" style="background:transparent; border:none;"></div>
     </section>
 
     <section id="settings" class="section no-print">
@@ -532,7 +556,7 @@
         <button onclick="saveProfileSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
         <p id="settingsMsg"></p>
 
-        <div style="margin-top: 50px; border-top: 1px solid var(--border); padding-top: 30px;">
+        <div style="margin-top: 50px; border-top: 1px solid var(--glass-border); padding-top: 30px;">
             <h3 style="color: #ef4444; margin-top:0;">⚠️ Zone de Danger</h3>
             <p style="font-size: 0.85em; color: var(--subtext); margin-bottom: 15px;">La suppression de votre compte est définitive.</p>
             <button onclick="deleteMyAccount()" class="danger-btn">🗑️ Supprimer mon compte définitivement</button>
@@ -544,22 +568,22 @@
 </div>
 
 <div id="newTaskModal" class="modal hidden no-print">
-  <div class="modal-content" style="width: 400px; text-align: left;">
+  <div class="modal-content" style="width: 450px; text-align: left;">
     <span class="close-btn" onclick="closeTaskModal()">&times;</span>
     <h2 style="margin-top:0;">📌 Nouvelle Mission</h2>
-    <div class="input-group" style="margin-top: 20px;">
+    <div class="input-group" style="margin-top: 25px;">
         <input id="taskTitle" type="text" required>
         <label>Titre de la tâche</label>
     </div>
     <div class="input-group">
-        <textarea id="taskDesc" class="cyber-textarea" placeholder="Détails de la mission..." style="height: 80px;"></textarea>
+        <textarea id="taskDesc" class="cyber-textarea" placeholder="Détails de la mission..." style="height: 100px;"></textarea>
     </div>
     <div class="input-group">
         <select id="taskAssignee" class="cyber-select">
             <option value="Pour toute l'équipe">Pour toute l'équipe</option>
             </select>
     </div>
-    <button onclick="saveNewTask()">Ajouter la mission</button>
+    <button onclick="saveNewTask()" style="margin-top:10px;">Ajouter la mission</button>
   </div>
 </div>
 
@@ -569,7 +593,7 @@
     <div class="modal-header">
       <img id="m_photo" src="" alt="Avatar">
       <h2 id="m_name">Chargement...</h2>
-      <p id="m_email" class="subtext">...</p>
+      <p id="m_email" class="subtext" style="text-align:center;">...</p>
     </div>
     <div class="modal-body">
       <div class="info-row"><span class="label">Rôle Actuel :</span><span id="m_role" class="value badge">...</span></div>
@@ -581,15 +605,15 @@
 </div>
 
 <div id="newEmployeeModal" class="modal hidden no-print">
-  <div class="modal-content" style="width: 500px; text-align: left;">
+  <div class="modal-content" style="width: 550px; text-align: left;">
     <span class="close-btn" onclick="closeNewEmployeeModal()">&times;</span>
     <h2 style="margin-top:0;">📝 Nouveau Dossier</h2>
-    <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 20px;">
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-top: 25px;">
         <div class="input-group"><input id="ne_name" type="text" required><label>Nom & Prénom</label></div>
-        <div class="input-group"><input id="ne_email" type="email" required><label>Email (Pour relier le compte)</label></div>
+        <div class="input-group"><input id="ne_email" type="email" required><label>Email (Liaison compte)</label></div>
         <div class="input-group"><input id="ne_grade" type="text" required><label>Poste / Grade</label></div>
         <div class="input-group"><input id="ne_phone" type="text" required><label>Téléphone</label></div>
-        <div class="input-group" style="grid-column: span 2;"><input id="ne_salary" type="text" required><label>Salaire</label></div>
+        <div class="input-group" style="grid-column: span 2;"><input id="ne_salary" type="text" required><label>Salaire / Taux</label></div>
     </div>
     <button onclick="saveNewEmployee()">Créer le dossier</button>
     <p id="ne_msg" style="text-align:center; font-weight:bold;"></p>
@@ -597,17 +621,17 @@
 </div>
 
 <div id="hrEmployeeModal" class="modal hidden no-print">
-  <div class="modal-content" style="width: 700px; text-align: left;">
+  <div class="modal-content" style="width: 750px; text-align: left;">
     <span class="close-btn" onclick="closeHrEmployeeModal()">&times;</span>
     
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:15px; margin-bottom:15px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--glass-border); padding-bottom:15px; margin-bottom:20px;">
         <div>
             <h2 id="hre_name" style="margin:0; color:var(--text);">Nom Employé</h2>
-            <p id="hre_grade" style="margin:5px 0 0 0; color:var(--accent);">Poste</p>
+            <p id="hre_grade" style="margin:5px 0 0 0; color:var(--accent); font-weight:bold;">Poste</p>
         </div>
         <div style="text-align: right;">
-            <label style="color:var(--subtext); font-size:0.8em; display:block; margin-bottom:5px;">Statut actuel :</label>
-            <select id="hre_status" class="cyber-select" style="width:150px; border:1px solid var(--border);">
+            <label style="color:var(--subtext); font-size:0.85em; display:block; margin-bottom:5px;">Statut actuel :</label>
+            <select id="hre_status" class="cyber-select" style="width:160px;">
                 <option value="en_service">🟢 En service</option>
                 <option value="hors_service">⚪ Hors service</option>
                 <option value="absent">🔴 Absent / Malade</option>
@@ -630,27 +654,27 @@
         <div class="info-row" style="border:none;"><span class="label">Salaire:</span><span id="hre_salary" class="value">...</span></div>
         <div class="info-row" style="border:none; grid-column: span 2;"><span class="label">Embauché le:</span><span id="hre_date" class="value">...</span></div>
 
-        <div class="info-row" style="border:none; grid-column: span 2; background: rgba(59, 130, 246, 0.1); padding: 10px; border-radius: 8px;">
-            <span class="label">⏱️ Temps de la semaine :</span>
-            <span id="hre_service_time" class="value" style="color:var(--accent); font-size: 1.2em;">0h 0m</span>
+        <div class="info-row" style="border:none; grid-column: span 2; background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 12px; border:1px solid rgba(59, 130, 246, 0.2);">
+            <span class="label" style="color:var(--text);">⏱️ Temps de la semaine :</span>
+            <span id="hre_service_time" class="value" style="color:var(--accent); font-size: 1.4em; font-family:monospace;">0h 0m</span>
         </div>
     </div>
 
-    <div style="margin-top: 20px;">
-        <h3 style="color:var(--text); font-size:1.1em; border-bottom: 1px solid var(--border); padding-bottom:5px;">📅 Historique des Sessions</h3>
-        <div id="hre_timelogs" style="max-height: 120px; overflow-y: auto; font-size: 0.85em; background: var(--hover-bg); padding: 10px; border-radius: 8px;">
+    <div style="margin-top: 25px;">
+        <h3 style="color:var(--text); font-size:1.1em; border-bottom: 2px solid var(--glass-border); padding-bottom:10px;">📅 Historique des Sessions</h3>
+        <div id="hre_timelogs" style="max-height: 140px; overflow-y: auto; font-size: 0.9em; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 12px; border:1px solid var(--glass-border);">
             <p style="color:var(--subtext); margin:0;">Chargement...</p>
         </div>
     </div>
 
-    <div style="margin-top: 20px;">
+    <div style="margin-top: 25px;">
         <h3 style="color:var(--text); font-size:1.1em;">🔒 Notes RH</h3>
-        <textarea id="hre_notes" class="cyber-textarea" style="height: 80px;"></textarea>
+        <textarea id="hre_notes" class="cyber-textarea" style="height: 100px;"></textarea>
     </div>
     
-    <div style="display:flex; gap:10px; margin-top:20px;">
+    <div style="display:flex; gap:15px; margin-top:25px;">
         <button onclick="updateEmployeeDossier()" style="flex:2;">💾 Enregistrer les modifs</button>
-        <button onclick="deleteEmployeeDossier()" style="flex:1; background:transparent; border:1px solid var(--error); color:var(--error);">🗑️ Virer</button>
+        <button onclick="deleteEmployeeDossier()" style="flex:1; background:rgba(239, 68, 68, 0.1); border:2px solid var(--error); color:var(--error);">🗑️ Virer</button>
     </div>
   </div>
 </div>
