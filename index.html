@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Agence Immo</title>
+  <title>Admin Dashboard Ultra</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
@@ -112,10 +112,24 @@
         </div>
       </div>
 
-      <div style="margin-top: 40px;">
-          <h3>📢 Annonces de la Direction</h3>
-          <div id="homeAnnouncementsGrid" class="announcements-grid">
-              <p style="color: var(--subtext);">Chargement des annonces...</p>
+      <div class="home-widgets-grid">
+          <div>
+              <h3>📢 Annonces de la Direction</h3>
+              <div id="homeAnnouncementsGrid" class="announcements-grid">
+                  <p style="color: var(--subtext);">Chargement des annonces...</p>
+              </div>
+          </div>
+          
+          <div class="focus-widget">
+              <div class="focus-widget-header">
+                  <h3 style="margin:0; color: #ef4444;">🎯 Radar Focus (Deep Work)</h3>
+                  <button id="btn-toggle-focus" onclick="toggleFocusMode()">Activer 45 min 🔕</button>
+              </div>
+              <p style="font-size: 0.8em; color: var(--subtext); margin-top: 5px; margin-bottom: 15px;">Évite de déranger les membres affichés ici.</p>
+              
+              <div id="focusRadarList" class="focus-radar-list">
+                  <p style="color: var(--subtext); text-align: center; padding: 20px 0;">Personne n'est en mode Focus actuellement.</p>
+              </div>
           </div>
       </div>
     </section>
