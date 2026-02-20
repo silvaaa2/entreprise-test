@@ -391,8 +391,8 @@
                 <tbody id="invoiceBody">
                     <tr>
                         <td><input type="text" class="inv-input" placeholder="Prestation ou Produit" oninput="window.calculateInvoice()"></td>
-                        <td><input type="number" class="inv-input qty" value="1" min="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
-                        <td><input type="number" class="inv-input price" value="100.00" min="0" step="0.01" oninput="window.calculateInvoice()" style="text-align:right;"></td>
+                        <td><input type="text" class="inv-input qty" value="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
+                        <td><input type="text" class="inv-input price" value="100.00" oninput="window.calculateInvoice()" style="text-align:right;"></td>
                         <td class="row-total" style="text-align:right;">100.00 €</td>
                         <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%;">X</button></td>
                     </tr>
@@ -412,7 +412,7 @@
                     <div class="tot-row"><span>Sous-total HT :</span> <span id="invSubtotal">100.00 €</span></div>
                     <div class="tot-row">
                         <span>TVA (%) :</span> 
-                        <input type="number" id="invTaxRate" class="inv-input" value="20" style="width:50px; text-align:right; margin-right:5px;" oninput="window.calculateInvoice()">
+                        <input type="text" id="invTaxRate" class="inv-input" value="20" style="width:50px; text-align:right; margin-right:5px;" oninput="window.calculateInvoice()">
                     </div>
                     <div class="tot-row"><span>Montant TVA :</span> <span id="invTaxAmount">20.00 €</span></div>
                     <div class="tot-row grand-total"><span>TOTAL TTC :</span> <span id="invTotal">120.00 €</span></div>
