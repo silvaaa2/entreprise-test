@@ -752,7 +752,7 @@ button:hover {
 .status-vacation { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
 .status-pending { background: rgba(59, 130, 246, 0.1); color: var(--accent); border: 1px solid rgba(59, 130, 246, 0.3); }
 
-/* NOUVEAU : BADGES SANCTIONS */
+/* BADGES SANCTIONS */
 .badge-avert-verbal { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
 .badge-avert-ecrit { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
 .badge-mise-pied { background: rgba(185, 28, 28, 0.2); color: #fca5a5; border: 1px solid #b91c1c; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
@@ -898,4 +898,180 @@ button:hover {
 
 .chat-row.mine .chat-meta { 
   text-align: right; 
+}
+
+/* ==================== GENERATEUR DE FACTURES ==================== */
+.invoice-container {
+    background: var(--panel);
+    border-radius: 15px;
+    padding: 40px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.inv-input {
+    background: transparent;
+    border: 1px dashed transparent;
+    color: var(--text);
+    width: 100%;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 0.95em;
+    outline: none;
+    transition: 0.3s;
+    border-radius: 5px;
+}
+
+.inv-input:hover, .inv-input:focus {
+    border-color: var(--accent);
+    background: var(--hover-bg);
+}
+
+.inv-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.invoice-company, .invoice-details {
+    width: 48%;
+}
+
+.invoice-details .inv-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.invoice-details .inv-row span {
+    width: 120px;
+    color: var(--subtext);
+    font-weight: bold;
+}
+
+.invoice-client {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--hover-bg);
+    border-radius: 10px;
+    border-left: 4px solid var(--accent);
+}
+
+.invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.invoice-table th {
+    background: var(--hover-bg);
+    color: var(--subtext);
+    text-transform: uppercase;
+    font-size: 0.85em;
+    padding: 12px;
+    border-bottom: 2px solid var(--border);
+}
+
+.invoice-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.invoice-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.invoice-notes {
+    width: 60%;
+}
+
+.invoice-totals {
+    width: 35%;
+    background: var(--hover-bg);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.tot-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--text);
+    align-items: center;
+}
+
+.grand-total {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--accent);
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+/* ==================== IMPRESSION (PDF) ==================== */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .no-print, .sidebar, #loginBox, #themeBtn {
+        display: none !important;
+    }
+    
+    .content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        overflow: visible !important;
+    }
+    
+    .invoice-container {
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+        padding: 0 !important;
+        color: black !important;
+    }
+    
+    .inv-input {
+        color: black !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    
+    .inv-input::placeholder {
+        color: transparent !important;
+    }
+    
+    .invoice-table th {
+        background: #f1f5f9 !important;
+        color: black !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    
+    .invoice-table td {
+        border-bottom: 1px solid #ddd !important;
+    }
+    
+    .invoice-client, .invoice-totals {
+        background: #f8fafc !important;
+        border-left-color: #000 !important;
+    }
+    
+    .grand-total {
+        color: black !important;
+    }
 }
