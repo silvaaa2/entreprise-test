@@ -120,15 +120,26 @@
               </div>
           </div>
           
-          <div class="focus-widget">
-              <div class="focus-widget-header">
-                  <h3 style="margin:0; color: #ef4444;">🎯 Radar Focus (Deep Work)</h3>
-                  <button id="btn-toggle-focus" onclick="toggleFocusMode()">Activer 45 min 🔕</button>
+          <div>
+              <div class="focus-widget" id="adminAlertWidget" style="border-color: var(--warning); display: none; margin-bottom: 20px;">
+                  <div class="focus-widget-header">
+                      <h3 style="margin:0; color: var(--error);">🚨 Alerte Générale</h3>
+                  </div>
+                  <p style="font-size: 0.8em; color: var(--subtext); margin-top: 5px; margin-bottom: 15px;">Fait trembler l'écran de TOUS les utilisateurs en ligne.</p>
+                  <input type="text" id="alertMessage" class="inv-input" placeholder="Raison de l'alerte..." style="margin-bottom: 15px; border-bottom: 1px solid var(--border);">
+                  <button onclick="triggerGeneralAlert()" style="background: var(--error); box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);">💥 DÉCLENCHER</button>
               </div>
-              <p style="font-size: 0.8em; color: var(--subtext); margin-top: 5px; margin-bottom: 15px;">Évite de déranger les membres affichés ici.</p>
-              
-              <div id="focusRadarList" class="focus-radar-list">
-                  <p style="color: var(--subtext); text-align: center; padding: 20px 0;">Personne n'est en mode Focus actuellement.</p>
+
+              <div class="focus-widget">
+                  <div class="focus-widget-header">
+                      <h3 style="margin:0; color: #ef4444;">🎯 Radar Focus (Deep Work)</h3>
+                      <button id="btn-toggle-focus" onclick="toggleFocusMode()">Activer 45 min 🔕</button>
+                  </div>
+                  <p style="font-size: 0.8em; color: var(--subtext); margin-top: 5px; margin-bottom: 15px;">Évite de déranger les membres affichés ici.</p>
+                  
+                  <div id="focusRadarList" class="focus-radar-list">
+                      <p style="color: var(--subtext); text-align: center; padding: 20px 0;">Personne n'est en mode Focus actuellement.</p>
+                  </div>
               </div>
           </div>
       </div>
