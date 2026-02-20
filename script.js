@@ -850,6 +850,13 @@ window.fetchChatUsers = async function() {
     snap.forEach(d => {
         if(d.id !== auth.currentUser.uid) { 
             const data = d.data();
+            
+            // --- MODIFICATION ICI : RESTRICTION DES MP ---
+            // Si l'utilisateur connecté N'EST PAS admin ET que le profil qu'on regarde N'EST PAS admin, on zappe.
+            if (window.currentUserRole !== 'admin' && data.role !== 'admin') {
+                return; // Ne pas afficher cet utilisateur dans la liste
+            }
+            
             const photo = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
             const name = data.displayName || "Anonyme";
             const statusDot = data.isOnline ? `<div class="online-dot"></div>` : `<div class="offline-dot"></div>`;
