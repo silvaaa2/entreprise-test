@@ -118,7 +118,7 @@ window.showSection = function(id) {
     if(id === 'home') { 
         window.updateDashboardStats(); 
         window.fetchAnnouncements(); 
-        window.fetchFocusRadar(); // Lancement du Radar
+        window.fetchFocusRadar(); 
     }
     else if(id === 'users') { 
         window.fetchUsers(); 
@@ -155,6 +155,7 @@ window.showSection = function(id) {
         window.populateSanctionDropdown(); 
     }
     else if(id === 'chat') { 
+        window.fetchChatUsers(); 
         window.fetchChatMessages(); 
         const badgeChat = document.getElementById("badgeChat");
         if(badgeChat) badgeChat.classList.add("hidden");
@@ -167,6 +168,11 @@ onAuthStateChanged(auth, async (user) => {
         if(adminDashboard) adminDashboard.classList.remove("hidden");
         
         await loadUserProfile(user);
+        
+        // Initialisation de la messagerie par défaut
+        window.currentChatId = 'general';
+        window.currentChatName = '☕ Général';
+        
         window.showSection('home');
         window.updateDashboardStats(); 
     } else {
@@ -315,10 +321,8 @@ window.toggleFocusMode = async function() {
         const now = Date.now();
         
         if(data.focusUntil && data.focusUntil > now) {
-            // Désactiver le focus
             await updateDoc(docRef, { focusUntil: null });
         } else {
-            // Activer pour 45 minutes
             await updateDoc(docRef, { focusUntil: now + 45 * 60 * 1000 });
         }
     }
@@ -346,7 +350,6 @@ window.fetchFocusRadar = function() {
             }
         });
 
-        // Mise à jour du bouton d'activation
         const btn = document.getElementById("btn-toggle-focus");
         if(btn) {
             if(amIFocusing) {
@@ -395,7 +398,6 @@ window.renderFocusList = function() {
     radarList.innerHTML = html;
 };
 
-// Boucle locale pour faire descendre les secondes à l'écran sans spammer la base de données
 setInterval(() => {
     const homeSection = document.getElementById("home");
     if(homeSection && homeSection.classList.contains("active")) {
@@ -826,8 +828,55 @@ window.fetchSanctions = function() {
     });
 };
 
-/* ==================== 7. MACHINE A CAFE (TCHAT) ==================== */
+/* ==================== 7. MESSAGERIE (GENERAL + MP) ==================== */
 let unsubChat = null;
+
+// Charge la liste de tous les collègues pour les MP
+window.fetchChatUsers = async function() {
+    if(!auth.currentUser) return;
+    const snap = await getDocs(collection(db, "users"));
+    let html = "";
+    snap.forEach(d => {
+        if(d.id !== auth.currentUser.uid) { // On s'affiche pas soi-même
+            const data = d.data();
+            const photo = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            const name = data.displayName || "Anonyme";
+            html += `
+            <div class="chat-contact" id="contact_${d.id}" onclick="window.selectChat('${d.id}', '${name}')">
+                <img src="${photo}">
+                ${name}
+            </div>`;
+        }
+    });
+    const list = document.getElementById("chatUsersList");
+    if(list) list.innerHTML = html;
+};
+
+// Fonction pour changer de salon (Général ou Privé)
+window.selectChat = function(targetUid, targetName) {
+    if(!auth.currentUser) return;
+    
+    if(targetUid === 'general') {
+        window.currentChatId = 'general';
+        window.currentChatName = '☕ Général';
+    } else {
+        // Crée une room unique et cryptique avec les 2 UID classés par ordre alphabétique
+        const myUid = auth.currentUser.uid;
+        window.currentChatId = [myUid, targetUid].sort().join('_');
+        window.currentChatName = '🔒 ' + targetName;
+    }
+    
+    // Met à jour le titre
+    setElementText('currentChatHeader', window.currentChatName);
+    
+    // Change la surbrillance dans le menu de gauche
+    document.querySelectorAll('.chat-contact').forEach(el => el.classList.remove('active'));
+    const activeEl = document.getElementById('contact_' + targetUid);
+    if(activeEl) activeEl.classList.add('active');
+    
+    // Recharge les messages
+    window.fetchChatMessages();
+};
 
 window.sendChatMessage = async function() {
     const input = document.getElementById("chatInput");
@@ -837,6 +886,7 @@ window.sendChatMessage = async function() {
     
     try {
         await addDoc(collection(db, "messages"), {
+            chatId: window.currentChatId || 'general', // Enregistre le salon cible
             text: text, 
             authorName: window.currentUserName, 
             authorEmail: window.currentUserEmail, 
@@ -856,14 +906,23 @@ window.handleChatKeyPress = function(e) {
 
 let isFirstChatLoad = true;
 window.fetchChatMessages = function() {
-    if(unsubChat) return;
+    if(unsubChat) unsubChat(); // Coupe l'ancienne écoute
     
-    unsubChat = onSnapshot(query(collection(db, "messages"), orderBy("createdAt", "asc")), (snapshot) => {
-        const container = document.getElementById("chatMessages");
-        let html = "";
+    // Récupère UNIQUEMENT les messages du salon actuel. 
+    // Le tri se fait en local pour éviter les bugs d'index Firebase !
+    unsubChat = onSnapshot(query(collection(db, "messages"), where("chatId", "==", window.currentChatId || 'general')), (snapshot) => {
+        let msgs = [];
+        snapshot.forEach(docSnap => msgs.push(docSnap.data()));
         
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
+        // Tri ultra robuste en javascript
+        msgs.sort((a, b) => {
+            let tA = a.createdAt ? a.createdAt.toMillis() : Date.now();
+            let tB = b.createdAt ? b.createdAt.toMillis() : Date.now();
+            return tA - tB;
+        });
+
+        let html = "";
+        msgs.forEach((data) => {
             const isMine = data.authorEmail === window.currentUserEmail;
             const alignClass = isMine ? 'mine' : 'other';
             let timeStr = "";
@@ -875,8 +934,9 @@ window.fetchChatMessages = function() {
             html += `<div class="chat-row ${alignClass}"><div class="chat-meta"><b>${isMine ? 'Moi' : data.authorName}</b> • ${timeStr}</div><div class="chat-bubble">${data.text}</div></div>`;
         });
         
+        const container = document.getElementById("chatMessages");
         if(container) {
-            container.innerHTML = html;
+            container.innerHTML = html || "<p style='color:var(--subtext); text-align:center;'>Aucun message ici. Lance la discussion !</p>";
             container.scrollTop = container.scrollHeight; 
         }
 
