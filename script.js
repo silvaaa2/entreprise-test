@@ -52,6 +52,44 @@ const setElementText = function(id, text) {
     if (el) el.innerText = text;
 };
 
+/* ==================== 1.5 FONCTION LOGS (BIG BROTHER) ==================== */
+window.logActivity = async function(actionDesc) {
+    if(!auth.currentUser) return;
+    try {
+        await addDoc(collection(db, "logs"), {
+            userName: window.currentUserName || "Inconnu",
+            userEmail: window.currentUserEmail || "inconnu@email.com",
+            action: actionDesc,
+            timestamp: Date.now()
+        });
+    } catch(e) {
+        console.error("Erreur d'enregistrement du log", e);
+    }
+};
+
+let unsubLogs = null;
+window.fetchLogs = function() {
+    if(unsubLogs) return;
+    
+    unsubLogs = onSnapshot(query(collection(db, "logs"), orderBy("timestamp", "desc")), (snapshot) => {
+        let html = "";
+        snapshot.forEach(docSnap => {
+            const d = docSnap.data();
+            const dateStr = new Date(d.timestamp).toLocaleString('fr-FR');
+            html += `<tr>
+                <td style="font-family:monospace; color:var(--subtext); font-size:0.9em;">${dateStr}</td>
+                <td style="font-weight:bold; color:var(--accent);">${d.userName}</td>
+                <td>${d.action}</td>
+            </tr>`;
+        });
+        
+        const tbody = document.getElementById("logsListBody");
+        if(tbody) {
+            tbody.innerHTML = html || "<tr><td colspan='3' style='text-align:center;'>Aucune activité détectée.</td></tr>";
+        }
+    });
+};
+
 /* ==================== 2. AUTHENTIFICATION & NAVIGATION ==================== */
 window.login = async function() { 
     const emailInput = document.getElementById("email").value;
@@ -107,6 +145,7 @@ window.loginWithGoogle = async function() {
 window.logout = async function() { 
     if(auth.currentUser) {
         await updateDoc(doc(db, "users", auth.currentUser.uid), { isOnline: false });
+        window.logActivity("S'est déconnecté du dashboard.");
     }
     signOut(auth).then(() => window.location.reload()); 
 };
@@ -169,6 +208,9 @@ window.showSection = function(id) {
         const badgeChat = document.getElementById("badgeChat");
         if(badgeChat) badgeChat.classList.add("hidden");
     }
+    else if(id === 'logs') {
+        window.fetchLogs();
+    }
 };
 
 onAuthStateChanged(auth, async (user) => {
@@ -180,6 +222,12 @@ onAuthStateChanged(auth, async (user) => {
         
         // On le signale en ligne
         await updateDoc(doc(db, "users", user.uid), { isOnline: true });
+        
+        // Log de connexion (si c'est le chargement initial)
+        if(!window.hasLoggedConnection) {
+            window.logActivity("S'est connecté au dashboard.");
+            window.hasLoggedConnection = true;
+        }
         
         window.currentChatId = 'general';
         window.currentChatName = '☕ Général';
@@ -252,7 +300,8 @@ function applyPermissions(role) {
     const menusToHide = [
         "btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-factures",
         "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "btn-kanban", "mainStatsGrid", 
-        "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc", "adminAlertWidget"
+        "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc", "adminAlertWidget",
+        "btn-logs" /* CACHÉ PAR DEFAUT */
     ];
     
     menusToHide.forEach(id => { 
@@ -333,8 +382,10 @@ window.toggleFocusMode = async function() {
         
         if(data.focusUntil && data.focusUntil > now) {
             await updateDoc(docRef, { focusUntil: null });
+            window.logActivity("A désactivé son mode Focus (Radar).");
         } else {
             await updateDoc(docRef, { focusUntil: now + 45 * 60 * 1000 });
+            window.logActivity("A activé le mode Focus pour 45 minutes.");
         }
     }
 };
@@ -448,6 +499,8 @@ window.createNewUser = async function() {
         
         await signOut(secondaryAuth);
         
+        window.logActivity(`A créé un nouveau compte pour : ${email} avec le rôle ${role}.`);
+        
         if(msg) {
             msg.innerText = `✅ Ajouté !`; 
             msg.style.color = "var(--success)";
@@ -471,7 +524,7 @@ window.fetchUsers = function() {
             const r = data.role;
 
             const roleSelect = `
-            <select onchange="window.updateUserRole('${uid}', this.value)" style="background:var(--panel); color:var(--text); border:1px solid var(--border); padding:5px; border-radius:5px;">
+            <select onchange="window.updateUserRole('${uid}', this.value, '${data.email}')" style="background:var(--panel); color:var(--text); border:1px solid var(--glass-border); padding:5px; border-radius:5px;">
                 <option value="guest" ${(!r || r === 'guest') ? 'selected' : ''}>⛔ Aucun accès</option>
                 <option value="employee" ${r === 'employee' ? 'selected' : ''}>👷 Employé</option>
                 <option value="rh" ${r === 'rh' ? 'selected' : ''}>🤝 RH</option>
@@ -487,7 +540,7 @@ window.fetchUsers = function() {
                 <td>${roleSelect}</td>
                 <td>${data.createdAt || "-"}</td>
                 <td>
-                    <button onclick="window.deleteUser('${uid}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em; color:white; border:none; border-radius:5px;">🗑️ Exclure</button>
+                    <button onclick="window.deleteUser('${uid}', '${data.email}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em; color:white; border:none; border-radius:5px;">🗑️ Exclure</button>
                 </td>
             </tr>`;
         });
@@ -495,20 +548,22 @@ window.fetchUsers = function() {
     });
 };
 
-window.updateUserRole = async function(uid, newRole) { 
+window.updateUserRole = async function(uid, newRole, email) { 
     try { 
         await updateDoc(doc(db, "users", uid), { role: newRole }); 
+        window.logActivity(`A modifié le rôle de ${email} en : ${newRole}.`);
     } catch (e) { 
         console.error("Erreur maj", e);
     } 
 };
 
-window.deleteUser = async function(uid) {
+window.deleteUser = async function(uid, email) {
     if (auth.currentUser && auth.currentUser.uid === uid) { 
         return alert("Utilise les Paramètres pour supprimer ton propre compte."); 
     }
     if(confirm("⚠️ EXCLURE définitivement cette personne ?")) { 
         await deleteDoc(doc(db, "users", uid)); 
+        window.logActivity(`A supprimé le compte utilisateur de : ${email}.`);
     }
 };
 
@@ -592,7 +647,7 @@ function renderMyServiceUI(data) {
                     ${isEnService ? "0h 0m" : formatTime(lastSession)}
                 </div>
                 
-                <div style="margin: 20px 0; padding-top: 20px; border-top: 1px solid var(--border);">
+                <div style="margin: 20px 0; padding-top: 20px; border-top: 1px solid var(--glass-border);">
                     <p style="color:var(--subtext); margin:0; font-size: 0.9em;">⏱️ Service total de la semaine :</p>
                     <div id="my_weekly_clock" style="font-size: 1.5em; color:var(--text); font-weight: bold; font-family: monospace;">0h 0m</div>
                 </div>
@@ -634,6 +689,7 @@ window.toggleMyService = async function(newStatus) {
     if (data.status !== 'en_service' && newStatus === 'en_service') {
         updates.currentServiceStart = Date.now();
         updates.weeklyServiceSeconds = currentWeekly; 
+        window.logActivity("A pris son service (Pointage).");
     } 
     else if (data.status === 'en_service' && newStatus !== 'en_service') {
         const durationSecs = Math.floor((Date.now() - data.currentServiceStart) / 1000);
@@ -648,6 +704,7 @@ window.toggleMyService = async function(newStatus) {
             endTime: Date.now(),
             durationText: formatTime(durationSecs)
         });
+        window.logActivity(`A terminé son service (Durée : ${formatTime(durationSecs)}).`);
     }
     
     await updateDoc(doc(db, "employees", myEmployeeDocId), updates);
@@ -675,6 +732,8 @@ window.submitRequest = async function() {
             status: 'pending', 
             createdAt: new Date().toISOString()
         });
+        
+        window.logActivity(`A fait une demande : ${type} (${dates}).`);
         
         if(msg) {
             msg.innerText = "✅ Demande envoyée !"; 
@@ -711,8 +770,8 @@ window.fetchRequests = function() {
             let actions = "-";
             if(data.status === 'pending' && (window.currentUserRole === 'admin' || window.currentUserRole === 'rh')) {
                 actions = `
-                <button onclick="window.updateRequest('${docSnap.id}', 'approved', '${data.employeeEmail}', '${data.type}')" style="background:var(--success); padding:5px; width:auto; font-size:0.8em; margin-right:5px; color:white; border:none; border-radius:3px;">✔️</button>
-                <button onclick="window.updateRequest('${docSnap.id}', 'rejected', null, null)" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">❌</button>`;
+                <button onclick="window.updateRequest('${docSnap.id}', 'approved', '${data.employeeEmail}', '${data.type}', '${data.employeeName}')" style="background:var(--success); padding:5px; width:auto; font-size:0.8em; margin-right:5px; color:white; border:none; border-radius:3px;">✔️</button>
+                <button onclick="window.updateRequest('${docSnap.id}', 'rejected', '${data.employeeEmail}', '${data.type}', '${data.employeeName}')" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">❌</button>`;
             }
 
             html += `<tr>
@@ -729,8 +788,11 @@ window.fetchRequests = function() {
     });
 };
 
-window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
+window.updateRequest = async function(reqId, newStatus, empEmail, reqType, empName) {
     await updateDoc(doc(db, "requests", reqId), { status: newStatus });
+    
+    let actionTxt = newStatus === 'approved' ? "Approuvé" : "Refusé";
+    window.logActivity(`A ${actionTxt} la demande de congé de : ${empName}.`);
     
     if(newStatus === 'approved' && reqType === 'Vacances' && empEmail) {
         const snap = await getDocs(query(collection(db, "employees"), where("email", "==", empEmail)));
@@ -782,6 +844,8 @@ window.submitSanction = async function() {
             createdAt: new Date().toISOString()
         });
         
+        window.logActivity(`A appliqué une sanction [${type}] à : ${empName}.`);
+        
         if(msg) {
             msg.innerText = "✅ Sanction appliquée avec succès."; 
             msg.style.color="var(--success)";
@@ -799,6 +863,7 @@ window.submitSanction = async function() {
 window.deleteSanction = async function(id) {
     if(confirm("Annuler définitivement cette sanction ?")) {
         await deleteDoc(doc(db, "sanctions", id));
+        window.logActivity(`A annulé et supprimé une sanction.`);
     }
 };
 
@@ -852,7 +917,6 @@ window.fetchChatUsers = async function() {
             const data = d.data();
             
             // --- MODIFICATION ICI : RESTRICTION DES MP ---
-            // Si l'utilisateur connecté N'EST PAS admin ET que le profil qu'on regarde N'EST PAS admin, on zappe.
             if (window.currentUserRole !== 'admin' && data.role !== 'admin') {
                 return; // Ne pas afficher cet utilisateur dans la liste
             }
@@ -875,7 +939,6 @@ window.fetchChatUsers = async function() {
     if(list) list.innerHTML = html;
 };
 
-// Fonction pour changer de salon (Général ou Privé)
 window.selectChat = function(targetUid, targetName) {
     if(!auth.currentUser) return;
     
@@ -1010,6 +1073,8 @@ window.saveNewTask = async function() {
         createdAt: new Date().toISOString()
     });
     
+    window.logActivity(`A créé la tâche Kanban : "${title}".`);
+    
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskDesc").value = "";
     window.closeTaskModal();
@@ -1059,6 +1124,7 @@ window.fetchTasks = function() {
 window.deleteTask = async function(id) {
     if(confirm("Supprimer cette tâche ?")) {
         await deleteDoc(doc(db, "tasks", id));
+        window.logActivity("A supprimé une tâche Kanban.");
     }
 };
 
@@ -1093,6 +1159,9 @@ window.drop = async function(ev) {
     if(targetCol.id === "col-done") newStatus = "done";
     
     await updateDoc(doc(db, "tasks", dataId), { status: newStatus });
+    
+    let statusText = newStatus === 'todo' ? "À FAIRE" : (newStatus === 'inprogress' ? "EN COURS" : "TERMINÉ");
+    window.logActivity(`A déplacé une tâche Kanban vers la colonne [${statusText}].`);
 };
 
 /* ==================== 8. RESSOURCES HUMAINES & DOSSIERS ==================== */
@@ -1114,6 +1183,8 @@ window.postAnnouncement = async function() {
         createdAt: new Date().toISOString() 
     });
     
+    window.logActivity(`A publié une annonce RH : "${title}".`);
+    
     titleInput.value = ""; 
     contentInput.value = "";
 };
@@ -1121,6 +1192,7 @@ window.postAnnouncement = async function() {
 window.deleteAnnouncement = async function(id) {
     if(confirm("Supprimer cette annonce ?")) {
         await deleteDoc(doc(db, "announcements", id));
+        window.logActivity("A supprimé une annonce RH.");
     }
 };
 
@@ -1163,8 +1235,9 @@ window.closeHrEmployeeModal = function() {
 };
 
 window.saveNewEmployee = async function() {
+    let empName = document.getElementById("ne_name").value;
     await addDoc(collection(db, "employees"), {
-        name: document.getElementById("ne_name").value, 
+        name: empName, 
         email: document.getElementById("ne_email").value,
         grade: document.getElementById("ne_grade").value, 
         phone: document.getElementById("ne_phone").value,
@@ -1177,6 +1250,8 @@ window.saveNewEmployee = async function() {
         hiredDate: new Date().toISOString().split('T')[0], 
         hrNotes: ""
     });
+    
+    window.logActivity(`A créé le dossier employé de : ${empName}.`);
     
     window.closeNewEmployeeModal();
     
@@ -1294,12 +1369,14 @@ window.updateEmployeeDossier = async function() {
     }
 
     await updateDoc(doc(db, "employees", id), updates);
+    window.logActivity(`A mis à jour un dossier RH depuis le panel Admin.`);
     window.closeHrEmployeeModal();
 };
 
 window.deleteEmployeeDossier = async function() { 
     if(confirm("Virer l'employé définitivement ?")) { 
         await deleteDoc(doc(db, "employees", document.getElementById("hre_id").value)); 
+        window.logActivity("A supprimé définitivement un dossier employé.");
         window.closeHrEmployeeModal(); 
     } 
 };
@@ -1379,7 +1456,7 @@ window.addInvoiceRow = function() {
         <td><input type="text" class="inv-input qty" value="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
         <td><input type="text" class="inv-input price" value="0.00" oninput="window.calculateInvoice()" style="text-align:right;"></td>
         <td class="row-total" style="text-align:right;">0.00 €</td>
-        <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%;">X</button></td>
+        <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%; border-radius:8px;">X</button></td>
     `;
     tbody.appendChild(tr);
     window.calculateInvoice();
@@ -1472,6 +1549,7 @@ window.createAdminDoc = async function() {
             createdAt: new Date().toISOString() 
         });
         
+        window.logActivity(`A enregistré le document cloud : "${title}".`);
         setElementText("docMsg", "✅ Sauvegardé !"); 
         titleEl.value = ""; 
         contentEl.value = "";
@@ -1483,6 +1561,7 @@ window.createAdminDoc = async function() {
 window.deleteAdminDoc = async function(id) {
     if(confirm("Supprimer ce document ?")) {
         await deleteDoc(doc(db, "admin_docs", id));
+        window.logActivity("A supprimé un document cloud.");
     }
 };
 
@@ -1545,6 +1624,7 @@ window.deleteMyAccount = async function() {
     if (!confirm("⚠️ DÉFINITIF.\nVeux-tu continuer ?") || !confirm("Vraiment sûr ?")) return; 
     
     try { 
+        window.logActivity("A supprimé son propre compte.");
         await deleteDoc(doc(db, "users", auth.currentUser.uid)); 
         await deleteUser(auth.currentUser); 
         window.location.reload(); 
@@ -1629,6 +1709,8 @@ window.triggerGeneralAlert = async function() {
         triggeredBy: window.currentUserName,
         timestamp: Date.now()
     });
+    
+    window.logActivity(`A DÉCLENCHÉ UNE ALERTE GÉNÉRALE NUCLÉAIRE : "${msg}".`);
     document.getElementById("alertMessage").value = "";
 };
 
