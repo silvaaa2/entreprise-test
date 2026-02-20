@@ -59,7 +59,7 @@
     <span id="admin-title-menu" style="color:var(--subtext); font-size:0.7em; margin-left:10px; text-transform:uppercase; letter-spacing:1px;">Administration</span>
     <button id="btn-kanban" onclick="showSection('kanban')" style="color: #a855f7;">📋 Tableau des Tâches</button>
     <button id="btn-chat" onclick="showSection('chat')" style="color: #3b82f6;">
-        💬 Machine à café <span id="badgeChat" class="nav-badge hidden">!</span>
+        💬 Messagerie <span id="badgeChat" class="nav-badge hidden">!</span>
     </button>
     <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
@@ -237,15 +237,31 @@
     </section>
 
     <section id="chat" class="section no-print">
-        <h1>Machine à café 💬</h1>
-        <p>Discute en direct avec toute l'équipe.</p>
+        <h1>Messagerie 💬</h1>
+        <p>Discute en direct avec toute l'équipe ou en message privé.</p>
         
-        <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
+        <div class="chat-layout">
+            <div class="chat-sidebar" id="chatSidebar">
+                <h4 style="color: var(--subtext); margin: 0 0 10px 5px; font-size: 0.8em; text-transform: uppercase;">Salons</h4>
+                <div class="chat-contact active" id="contact_general" onclick="window.selectChat('general', 'Général')">
+                    <div class="contact-icon" style="background: var(--accent);">☕</div> 
+                    Général
                 </div>
-            <div class="chat-input-area">
-                <input type="text" id="chatInput" placeholder="Écris un message..." onkeypress="handleChatKeyPress(event)">
-                <button onclick="sendChatMessage()" style="width: 100px; margin:0;">Envoyer</button>
+                
+                <h4 style="color: var(--subtext); margin: 20px 0 10px 5px; font-size: 0.8em; text-transform: uppercase;">Messages Privés (MP)</h4>
+                <div id="chatUsersList">
+                    <p style="color:var(--subtext); font-size:0.8em; padding-left:5px;">Chargement...</p>
+                </div>
+            </div>
+
+            <div class="chat-main">
+                <div class="chat-header" id="currentChatHeader">☕ Général</div>
+                <div class="chat-messages" id="chatMessages">
+                    </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Écris un message..." onkeypress="handleChatKeyPress(event)">
+                    <button onclick="sendChatMessage()" style="width: 100px; margin:0;">Envoyer</button>
+                </div>
             </div>
         </div>
     </section>
