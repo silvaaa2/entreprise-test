@@ -197,6 +197,12 @@ button:hover {
   box-shadow: 0 5px 15px rgba(0,0,0, 0.1); 
 }
 
+/* C'EST CETTE LIGNE QUI MANQUAIT POUR LE LOGO GOOGLE ! */
+.google-btn img { 
+  width: 24px; 
+  height: 24px; 
+}
+
 .separator { 
   display: flex; 
   align-items: center; 
