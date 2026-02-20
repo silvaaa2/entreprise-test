@@ -104,9 +104,18 @@ window.loginWithGoogle = async function() {
     } 
 };
 
-window.logout = function() { 
+window.logout = async function() { 
+    if(auth.currentUser) {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { isOnline: false });
+    }
     signOut(auth).then(() => window.location.reload()); 
 };
+
+window.addEventListener('beforeunload', () => {
+    if(auth.currentUser) {
+        updateDoc(doc(db, "users", auth.currentUser.uid), { isOnline: false });
+    }
+});
 
 window.showSection = function(id) {
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
@@ -169,7 +178,9 @@ onAuthStateChanged(auth, async (user) => {
         
         await loadUserProfile(user);
         
-        // Initialisation de la messagerie par défaut
+        // On le signale en ligne
+        await updateDoc(doc(db, "users", user.uid), { isOnline: true });
+        
         window.currentChatId = 'general';
         window.currentChatName = '☕ Général';
         
@@ -241,7 +252,7 @@ function applyPermissions(role) {
     const menusToHide = [
         "btn-users", "btn-rh", "btn-compta", "btn-docs", "btn-factures",
         "btn-service", "btn-requests", "btn-sanctions", "btn-chat", "btn-kanban", "mainStatsGrid", 
-        "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc"
+        "admin-title-menu", "perso-title-menu", "thActionsReq", "employeeRequestBox", "hrSanctionBox", "thActionsSanc", "adminAlertWidget"
     ];
     
     menusToHide.forEach(id => { 
@@ -837,13 +848,18 @@ window.fetchChatUsers = async function() {
     const snap = await getDocs(collection(db, "users"));
     let html = "";
     snap.forEach(d => {
-        if(d.id !== auth.currentUser.uid) { // On s'affiche pas soi-même
+        if(d.id !== auth.currentUser.uid) { 
             const data = d.data();
             const photo = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
             const name = data.displayName || "Anonyme";
+            const statusDot = data.isOnline ? `<div class="online-dot"></div>` : `<div class="offline-dot"></div>`;
+            
             html += `
             <div class="chat-contact" id="contact_${d.id}" onclick="window.selectChat('${d.id}', '${name}')">
-                <img src="${photo}">
+                <div style="position:relative; display:inline-block;">
+                    <img src="${photo}">
+                    <span style="position:absolute; bottom:0; right:0;">${statusDot}</span>
+                </div>
                 ${name}
             </div>`;
         }
@@ -860,21 +876,17 @@ window.selectChat = function(targetUid, targetName) {
         window.currentChatId = 'general';
         window.currentChatName = '☕ Général';
     } else {
-        // Crée une room unique et cryptique avec les 2 UID classés par ordre alphabétique
         const myUid = auth.currentUser.uid;
         window.currentChatId = [myUid, targetUid].sort().join('_');
         window.currentChatName = '🔒 ' + targetName;
     }
     
-    // Met à jour le titre
     setElementText('currentChatHeader', window.currentChatName);
     
-    // Change la surbrillance dans le menu de gauche
     document.querySelectorAll('.chat-contact').forEach(el => el.classList.remove('active'));
     const activeEl = document.getElementById('contact_' + targetUid);
     if(activeEl) activeEl.classList.add('active');
     
-    // Recharge les messages
     window.fetchChatMessages();
 };
 
@@ -886,7 +898,7 @@ window.sendChatMessage = async function() {
     
     try {
         await addDoc(collection(db, "messages"), {
-            chatId: window.currentChatId || 'general', // Enregistre le salon cible
+            chatId: window.currentChatId || 'general', 
             text: text, 
             authorName: window.currentUserName, 
             authorEmail: window.currentUserEmail, 
@@ -906,15 +918,12 @@ window.handleChatKeyPress = function(e) {
 
 let isFirstChatLoad = true;
 window.fetchChatMessages = function() {
-    if(unsubChat) unsubChat(); // Coupe l'ancienne écoute
+    if(unsubChat) unsubChat(); 
     
-    // Récupère UNIQUEMENT les messages du salon actuel. 
-    // Le tri se fait en local pour éviter les bugs d'index Firebase !
     unsubChat = onSnapshot(query(collection(db, "messages"), where("chatId", "==", window.currentChatId || 'general')), (snapshot) => {
         let msgs = [];
         snapshot.forEach(docSnap => msgs.push(docSnap.data()));
         
-        // Tri ultra robuste en javascript
         msgs.sort((a, b) => {
             let tA = a.createdAt ? a.createdAt.toMillis() : Date.now();
             let tB = b.createdAt ? b.createdAt.toMillis() : Date.now();
@@ -1603,17 +1612,45 @@ window.loadSheetData = async function() {
     } 
 };
 
-window.searchTable = function() { 
-    const searchEl = document.getElementById("tableSearch");
-    if(!searchEl) return;
+/* ==================== ALERTE GENERALE ==================== */
+window.triggerGeneralAlert = async function() {
+    const msg = document.getElementById("alertMessage").value || "ALERTE GÉNÉRALE DE LA DIRECTION !";
+    if(!confirm("⚠️ Sûr de vouloir faire trembler l'écran de TOUTE l'équipe ?")) return;
     
-    const f = searchEl.value.toUpperCase(); 
-    const table = document.getElementById("sheetTable");
-    if(!table) return;
+    await setDoc(doc(db, "system", "global_alert"), {
+        message: msg,
+        triggeredBy: window.currentUserName,
+        timestamp: Date.now()
+    });
+    document.getElementById("alertMessage").value = "";
+};
+
+onSnapshot(doc(db, "system", "global_alert"), (docSnap) => {
+    if(docSnap.exists()) {
+        const data = docSnap.data();
+        if(Date.now() - data.timestamp < 10000) {
+            executeScreenShake(data.message, data.triggeredBy);
+        }
+    }
+});
+
+function executeScreenShake(msg, author) {
+    document.body.classList.add("shake-active");
     
-    const tr = table.getElementsByTagName("tr"); 
-    
-    for(let i=1; i<tr.length; i++) { 
-        tr[i].style.display = Array.from(tr[i].getElementsByTagName("td")).some(td => td.textContent.toUpperCase().includes(f)) ? "" : "none"; 
-    } 
+    const modalHtml = `
+    <div id="nukeAlertModal" class="alert-modal-overlay">
+        <div class="alert-modal-box">
+            <h1 style="color:var(--error); font-size:3.5em; margin:0; text-shadow: 0 0 20px var(--error);">🚨 ALERTE ! 🚨</h1>
+            <p style="font-size:1.8em; font-weight:bold; color:var(--text);">${msg}</p>
+            <p style="color:var(--subtext); margin-bottom: 30px;">Déclenché par : ${author}</p>
+            <button onclick="stopScreenShake()" style="background:var(--error); font-size: 1.2em;">J'ai compris</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+window.stopScreenShake = function() {
+    document.body.classList.remove("shake-active");
+    const alertEl = document.getElementById("nukeAlertModal");
+    if(alertEl) alertEl.remove();
 };
