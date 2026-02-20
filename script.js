@@ -47,7 +47,7 @@ function formatTime(totalSeconds) {
     return `${h}h ${m}m`; 
 }
 
-// Fonction de sécurité
+// Fonction de sécurité ABSOLUE pour ne plus JAMAIS avoir l'erreur "Cannot set properties of null"
 const setElementText = function(id, text) {
     const el = document.getElementById(id);
     if (el) el.innerText = text;
@@ -131,7 +131,6 @@ window.showSection = function(id) {
         window.toggleCompta('data'); 
     }
     else if(id === 'factures') {
-        // Init la date du jour sur la facture si c'est vide
         const dateInput = document.getElementById("invDateCurrent");
         if(dateInput && !dateInput.value) {
             dateInput.value = new Date().toISOString().split('T')[0];
@@ -223,7 +222,7 @@ async function loadUserProfile(user) {
         listenForNotifications();
         
     } catch (e) { 
-        console.error("Erreur lors du chargement du profil:", e); 
+        console.error("Erreur profil:", e); 
     }
 }
 
@@ -379,7 +378,7 @@ window.updateUserRole = async function(uid, newRole) {
     try { 
         await updateDoc(doc(db, "users", uid), { role: newRole }); 
     } catch (e) { 
-        alert("Erreur lors de la mise à jour : " + e.message); 
+        console.error("Erreur maj", e);
     } 
 };
 
@@ -616,7 +615,7 @@ window.updateRequest = async function(reqId, newStatus, empEmail, reqType) {
         const snap = await getDocs(query(collection(db, "employees"), where("email", "==", empEmail)));
         if(!snap.empty) {
             await updateDoc(doc(db, "employees", snap.docs[0].id), { status: 'vacation' });
-            alert("Requête approuvée. Employé mis en statut 'Congés'.");
+            // Pas d'alerte pour rester fluide
         }
     }
 };
@@ -738,7 +737,7 @@ window.sendChatMessage = async function() {
         });
         input.value = "";
     } catch(e) { 
-        alert("Erreur d'envoi du message"); 
+        console.error("Erreur d'envoi", e);
     }
 };
 
@@ -1009,37 +1008,55 @@ window.searchRH = function() {
     } 
 };
 
-/* ==================== 8.5 CALCULS FACTURES ==================== */
+/* ==================== 8.5 CALCULS FACTURES (ANTI-PLANTAGE VIRGULE) ==================== */
 window.calculateInvoice = function() {
-    const tbody = document.getElementById("invoiceBody");
-    if(!tbody) return;
-    
-    const rows = tbody.getElementsByTagName("tr");
-    let subtotal = 0;
-    
-    for(let i = 0; i < rows.length; i++) {
-        const qtyInput = rows[i].querySelector(".qty");
-        const priceInput = rows[i].querySelector(".price");
-        const rowTotalEl = rows[i].querySelector(".row-total");
+    try {
+        const tbody = document.getElementById("invoiceBody");
+        if(!tbody) return;
         
-        if(qtyInput && priceInput && rowTotalEl) {
-            const qty = parseFloat(qtyInput.value) || 0;
-            const price = parseFloat(priceInput.value) || 0;
-            const total = qty * price;
-            subtotal += total;
-            rowTotalEl.innerText = total.toFixed(2) + " €";
+        const rows = tbody.getElementsByTagName("tr");
+        let subtotal = 0;
+        
+        for(let i = 0; i < rows.length; i++) {
+            const qtyInput = rows[i].querySelector(".qty");
+            const priceInput = rows[i].querySelector(".price");
+            const rowTotalEl = rows[i].querySelector(".row-total");
+            
+            if(qtyInput && priceInput && rowTotalEl) {
+                // On remplace la virgule tapée par l'utilisateur par un point (pour JS)
+                const qVal = qtyInput.value.replace(',', '.');
+                const pVal = priceInput.value.replace(',', '.');
+                
+                const qty = parseFloat(qVal) || 0;
+                const price = parseFloat(pVal) || 0;
+                const total = qty * price;
+                
+                subtotal += total;
+                rowTotalEl.innerText = total.toFixed(2) + " €";
+            }
         }
+        
+        const taxRateInput = document.getElementById("invTaxRate");
+        let taxRate = 20;
+        if(taxRateInput) {
+            taxRate = parseFloat(taxRateInput.value.replace(',', '.')) || 0;
+        }
+        
+        const taxAmount = subtotal * (taxRate / 100);
+        const grandTotal = subtotal + taxAmount;
+        
+        const stEl = document.getElementById("invSubtotal");
+        if(stEl) stEl.innerText = subtotal.toFixed(2) + " €";
+
+        const txEl = document.getElementById("invTaxAmount");
+        if(txEl) txEl.innerText = taxAmount.toFixed(2) + " €";
+
+        const gtEl = document.getElementById("invTotal");
+        if(gtEl) gtEl.innerText = grandTotal.toFixed(2) + " €";
+
+    } catch(e) {
+        console.error("Erreur de calcul facture :", e);
     }
-    
-    const taxRateInput = document.getElementById("invTaxRate");
-    const taxRate = taxRateInput ? (parseFloat(taxRateInput.value) || 0) : 20;
-    
-    const taxAmount = subtotal * (taxRate / 100);
-    const grandTotal = subtotal + taxAmount;
-    
-    setElementText("invSubtotal", subtotal.toFixed(2) + " €");
-    setElementText("invTaxAmount", taxAmount.toFixed(2) + " €");
-    setElementText("invTotal", grandTotal.toFixed(2) + " €");
 };
 
 window.addInvoiceRow = function() {
@@ -1049,8 +1066,8 @@ window.addInvoiceRow = function() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
         <td><input type="text" class="inv-input" placeholder="Prestation ou Produit" oninput="window.calculateInvoice()"></td>
-        <td><input type="number" class="inv-input qty" value="1" min="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
-        <td><input type="number" class="inv-input price" value="0.00" min="0" step="0.01" oninput="window.calculateInvoice()" style="text-align:right;"></td>
+        <td><input type="text" class="inv-input qty" value="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
+        <td><input type="text" class="inv-input price" value="0.00" oninput="window.calculateInvoice()" style="text-align:right;"></td>
         <td class="row-total" style="text-align:right;">0.00 €</td>
         <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%;">X</button></td>
     `;
@@ -1059,16 +1076,22 @@ window.addInvoiceRow = function() {
 };
 
 window.removeInvoiceRow = function(btn) {
+    if(!btn || !btn.parentNode || !btn.parentNode.parentNode) return;
     const row = btn.parentNode.parentNode;
-    row.parentNode.removeChild(row);
-    window.calculateInvoice();
+    if(row.parentNode) {
+        row.parentNode.removeChild(row);
+        window.calculateInvoice();
+    }
 };
 
 /* ==================== 9. AUTRES (DOCS / COMPTA / PARAMETRES) ==================== */
 window.createAdminDoc = async function() {
-    const title = document.getElementById("docTitle").value; 
-    const content = document.getElementById("docContent").value;
-    
+    const titleEl = document.getElementById("docTitle"); 
+    const contentEl = document.getElementById("docContent");
+    if(!titleEl || !contentEl) return;
+
+    const title = titleEl.value;
+    const content = contentEl.value;
     if(!title || !content) return;
     
     try {
@@ -1079,11 +1102,8 @@ window.createAdminDoc = async function() {
         });
         
         setElementText("docMsg", "✅ Sauvegardé !"); 
-        
-        const dt = document.getElementById("docTitle");
-        if(dt) dt.value = ""; 
-        const dc = document.getElementById("docContent");
-        if(dc) dc.value = "";
+        titleEl.value = ""; 
+        contentEl.value = "";
     } catch(e) { 
         console.error(e); 
     }
@@ -1124,8 +1144,12 @@ window.toggleTheme = function() {
 };
 
 window.saveProfileSettings = async function() { 
-    const newName = document.getElementById("settingsDisplayName").value; 
-    const newPhotoURL = document.getElementById("settingsPhotoURL").value; 
+    const newNameEl = document.getElementById("settingsDisplayName"); 
+    const newPhotoURLEl = document.getElementById("settingsPhotoURL"); 
+    if(!newNameEl || !newPhotoURLEl) return;
+
+    const newName = newNameEl.value;
+    const newPhotoURL = newPhotoURLEl.value;
     
     if (!auth.currentUser || !newName) return; 
     
