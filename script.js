@@ -118,6 +118,7 @@ window.showSection = function(id) {
     if(id === 'home') { 
         window.updateDashboardStats(); 
         window.fetchAnnouncements(); 
+        window.fetchFocusRadar(); // Lancement du Radar
     }
     else if(id === 'users') { 
         window.fetchUsers(); 
@@ -138,7 +139,7 @@ window.showSection = function(id) {
         if(dateInput && !dateInput.value) {
             dateInput.value = new Date().toISOString().split('T')[0];
         }
-        window.initSignature(); // Lance le pad de signature
+        window.initSignature(); 
     }
     else if(id === 'docs') { 
         window.fetchAdminDocs(); 
@@ -300,6 +301,108 @@ function listenForNotifications() {
     }
 }
 
+/* ==================== 3.1 RADAR FOCUS MODE (DEEP WORK) ==================== */
+let unsubFocus = null;
+window.currentFocusUsers = [];
+
+window.toggleFocusMode = async function() {
+    if(!auth.currentUser) return;
+    const docRef = doc(db, "users", auth.currentUser.uid);
+    const docSnap = await getDoc(docRef);
+    
+    if(docSnap.exists()) {
+        const data = docSnap.data();
+        const now = Date.now();
+        
+        if(data.focusUntil && data.focusUntil > now) {
+            // Désactiver le focus
+            await updateDoc(docRef, { focusUntil: null });
+        } else {
+            // Activer pour 45 minutes
+            await updateDoc(docRef, { focusUntil: now + 45 * 60 * 1000 });
+        }
+    }
+};
+
+window.fetchFocusRadar = function() {
+    if(unsubFocus) return;
+    
+    unsubFocus = onSnapshot(collection(db, "users"), (snapshot) => {
+        let amIFocusing = false;
+        const now = Date.now();
+        window.currentFocusUsers = []; 
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if(data.focusUntil && data.focusUntil > now) {
+                if(docSnap.id === auth.currentUser.uid) amIFocusing = true;
+                
+                window.currentFocusUsers.push({
+                    name: data.displayName || "Anonyme",
+                    photo: data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                    focusUntil: data.focusUntil,
+                    uid: docSnap.id
+                });
+            }
+        });
+
+        // Mise à jour du bouton d'activation
+        const btn = document.getElementById("btn-toggle-focus");
+        if(btn) {
+            if(amIFocusing) {
+                btn.innerText = "🛑 Stopper le Focus";
+                btn.style.background = "#ef4444";
+                btn.style.color = "white";
+            } else {
+                btn.innerText = "Activer 45 min 🔕";
+                btn.style.background = "transparent";
+                btn.style.color = "#ef4444";
+            }
+        }
+
+        window.renderFocusList();
+    });
+};
+
+window.renderFocusList = function() {
+    const radarList = document.getElementById("focusRadarList");
+    if(!radarList) return;
+    
+    if(!window.currentFocusUsers || window.currentFocusUsers.length === 0) {
+        radarList.innerHTML = `<p style="color: var(--subtext); text-align: center; padding: 20px 0;">Personne n'est en mode Focus actuellement.</p>`;
+        return;
+    }
+    
+    let html = "";
+    const now = Date.now();
+    
+    window.currentFocusUsers.forEach(u => {
+        let diff = Math.floor((u.focusUntil - now) / 1000);
+        if(diff < 0) diff = 0;
+        
+        let m = Math.floor(diff / 60).toString().padStart(2, '0');
+        let s = (diff % 60).toString().padStart(2, '0');
+        
+        html += `<div class="focus-item">
+                    <div class="focus-user">
+                        <img src="${u.photo}">
+                        <span><b>${u.name}</b> <small style="color:var(--subtext)">en plein tryhard...</small></span>
+                    </div>
+                    <div class="focus-timer">${m}:${s}</div>
+                 </div>`;
+    });
+    
+    radarList.innerHTML = html;
+};
+
+// Boucle locale pour faire descendre les secondes à l'écran sans spammer la base de données
+setInterval(() => {
+    const homeSection = document.getElementById("home");
+    if(homeSection && homeSection.classList.contains("active")) {
+        window.renderFocusList();
+    }
+}, 1000);
+
 /* ==================== 4. GESTION DES UTILISATEURS (COMPTES) ==================== */
 let unsubscribeUsers = null;
 
@@ -326,7 +429,8 @@ window.createNewUser = async function() {
             role: role, 
             createdAt: new Date().toISOString().split('T')[0], 
             displayName: "En attente", 
-            photoURL: "" 
+            photoURL: "",
+            focusUntil: null
         });
         
         await signOut(secondaryAuth);
@@ -826,7 +930,7 @@ window.saveNewTask = async function() {
         title: title,
         desc: desc,
         assignee: assignee,
-        status: "todo", // todo, inprogress, done
+        status: "todo", 
         createdAt: new Date().toISOString()
     });
     
@@ -896,7 +1000,6 @@ window.drop = async function(ev) {
     const draggedCard = document.getElementById(dataId);
     if(!draggedCard) return;
 
-    // Trouver la colonne de destination
     let targetCol = ev.target;
     while(targetCol && !targetCol.classList.contains("kanban-column")) {
         targetCol = targetCol.parentNode;
@@ -909,7 +1012,6 @@ window.drop = async function(ev) {
         targetList.appendChild(draggedCard);
     }
     
-    // Mettre à jour Firebase
     let newStatus = "todo";
     if(targetCol.id === "col-inprogress") newStatus = "inprogress";
     if(targetCol.id === "col-done") newStatus = "done";
@@ -1073,7 +1175,6 @@ window.openHrEmployeeModal = async function(id) {
     };
     updateTimerDisplay();
 
-    // Récupération de l'historique de pointage
     const logSnap = await getDocs(query(collection(db, "timelogs"), where("employeeId", "==", id)));
     let logHtml = "";
     if(logSnap.empty) { 
@@ -1217,7 +1318,7 @@ window.removeInvoiceRow = function(btn) {
     }
 };
 
-/* ==================== 8.6 SIGNATURE ELECTRONIQUE (POUR BOSS SEULEMENT) ==================== */
+/* ==================== 8.6 SIGNATURE ELECTRONIQUE ==================== */
 let sigCtx = null;
 let isDrawing = false;
 
@@ -1226,7 +1327,6 @@ window.initSignature = function() {
     const clearBtn = document.getElementById('clearSigBtn');
     if(!canvas) return;
 
-    // SECURITE : Si c'est pas le Boss, on bloque le dessin
     if(window.currentUserRole !== 'admin') {
         canvas.style.pointerEvents = 'none';
         if(clearBtn) clearBtn.style.display = 'none';
@@ -1242,7 +1342,6 @@ window.initSignature = function() {
     canvas.addEventListener('mouseup', endPos);
     canvas.addEventListener('mousemove', drawSig);
 
-    // Support Tactile
     canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startPos(e.touches[0]); });
     canvas.addEventListener('touchend', endPos);
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawSig(e.touches[0]); });
@@ -1338,7 +1437,6 @@ window.toggleTheme = function() {
     localStorage.setItem('theme', isL ? 'light' : 'dark'); 
     setElementText('themeBtn', isL ? "🌙 Mode Sombre" : "☀️ Mode Clair"); 
     
-    // Maj de l'encre de la signature si le thème change
     if(sigCtx) sigCtx.strokeStyle = isL ? '#000' : '#fff';
 };
 
