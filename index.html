@@ -43,7 +43,7 @@
 
 <div id="adminDashboard" class="hidden">
 
-  <aside class="sidebar">
+  <aside class="sidebar no-print">
     <h3>Dashboard</h3>
     <button id="btn-home" onclick="showSection('home')">🏠 Accueil</button>
     
@@ -63,6 +63,7 @@
     <button id="btn-users" onclick="showSection('users')">👤 Gestion Équipe</button>
     <button id="btn-rh" onclick="showSection('rh')">🤝 Ress. Humaines</button>
     <button id="btn-compta" onclick="showSection('compta')">📊 Comptabilité</button>
+    <button id="btn-factures" onclick="showSection('factures')" style="color: #2dd4bf;">🧾 Factures</button>
     <button id="btn-docs" onclick="showSection('docs')" style="color: #facc15;">📂 Documents Admin</button>
     
     <div class="spacer"></div>
@@ -80,7 +81,7 @@
 
   <main class="content">
 
-    <section id="home" class="section active">
+    <section id="home" class="section active no-print">
       <div class="home-header">
         <h1>Bienvenue. 👋</h1>
         <p>Voici l'état actuel de ton entreprise.</p>
@@ -118,7 +119,7 @@
       </div>
     </section>
 
-    <section id="service" class="section">
+    <section id="service" class="section no-print">
         <h1>Mon Pointage ⏱️</h1>
         <p>Gère tes heures de service directement ici.</p>
 
@@ -127,7 +128,7 @@
         </div>
     </section>
 
-    <section id="requests" class="section">
+    <section id="requests" class="section no-print">
         <h1>Demandes & Congés 🎫</h1>
         
         <div class="create-user-box" id="employeeRequestBox">
@@ -172,7 +173,7 @@
         </div>
     </section>
 
-    <section id="sanctions" class="section">
+    <section id="sanctions" class="section no-print">
         <h1 style="color: var(--error);">Sanctions & Avertissements ⚠️</h1>
         <p>Historique des mesures disciplinaires de l'entreprise.</p>
 
@@ -220,7 +221,7 @@
         </div>
     </section>
 
-    <section id="chat" class="section">
+    <section id="chat" class="section no-print">
         <h1>Machine à café 💬</h1>
         <p>Discute en direct avec toute l'équipe.</p>
         
@@ -234,7 +235,7 @@
         </div>
     </section>
 
-    <section id="users" class="section">
+    <section id="users" class="section no-print">
       <h1>Gestion des Accès</h1>
       <div class="create-user-box">
         <h3>✨ Ajouter un collaborateur</h3>
@@ -278,7 +279,7 @@
       </div>
     </section>
 
-   <section id="rh" class="section">
+   <section id="rh" class="section no-print">
       <h1>Ressources Humaines 🤝</h1>
       <p>Gestion du personnel, absences et annonces.</p>
 
@@ -325,7 +326,7 @@
       </div>
     </section>
 
-    <section id="compta" class="section">
+    <section id="compta" class="section no-print">
       <h1>Comptabilité</h1>
       <div class="compta-controls">
         <button onclick="toggleCompta('iframe')" class="small-btn action-btn">📄 Vue Fichier</button>
@@ -346,7 +347,81 @@
       </div>
     </section>
 
-    <section id="docs" class="section">
+    <section id="factures" class="section">
+        <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <div>
+                <h1>🧾 Générateur de Factures</h1>
+                <p>Crée et édite tes factures directement ici.</p>
+            </div>
+            <div>
+                <button onclick="window.print()" style="background:var(--success); width:auto; padding:10px 20px;">🖨️ Imprimer / PDF</button>
+            </div>
+        </div>
+
+        <div class="invoice-container">
+            <div class="invoice-header">
+                <div class="invoice-company">
+                    <input type="text" class="inv-input inv-title" value="MON ENTREPRISE" placeholder="Nom de l'entreprise">
+                    <textarea class="inv-input" placeholder="Adresse complète&#10;SIRET : 123 456 789&#10;Email : contact@entreprise.com" style="height:80px;"></textarea>
+                </div>
+                <div class="invoice-details">
+                    <h2 style="margin:0 0 10px 0; color:var(--text); letter-spacing:2px;">FACTURE</h2>
+                    <div class="inv-row"><span>N° Facture :</span> <input type="text" class="inv-input" value="FAC-2026-001"></div>
+                    <div class="inv-row"><span>Date :</span> <input type="date" class="inv-input" id="invDateCurrent"></div>
+                    <div class="inv-row"><span>Échéance :</span> <input type="date" class="inv-input"></div>
+                </div>
+            </div>
+
+            <div class="invoice-client">
+                <h4 style="margin:0 0 5px 0; color:var(--subtext);">Facturé à :</h4>
+                <input type="text" class="inv-input" placeholder="Nom du Client / Entreprise" style="font-weight:bold; font-size:1.1em;">
+                <textarea class="inv-input" placeholder="Adresse du client&#10;Code postal, Ville" style="height:60px;"></textarea>
+            </div>
+
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">Description</th>
+                        <th style="width: 15%; text-align:center;">Qté</th>
+                        <th style="width: 20%; text-align:right;">Prix Unitaire</th>
+                        <th style="width: 15%; text-align:right;">Total</th>
+                        <th class="no-print" style="width: 5%;"></th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceBody">
+                    <tr>
+                        <td><input type="text" class="inv-input" placeholder="Prestation ou Produit" oninput="window.calculateInvoice()"></td>
+                        <td><input type="number" class="inv-input qty" value="1" min="1" oninput="window.calculateInvoice()" style="text-align:center;"></td>
+                        <td><input type="number" class="inv-input price" value="100.00" min="0" step="0.01" oninput="window.calculateInvoice()" style="text-align:right;"></td>
+                        <td class="row-total" style="text-align:right;">100.00 €</td>
+                        <td class="no-print"><button onclick="window.removeInvoiceRow(this)" style="background:#ef4444; padding:5px; width:100%;">X</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="no-print" style="margin-top: 10px;">
+                <button onclick="window.addInvoiceRow()" style="background:var(--panel); border:1px dashed var(--accent); color:var(--accent); width:auto;">+ Ajouter une ligne</button>
+            </div>
+
+            <div class="invoice-footer">
+                <div class="invoice-notes">
+                    <h4 style="margin:0 0 5px 0; color:var(--subtext);">Conditions & Notes</h4>
+                    <textarea class="inv-input" placeholder="Conditions de paiement (ex: 30 jours fin de mois). RIB pour virement..." style="height:80px;"></textarea>
+                </div>
+                <div class="invoice-totals">
+                    <div class="tot-row"><span>Sous-total HT :</span> <span id="invSubtotal">100.00 €</span></div>
+                    <div class="tot-row">
+                        <span>TVA (%) :</span> 
+                        <input type="number" id="invTaxRate" class="inv-input" value="20" style="width:50px; text-align:right; margin-right:5px;" oninput="window.calculateInvoice()">
+                    </div>
+                    <div class="tot-row"><span>Montant TVA :</span> <span id="invTaxAmount">20.00 €</span></div>
+                    <div class="tot-row grand-total"><span>TOTAL TTC :</span> <span id="invTotal">120.00 €</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="docs" class="section no-print">
         <h1>📂 Documents Confidentiels</h1>
         <p>Espace de stockage réservé à l'administration.</p>
         <div class="create-user-box">
@@ -367,7 +442,7 @@
         <div id="docsGrid" class="docs-grid scrollable-table"></div>
     </section>
 
-    <section id="settings" class="section">
+    <section id="settings" class="section no-print">
       <h1>Paramètres</h1>
       <div class="create-user-box" style="max-width: 500px;">
         <h3>👤 Mon Profil</h3>
@@ -393,7 +468,7 @@
   </main>
 </div>
 
-<div id="profileModal" class="modal hidden">
+<div id="profileModal" class="modal hidden no-print">
   <div class="modal-content">
     <span class="close-btn" onclick="closeUserProfile()">&times;</span>
     <div class="modal-header">
@@ -410,7 +485,7 @@
   </div>
 </div>
 
-<div id="newEmployeeModal" class="modal hidden">
+<div id="newEmployeeModal" class="modal hidden no-print">
   <div class="modal-content" style="width: 500px; text-align: left;">
     <span class="close-btn" onclick="closeNewEmployeeModal()">&times;</span>
     <h2 style="margin-top:0;">📝 Nouveau Dossier</h2>
@@ -426,7 +501,7 @@
   </div>
 </div>
 
-<div id="hrEmployeeModal" class="modal hidden">
+<div id="hrEmployeeModal" class="modal hidden no-print">
   <div class="modal-content" style="width: 700px; text-align: left;">
     <span class="close-btn" onclick="closeHrEmployeeModal()">&times;</span>
     
