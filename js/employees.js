@@ -1,6 +1,7 @@
 import { db } from "./firebase.js";
 import { registerListener } from "./core.js";
 import { clearCache } from "./cache.js";
+import { requirePermission } from "./permissions.js";
 
 import {
   collection,
@@ -16,6 +17,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 function openNewEmployeeModal() {
+  if (!requirePermission("manage_employees", "Tu n'as pas le droit d'ouvrir ce formulaire.")) return;
+
   const modal = document.getElementById("newEmployeeModal");
   if (modal) modal.classList.remove("hidden");
 }
@@ -26,6 +29,8 @@ function closeNewEmployeeModal() {
 }
 
 async function saveNewEmployee() {
+  if (!requirePermission("manage_employees", "Tu n'as pas le droit de créer un employé.")) return;
+
   const name = document.getElementById("ne_name")?.value.trim();
   const email = document.getElementById("ne_email")?.value.trim();
   const grade = document.getElementById("ne_grade")?.value.trim();
@@ -82,6 +87,8 @@ async function saveNewEmployee() {
 }
 
 function fetchEmployees() {
+  if (!requirePermission("manage_employees", "Tu n'as pas accès aux employés.")) return;
+
   const tbody = document.getElementById("employeeListBody");
   if (!tbody) return;
 
@@ -115,6 +122,8 @@ function fetchEmployees() {
 }
 
 async function openHrEmployeeModal(id) {
+  if (!requirePermission("manage_employees", "Tu n'as pas accès à ce dossier employé.")) return;
+
   const modal = document.getElementById("hrEmployeeModal");
   if (modal) modal.classList.remove("hidden");
 
@@ -177,6 +186,8 @@ async function openHrEmployeeModal(id) {
 }
 
 async function updateEmployeeDossier() {
+  if (!requirePermission("manage_employees", "Tu n'as pas le droit de modifier un employé.")) return;
+
   const id = document.getElementById("hre_id")?.value;
   if (!id) return;
 
@@ -194,6 +205,8 @@ async function updateEmployeeDossier() {
 }
 
 async function deleteEmployeeDossier() {
+  if (!requirePermission("manage_employees", "Tu n'as pas le droit de supprimer un employé.")) return;
+
   const id = document.getElementById("hre_id")?.value;
   if (!id) return;
 
