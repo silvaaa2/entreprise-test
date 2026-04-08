@@ -1,5 +1,6 @@
 import { db } from "./firebase.js";
 import { registerListener } from "./core.js";
+import { clearCache } from "./cache.js";
 
 import {
   collection,
@@ -56,6 +57,8 @@ async function saveNewEmployee() {
       currentWeek: "",
       hrNotes: ""
     });
+
+    clearCache("dashboard_stats");
 
     if (msg) {
       msg.innerText = "✅ Employé créé";
@@ -197,6 +200,7 @@ async function deleteEmployeeDossier() {
   if (confirm("Supprimer cet employé ?")) {
     try {
       await deleteDoc(doc(db, "employees", id));
+      clearCache("dashboard_stats");
       closeHrEmployeeModal();
     } catch (e) {
       console.error("Erreur suppression employé :", e);
