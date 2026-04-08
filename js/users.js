@@ -1,6 +1,7 @@
 import { db, firebaseConfig } from "./firebase.js";
 import { registerListener } from "./core.js";
 import { clearCache } from "./cache.js";
+import { requirePermission } from "./permissions.js";
 
 import {
   collection,
@@ -20,6 +21,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 async function createNewUser() {
+  if (!requirePermission("manage_users", "Tu n'as pas le droit de créer des utilisateurs.")) return;
+
   const email = document.getElementById("newEmail")?.value.trim();
   const password = document.getElementById("newPassword")?.value;
   const role = document.getElementById("newRole")?.value;
@@ -53,7 +56,6 @@ async function createNewUser() {
     });
 
     clearCache("dashboard_stats");
-
     await signOut(secondaryAuth);
 
     if (msg) {
@@ -78,6 +80,8 @@ async function createNewUser() {
 }
 
 function fetchUsers() {
+  if (!requirePermission("manage_users", "Tu n'as pas accès à la gestion des utilisateurs.")) return;
+
   const tbody = document.getElementById("userListBody");
   if (!tbody) return;
 
@@ -127,6 +131,8 @@ function fetchUsers() {
 }
 
 async function updateUserRole(uid, newRole, email) {
+  if (!requirePermission("manage_users", "Tu n'as pas le droit de modifier les rôles.")) return;
+
   try {
     await updateDoc(doc(db, "users", uid), { role: newRole });
     clearCache("dashboard_stats");
@@ -136,6 +142,8 @@ async function updateUserRole(uid, newRole, email) {
 }
 
 async function deleteUser(uid, email) {
+  if (!requirePermission("manage_users", "Tu n'as pas le droit de supprimer des utilisateurs.")) return;
+
   if (confirm(`Supprimer ${email} ?`)) {
     try {
       await deleteDoc(doc(db, "users", uid));
@@ -147,6 +155,8 @@ async function deleteUser(uid, email) {
 }
 
 async function openUserProfile(uid) {
+  if (!requirePermission("manage_users", "Tu n'as pas accès aux profils utilisateurs.")) return;
+
   const modal = document.getElementById("profileModal");
   if (modal) modal.classList.remove("hidden");
 
