@@ -14,6 +14,16 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
+function openNewEmployeeModal() {
+  const modal = document.getElementById("newEmployeeModal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeNewEmployeeModal() {
+  const modal = document.getElementById("newEmployeeModal");
+  if (modal) modal.classList.add("hidden");
+}
+
 async function saveNewEmployee() {
   const name = document.getElementById("ne_name")?.value.trim();
   const email = document.getElementById("ne_email")?.value.trim();
@@ -58,8 +68,7 @@ async function saveNewEmployee() {
       if (el) el.value = "";
     });
 
-    const modal = document.getElementById("newEmployeeModal");
-    if (modal) modal.classList.add("hidden");
+    closeNewEmployeeModal();
   } catch (e) {
     console.error("Erreur création employé :", e);
     if (msg) {
@@ -201,6 +210,8 @@ function closeHrEmployeeModal() {
 }
 
 export {
+  openNewEmployeeModal,
+  closeNewEmployeeModal,
   saveNewEmployee,
   fetchEmployees,
   openHrEmployeeModal,
