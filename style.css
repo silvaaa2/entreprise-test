@@ -95,6 +95,7 @@ body::after {
   z-index: 0;
   pointer-events: none;
   opacity: 0.35;
+  animation: floatGlow 12s ease-in-out infinite alternate;
 }
 
 body::before {
@@ -107,6 +108,15 @@ body::after {
   right: -120px;
   bottom: -120px;
   background: rgba(217, 70, 239, 0.18);
+}
+
+@keyframes floatGlow {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(25px, -20px) scale(1.08);
+  }
 }
 
 body > * {
@@ -219,6 +229,20 @@ a {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    transform 0.18s ease;
+}
+
+.input-group input:hover,
+.input-group textarea:hover,
+.cyber-select:hover,
+.inv-input:hover,
+#chatInput:hover,
+.search-container input:hover {
+  background: rgba(255,255,255,0.07);
 }
 
 .input-group input:focus,
@@ -229,6 +253,7 @@ a {
 .search-container input:focus {
   border-color: rgba(105, 226, 255, 0.55);
   box-shadow: 0 0 0 4px rgba(105, 226, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .input-group label {
@@ -266,6 +291,40 @@ a {
   background: linear-gradient(135deg, rgba(105, 226, 255, 0.95), rgba(139, 92, 246, 0.95));
   color: white;
   box-shadow: 0 10px 24px rgba(105, 226, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card button::before,
+.create-user-box button::before,
+.modal-content button::before,
+.chat-input-area button::before,
+.compta-controls button::before,
+.small-btn::before,
+.secondary-btn::before,
+.logout-btn::before,
+.danger-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+}
+
+.login-card button:hover::before,
+.create-user-box button:hover::before,
+.modal-content button:hover::before,
+.chat-input-area button:hover::before,
+.compta-controls button:hover::before,
+.small-btn:hover::before,
+.secondary-btn:hover::before,
+.logout-btn:hover::before,
+.danger-btn:hover::before {
+  left: 140%;
 }
 
 .login-card button:hover,
@@ -273,6 +332,7 @@ a {
 .modal-content button:hover,
 .chat-input-area button:hover {
   box-shadow: 0 16px 30px rgba(105, 226, 255, 0.22);
+  transform: translateY(-2px) scale(1.01);
 }
 
 .google-btn {
@@ -333,11 +393,17 @@ a {
   padding: 22px 18px;
   margin: 18px 0 18px 18px;
   border-radius: 30px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)),
+    radial-gradient(circle at top left, rgba(105, 226, 255, 0.1), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 30%);
   border: 1px solid var(--glass-border-strong);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
-  box-shadow: var(--shadow-lg);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255,255,255,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.04);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -347,9 +413,12 @@ a {
 }
 
 .sidebar h3 {
-  font-size: 1.25rem;
+  font-size: 1.45rem;
   font-weight: 800;
   margin: 4px 6px 8px;
+  background: linear-gradient(90deg, var(--text), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .sidebar button {
@@ -363,20 +432,39 @@ a {
   font-weight: 700;
   font-size: 1rem;
   box-shadow: none;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sidebar button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.08), transparent 80%);
+  transform: translateX(-120%);
+  transition: transform 0.45s ease;
+}
+
+.sidebar button:hover::before {
+  transform: translateX(120%);
 }
 
 .sidebar button:hover {
   background: rgba(255,255,255,0.09);
   border-color: var(--glass-border);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.15);
 }
 
 .sidebar button.active,
 .sidebar button:focus-visible {
-  background: linear-gradient(135deg, rgba(105, 226, 255, 0.16), rgba(139, 92, 246, 0.18));
-  border-color: rgba(105, 226, 255, 0.3);
+  background: linear-gradient(135deg, rgba(105, 226, 255, 0.18), rgba(139, 92, 246, 0.22));
+  border-color: rgba(105, 226, 255, 0.4);
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.04),
-    0 0 24px rgba(105, 226, 255, 0.12);
+    0 0 22px rgba(105, 226, 255, 0.18),
+    inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
 .nav-badge {
@@ -392,6 +480,9 @@ a {
   font-weight: 800;
   background: linear-gradient(135deg, var(--error), #ff8fab);
   color: white;
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,0.03),
+    0 0 18px rgba(255, 91, 127, 0.2);
 }
 
 .spacer {
@@ -402,11 +493,15 @@ a {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255,255,255,0.06);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
   border: 1px solid var(--glass-border);
   border-radius: 18px;
   padding: 12px;
   margin-top: 8px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 12px 22px rgba(0,0,0,0.15);
 }
 
 .user-profile-section img {
@@ -415,7 +510,9 @@ a {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(105, 226, 255, 0.55);
-  box-shadow: 0 0 20px rgba(105, 226, 255, 0.18);
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,0.04),
+    0 0 26px rgba(105, 226, 255, 0.2);
 }
 
 #sidebarUserName {
@@ -434,6 +531,21 @@ a {
   background: rgba(255, 91, 127, 0.18) !important;
 }
 
+.secondary-btn {
+  background: rgba(255,255,255,0.07) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: none !important;
+}
+
+.secondary-btn:hover {
+  background: rgba(255,255,255,0.11) !important;
+}
+
+.danger-btn {
+  background: linear-gradient(135deg, rgba(255, 91, 127, 0.9), rgba(217, 70, 239, 0.86)) !important;
+}
+
 /* CONTENT */
 
 .content {
@@ -444,21 +556,23 @@ a {
 
 .section {
   display: none;
-  animation: fadeSlide 0.24s ease;
+  animation: fadeSlidePremium 0.28s cubic-bezier(.2,.8,.2,1);
 }
 
 .section.active {
   display: block;
 }
 
-@keyframes fadeSlide {
+@keyframes fadeSlidePremium {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.995);
+    transform: translateY(14px) scale(0.992);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -483,6 +597,40 @@ a {
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  position: relative;
+  overflow: hidden;
+}
+
+.create-user-box::before,
+.pointage-card::before,
+.focus-widget::before,
+.modal-content::before,
+.invoice-container::before,
+.doc-card::before,
+.ann-card::before,
+.chat-main::before,
+.chat-sidebar::before,
+.kanban-column::before,
+.iframe-container::before,
+.table-wrapper::before,
+#nativeTableContainer::before,
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(105, 226, 255, 0.22),
+    rgba(139, 92, 246, 0.2),
+    rgba(255, 79, 216, 0.15),
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
 
 .create-user-box,
@@ -495,6 +643,13 @@ a {
 
 .home-header {
   margin-bottom: 28px;
+}
+
+.home-header h1,
+.section h1 {
+  background: linear-gradient(90deg, var(--text), var(--accent), #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .home-header h1 {
@@ -525,6 +680,14 @@ a {
   border: 1px solid var(--glass-border-strong);
   box-shadow: var(--shadow-md);
   min-height: 122px;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 34px rgba(0,0,0,0.22),
+    0 0 28px rgba(105, 226, 255, 0.08);
 }
 
 .stat-card .icon {
@@ -536,7 +699,9 @@ a {
   font-size: 1.8rem;
   background: linear-gradient(135deg, rgba(105, 226, 255, 0.18), rgba(139, 92, 246, 0.16));
   border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 0 26px rgba(105, 226, 255, 0.08);
 }
 
 .stat-card .info h3 {
@@ -639,7 +804,10 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-bottom: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.04);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .cyber-table tbody td,
@@ -649,9 +817,24 @@ a {
   vertical-align: middle;
 }
 
+.cyber-table tbody tr,
+.invoice-table tbody tr {
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
 .cyber-table tbody tr:hover,
 .invoice-table tbody tr:hover {
-  background: rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.05);
+}
+
+.cyber-table tbody td:first-child,
+.invoice-table tbody td:first-child {
+  border-left: 2px solid transparent;
+}
+
+.cyber-table tbody tr:hover td:first-child,
+.invoice-table tbody tr:hover td:first-child {
+  border-left-color: rgba(105, 226, 255, 0.5);
 }
 
 .clickable-name {
@@ -679,6 +862,7 @@ a {
   font-size: 0.82rem;
   font-weight: 800;
   border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .status-en_service {
@@ -732,6 +916,9 @@ a {
 .chat-sidebar,
 .chat-main {
   padding: 18px;
+  box-shadow:
+    0 18px 36px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .chat-sidebar {
@@ -750,6 +937,22 @@ a {
   background: rgba(255,255,255,0.04);
   border: 1px solid transparent;
   transition: 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-contact::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.35s ease;
+}
+
+.chat-contact:hover::after {
+  transform: translateX(100%);
 }
 
 .chat-contact:hover,
@@ -808,10 +1011,14 @@ a {
   border-radius: 18px;
   background: rgba(255,255,255,0.07);
   border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
 }
 
 .chat-row.mine .chat-bubble {
   background: linear-gradient(135deg, rgba(105, 226, 255, 0.2), rgba(139, 92, 246, 0.22));
+  box-shadow:
+    0 12px 26px rgba(105, 226, 255, 0.08),
+    0 8px 18px rgba(0,0,0,0.16);
 }
 
 .chat-input-area {
@@ -858,6 +1065,15 @@ a {
   border: 1px solid rgba(255,255,255,0.08);
   cursor: grab;
   box-shadow: 0 10px 18px rgba(0,0,0,0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.kanban-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(105, 226, 255, 0.2);
+  box-shadow:
+    0 16px 24px rgba(0,0,0,0.2),
+    0 0 22px rgba(105, 226, 255, 0.06);
 }
 
 .kanban-card h4 {
@@ -892,6 +1108,16 @@ a {
   z-index: 1000;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  animation: modalBackdropIn 0.18s ease;
+}
+
+@keyframes modalBackdropIn {
+  from {
+    background: rgba(5, 8, 20, 0);
+  }
+  to {
+    background: rgba(5, 8, 20, 0.64);
+  }
 }
 
 .modal-content {
@@ -899,6 +1125,9 @@ a {
   padding: 28px;
   position: relative;
   animation: modalIn 0.22s ease;
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(255,255,255,0.04);
 }
 
 @keyframes modalIn {
@@ -976,6 +1205,15 @@ a {
 .ann-card,
 .doc-card {
   padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ann-card:hover,
+.doc-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 18px 34px rgba(0,0,0,0.2),
+    0 0 18px rgba(105, 226, 255, 0.05);
 }
 
 .ann-title,
@@ -1013,6 +1251,9 @@ a {
 
 .invoice-container {
   padding: 30px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04)),
+    radial-gradient(circle at top right, rgba(105, 226, 255, 0.08), transparent 25%);
 }
 
 .invoice-header {
@@ -1051,6 +1292,7 @@ a {
   border-radius: 18px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 .tot-row {
@@ -1093,9 +1335,10 @@ a {
 .live-clock {
   font-weight: 800;
   font-family: monospace;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.06em;
   color: var(--accent);
   text-shadow: 0 0 18px rgba(105, 226, 255, 0.16);
+  font-size: clamp(2rem, 4vw, 3rem);
 }
 
 #sigCanvas {
@@ -1233,432 +1476,4 @@ a {
   .focus-widget {
     padding: 18px;
   }
-  /* ===============================
-   FUTURISTIC PREMIUM UPGRADE ++
-================================= */
-
-/* halos animés subtils */
-body::before,
-body::after {
-  animation: floatGlow 12s ease-in-out infinite alternate;
-}
-
-@keyframes floatGlow {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    transform: translate(25px, -20px) scale(1.08);
-  }
-}
-
-/* sidebar plus premium */
-.sidebar {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)),
-    radial-gradient(circle at top left, rgba(105, 226, 255, 0.1), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 30%);
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255,255,255,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.sidebar h3 {
-  font-size: 1.45rem;
-  background: linear-gradient(90deg, var(--text), var(--accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.sidebar button {
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.sidebar button::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,0.08), transparent 80%);
-  transform: translateX(-120%);
-  transition: transform 0.45s ease;
-}
-
-.sidebar button:hover::before {
-  transform: translateX(120%);
-}
-
-.sidebar button:hover {
-  box-shadow: 0 10px 24px rgba(0,0,0,0.15);
-}
-
-.sidebar button.active,
-.sidebar button:focus-visible {
-  background: linear-gradient(135deg, rgba(105, 226, 255, 0.18), rgba(139, 92, 246, 0.22));
-  border-color: rgba(105, 226, 255, 0.4);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04),
-    0 0 22px rgba(105, 226, 255, 0.18),
-    inset 0 1px 0 rgba(255,255,255,0.07);
-}
-
-/* profil sidebar encore plus stylé */
-.user-profile-section {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.05),
-    0 12px 22px rgba(0,0,0,0.15);
-}
-
-.user-profile-section img {
-  box-shadow:
-    0 0 0 3px rgba(255,255,255,0.04),
-    0 0 26px rgba(105, 226, 255, 0.2);
-}
-
-/* titres plus futuristes */
-.section h1,
-.home-header h1 {
-  background: linear-gradient(90deg, var(--text), var(--accent), #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* cartes plus "wow" */
-.stat-card,
-.create-user-box,
-.pointage-card,
-.focus-widget,
-.modal-content,
-.invoice-container,
-.doc-card,
-.ann-card,
-.chat-main,
-.chat-sidebar,
-.kanban-column,
-.iframe-container,
-.table-wrapper,
-#nativeTableContainer {
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before,
-.create-user-box::before,
-.pointage-card::before,
-.focus-widget::before,
-.modal-content::before,
-.invoice-container::before,
-.doc-card::before,
-.ann-card::before,
-.chat-main::before,
-.chat-sidebar::before,
-.kanban-column::before,
-.iframe-container::before,
-.table-wrapper::before,
-#nativeTableContainer::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    rgba(105, 226, 255, 0.22),
-    rgba(139, 92, 246, 0.2),
-    rgba(255, 79, 216, 0.15),
-    transparent 70%
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* stats cards plus premium */
-.stat-card {
-  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 20px 34px rgba(0,0,0,0.22),
-    0 0 28px rgba(105, 226, 255, 0.08);
-}
-
-.stat-card .icon {
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 0 26px rgba(105, 226, 255, 0.08);
-}
-
-/* boutons ultra premium */
-.login-card button,
-.create-user-box button,
-.modal-content button,
-.chat-input-area button,
-.compta-controls button,
-.small-btn,
-.secondary-btn,
-.logout-btn,
-.danger-btn {
-  position: relative;
-  overflow: hidden;
-}
-
-.login-card button::before,
-.create-user-box button::before,
-.modal-content button::before,
-.chat-input-area button::before,
-.compta-controls button::before,
-.small-btn::before,
-.secondary-btn::before,
-.logout-btn::before,
-.danger-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 80%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-  transform: skewX(-20deg);
-  transition: left 0.6s ease;
-}
-
-.login-card button:hover::before,
-.create-user-box button:hover::before,
-.modal-content button:hover::before,
-.chat-input-area button:hover::before,
-.compta-controls button:hover::before,
-.small-btn:hover::before,
-.secondary-btn:hover::before,
-.logout-btn:hover::before,
-.danger-btn:hover::before {
-  left: 140%;
-}
-
-.login-card button:hover,
-.create-user-box button:hover,
-.modal-content button:hover,
-.chat-input-area button:hover {
-  transform: translateY(-2px) scale(1.01);
-}
-
-.secondary-btn {
-  background: rgba(255,255,255,0.07) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--glass-border) !important;
-  box-shadow: none !important;
-}
-
-.secondary-btn:hover {
-  background: rgba(255,255,255,0.11) !important;
-}
-
-.danger-btn {
-  background: linear-gradient(135deg, rgba(255, 91, 127, 0.9), rgba(217, 70, 239, 0.86)) !important;
-}
-
-/* inputs encore plus modernes */
-.input-group input,
-.input-group textarea,
-.cyber-select,
-.inv-input,
-#chatInput,
-.search-container input {
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease,
-    transform 0.18s ease;
-}
-
-.input-group input:hover,
-.input-group textarea:hover,
-.cyber-select:hover,
-.inv-input:hover,
-#chatInput:hover,
-.search-container input:hover {
-  background: rgba(255,255,255,0.07);
-}
-
-.input-group input:focus,
-.input-group textarea:focus,
-.cyber-select:focus,
-.inv-input:focus,
-#chatInput:focus,
-.search-container input:focus {
-  transform: translateY(-1px);
-}
-
-/* tables plus haut de gamme */
-.cyber-table thead th,
-.invoice-table thead th {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.cyber-table tbody tr,
-.invoice-table tbody tr {
-  transition: background 0.18s ease, transform 0.18s ease;
-}
-
-.cyber-table tbody tr:hover,
-.invoice-table tbody tr:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-.cyber-table tbody td:first-child,
-.invoice-table tbody td:first-child {
-  border-left: 2px solid transparent;
-}
-
-.cyber-table tbody tr:hover td:first-child,
-.invoice-table tbody tr:hover td:first-child {
-  border-left-color: rgba(105, 226, 255, 0.5);
-}
-
-/* chat encore plus futuriste */
-.chat-main,
-.chat-sidebar {
-  box-shadow:
-    0 18px 36px rgba(0,0,0,0.25),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.chat-contact {
-  position: relative;
-  overflow: hidden;
-}
-
-.chat-contact::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-  transform: translateX(-100%);
-  transition: transform 0.35s ease;
-}
-
-.chat-contact:hover::after {
-  transform: translateX(100%);
-}
-
-.chat-bubble {
-  box-shadow: 0 8px 18px rgba(0,0,0,0.18);
-}
-
-.chat-row.mine .chat-bubble {
-  box-shadow:
-    0 12px 26px rgba(105, 226, 255, 0.08),
-    0 8px 18px rgba(0,0,0,0.16);
-}
-
-/* kanban boost */
-.kanban-card {
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-}
-
-.kanban-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(105, 226, 255, 0.2);
-  box-shadow:
-    0 16px 24px rgba(0,0,0,0.2),
-    0 0 22px rgba(105, 226, 255, 0.06);
-}
-
-/* modales plus cinématiques */
-.modal {
-  animation: modalBackdropIn 0.18s ease;
-}
-
-@keyframes modalBackdropIn {
-  from {
-    background: rgba(5, 8, 20, 0);
-  }
-  to {
-    background: rgba(5, 8, 20, 0.64);
-  }
-}
-
-.modal-content {
-  box-shadow:
-    0 30px 80px rgba(0,0,0,0.45),
-    0 0 0 1px rgba(255,255,255,0.04);
-}
-
-/* badges plus beaux */
-.status-badge,
-.badge-avert-verbal,
-.badge-avert-ecrit,
-.badge-mise-pied,
-.badge-licenciement,
-.badge {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-/* facture plus premium */
-.invoice-container {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04)),
-    radial-gradient(circle at top right, rgba(105, 226, 255, 0.08), transparent 25%);
-}
-
-.invoice-totals {
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-}
-
-/* loader d’ambiance pour sections */
-.section.active {
-  animation: fadeSlidePremium 0.28s cubic-bezier(.2,.8,.2,1);
-}
-
-@keyframes fadeSlidePremium {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.992);
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-
-/* hover sur les cartes docs/annonces */
-.ann-card,
-.doc-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.ann-card:hover,
-.doc-card:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 18px 34px rgba(0,0,0,0.2),
-    0 0 18px rgba(105, 226, 255, 0.05);
-}
-
-/* pointage plus puissant visuellement */
-.live-clock {
-  font-size: clamp(2rem, 4vw, 3rem);
-  letter-spacing: -0.06em;
-}
-
-/* joli effet sur badges notif */
-.nav-badge {
-  box-shadow:
-    0 0 0 3px rgba(255,255,255,0.03),
-    0 0 18px rgba(255, 91, 127, 0.2);
-}
 }
