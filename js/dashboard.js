@@ -14,11 +14,39 @@ import {
 } from "./core.js";
 
 import { getCache, setCache } from "./cache.js";
+import { getCurrentUserRole } from "./user.js";
 
 let currentSection = null;
 let statsClockStarted = false;
 
+const sectionPermissions = {
+  home: ["admin", "employee", "rh", "compta", "guest"],
+  service: ["admin", "employee", "rh"],
+  requests: ["admin", "employee", "rh"],
+  sanctions: ["admin", "employee", "rh"],
+  chat: ["admin", "employee", "rh", "compta"],
+  kanban: ["admin", "employee", "rh", "compta"],
+  users: ["admin"],
+  rh: ["admin", "rh"],
+  compta: ["admin", "compta"],
+  factures: ["admin", "compta"],
+  docs: ["admin"],
+  logs: ["admin"],
+  settings: ["admin", "employee", "rh", "compta", "guest"]
+};
+
+function canAccessSection(sectionId) {
+  const role = getCurrentUserRole() || "guest";
+  const allowedRoles = sectionPermissions[sectionId] || [];
+  return allowedRoles.includes(role);
+}
+
 function showSection(id) {
+  if (!canAccessSection(id)) {
+    console.warn(`Accès refusé à la section : ${id}`);
+    return;
+  }
+
   if (currentSection === id) return;
 
   currentSection = id;
@@ -141,5 +169,6 @@ export {
   showSection,
   updateDashboardStats,
   toggleTheme,
-  initTheme
+  initTheme,
+  canAccessSection
 };
