@@ -25,6 +25,7 @@ function showSection(id) {
 
   clearAllListeners();
   clearIntervals();
+  statsClockStarted = false;
 
   document.querySelectorAll(".section").forEach((section) => {
     section.classList.remove("active");
@@ -75,7 +76,7 @@ function startClock() {
     }
   }, 1000);
 
-  registerInterval(interval);
+  registerInterval("dashboard_clock", interval);
   statsClockStarted = true;
 }
 
