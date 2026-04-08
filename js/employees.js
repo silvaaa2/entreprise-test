@@ -1,4 +1,6 @@
 import { db } from "./firebase.js";
+import { registerListener } from "./core.js";
+
 import {
   collection,
   addDoc,
@@ -6,45 +8,72 @@ import {
   doc,
   getDoc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  query,
+  where,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-import { getCurrentUserName } from "./user.js";
-
-// ================= CREATE =================
 async function saveNewEmployee() {
-  const name = document.getElementById("ne_name").value;
-  const email = document.getElementById("ne_email").value;
-  const grade = document.getElementById("ne_grade").value;
-  const phone = document.getElementById("ne_phone").value;
-  const salary = document.getElementById("ne_salary").value;
+  const name = document.getElementById("ne_name")?.value.trim();
+  const email = document.getElementById("ne_email")?.value.trim();
+  const grade = document.getElementById("ne_grade")?.value.trim();
+  const phone = document.getElementById("ne_phone")?.value.trim();
+  const salary = document.getElementById("ne_salary")?.value.trim();
 
-  if (!name || !email) return;
+  const msg = document.getElementById("ne_msg");
 
-  await addDoc(collection(db, "employees"), {
-    name,
-    email,
-    grade,
-    phone,
-    salary,
-    status: "hors_service",
-    hiredDate: new Date().toISOString().split("T")[0],
-    weeklyServiceSeconds: 0,
-    currentServiceStart: null,
-    hrNotes: ""
-  });
+  if (!name || !email) {
+    if (msg) {
+      msg.innerText = "Nom et email obligatoires";
+      msg.style.color = "var(--warning)";
+    }
+    return;
+  }
 
-  document.getElementById("ne_name").value = "";
-  document.getElementById("ne_email").value = "";
+  try {
+    await addDoc(collection(db, "employees"), {
+      name,
+      email,
+      grade,
+      phone,
+      salary,
+      status: "hors_service",
+      hiredDate: new Date().toISOString().split("T")[0],
+      weeklyServiceSeconds: 0,
+      currentServiceStart: null,
+      lastSessionSeconds: 0,
+      currentWeek: "",
+      hrNotes: ""
+    });
+
+    if (msg) {
+      msg.innerText = "✅ Employé créé";
+      msg.style.color = "var(--success)";
+    }
+
+    const ids = ["ne_name", "ne_email", "ne_grade", "ne_phone", "ne_salary"];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+
+    const modal = document.getElementById("newEmployeeModal");
+    if (modal) modal.classList.add("hidden");
+  } catch (e) {
+    console.error("Erreur création employé :", e);
+    if (msg) {
+      msg.innerText = "Erreur";
+      msg.style.color = "var(--error)";
+    }
+  }
 }
 
-// ================= FETCH =================
-let unsubEmployees = null;
-
 function fetchEmployees() {
-  if (unsubEmployees) return;
+  const tbody = document.getElementById("employeeListBody");
+  if (!tbody) return;
 
-  unsubEmployees = onSnapshot(collection(db, "employees"), (snap) => {
+  const unsubscribe = onSnapshot(collection(db, "employees"), (snap) => {
     let html = "";
 
     snap.forEach((d) => {
@@ -59,67 +88,118 @@ function fetchEmployees() {
         <tr>
           <td>${status}</td>
           <td onclick="openHrEmployeeModal('${d.id}')" class="clickable-name">
-            ${data.name}
+            ${data.name || ""}
           </td>
-          <td>${data.grade}</td>
-          <td>${data.phone}</td>
+          <td>${data.grade || ""}</td>
+          <td>${data.phone || ""}</td>
         </tr>
       `;
     });
 
-    document.getElementById("employeeListBody").innerHTML = html;
+    tbody.innerHTML = html || "<tr><td colspan='4'>Aucun employé</td></tr>";
   });
+
+  registerListener("employees", unsubscribe);
 }
 
-// ================= OPEN MODAL =================
 async function openHrEmployeeModal(id) {
   const modal = document.getElementById("hrEmployeeModal");
-  modal.classList.remove("hidden");
+  if (modal) modal.classList.remove("hidden");
 
-  const snap = await getDoc(doc(db, "employees", id));
-  const data = snap.data();
+  try {
+    const snap = await getDoc(doc(db, "employees", id));
+    if (!snap.exists()) return;
 
-  document.getElementById("hre_id").value = id;
-  document.getElementById("hre_name").innerText = data.name;
-  document.getElementById("hre_grade").innerText = data.grade;
-  document.getElementById("hre_phone").innerText = data.phone;
-  document.getElementById("hre_salary").innerText = data.salary;
-  document.getElementById("hre_date").innerText = data.hiredDate;
+    const data = snap.data();
 
-  document.getElementById("hre_email").value = data.email;
-  document.getElementById("hre_status").value = data.status;
-  document.getElementById("hre_notes").value = data.hrNotes || "";
-}
+    const setValue = (idEl, value) => {
+      const el = document.getElementById(idEl);
+      if (el) el.value = value ?? "";
+    };
 
-// ================= UPDATE =================
-async function updateEmployeeDossier() {
-  const id = document.getElementById("hre_id").value;
+    const setText = (idEl, value) => {
+      const el = document.getElementById(idEl);
+      if (el) el.innerText = value ?? "";
+    };
 
-  await updateDoc(doc(db, "employees", id), {
-    email: document.getElementById("hre_email").value,
-    status: document.getElementById("hre_status").value,
-    hrNotes: document.getElementById("hre_notes").value
-  });
+    setValue("hre_id", id);
+    setText("hre_name", data.name || "");
+    setText("hre_grade", data.grade || "");
+    setText("hre_phone", data.phone || "");
+    setText("hre_salary", data.salary || "");
+    setText("hre_date", data.hiredDate || "");
+    setValue("hre_email", data.email || "");
+    setValue("hre_status", data.status || "hors_service");
+    setValue("hre_notes", data.hrNotes || "");
 
-  closeHrEmployeeModal();
-}
+    const timeEl = document.getElementById("hre_service_time");
+    if (timeEl) {
+      const seconds = data.weeklyServiceSeconds || 0;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      timeEl.innerText = `${h}h ${m}m`;
+    }
 
-// ================= DELETE =================
-async function deleteEmployeeDossier() {
-  const id = document.getElementById("hre_id").value;
+    const logsBox = document.getElementById("hre_timelogs");
+    if (logsBox) {
+      const logsSnap = await getDocs(
+        query(collection(db, "timelogs"), where("employeeId", "==", id))
+      );
 
-  if (confirm("Supprimer cet employé ?")) {
-    await deleteDoc(doc(db, "employees", id));
-    closeHrEmployeeModal();
+      let logsHtml = "";
+
+      logsSnap.forEach((logDoc) => {
+        const log = logDoc.data();
+        logsHtml += `
+          <div style="padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <b>${log.date || "-"}</b> — ${log.durationText || "-"}
+          </div>
+        `;
+      });
+
+      logsBox.innerHTML = logsHtml || "<p style='color:var(--subtext); margin:0;'>Aucun historique.</p>";
+    }
+  } catch (e) {
+    console.error("Erreur modal employé :", e);
   }
 }
 
-// ================= CLOSE =================
-function closeHrEmployeeModal() {
-  document.getElementById("hrEmployeeModal").classList.add("hidden");
+async function updateEmployeeDossier() {
+  const id = document.getElementById("hre_id")?.value;
+  if (!id) return;
+
+  try {
+    await updateDoc(doc(db, "employees", id), {
+      email: document.getElementById("hre_email")?.value.trim() || "",
+      status: document.getElementById("hre_status")?.value || "hors_service",
+      hrNotes: document.getElementById("hre_notes")?.value || ""
+    });
+
+    closeHrEmployeeModal();
+  } catch (e) {
+    console.error("Erreur update employé :", e);
+  }
 }
 
-// ================= EXPORT =================
+async function deleteEmployeeDossier() {
+  const id = document.getElementById("hre_id")?.value;
+  if (!id) return;
+
+  if (confirm("Supprimer cet employé ?")) {
+    try {
+      await deleteDoc(doc(db, "employees", id));
+      closeHrEmployeeModal();
+    } catch (e) {
+      console.error("Erreur suppression employé :", e);
+    }
+  }
+}
+
+function closeHrEmployeeModal() {
+  const modal = document.getElementById("hrEmployeeModal");
+  if (modal) modal.classList.add("hidden");
+}
+
 export {
   saveNewEmployee,
   fetchEmployees,
