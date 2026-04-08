@@ -1294,4 +1294,430 @@ button:active {
   .focus-widget {
     padding: 18px;
   }
+  /* =========================================
+   CYBERPUNK / FUTURISTIC OVERDRIVE PATCH
+========================================= */
+
+/* glow général plus fort */
+body::before {
+  background: rgba(0, 255, 255, 0.22) !important;
+  filter: blur(130px) !important;
+  opacity: 0.55 !important;
+}
+
+body::after {
+  background: rgba(180, 0, 255, 0.2) !important;
+  filter: blur(130px) !important;
+  opacity: 0.52 !important;
+}
+
+/* effet de grille futuriste légère */
+body {
+  position: relative;
+}
+
+body::selection {
+  background: rgba(0, 255, 255, 0.22);
+}
+
+body::before,
+body::after {
+  animation: cyberGlowMove 8s ease-in-out infinite alternate !important;
+}
+
+@keyframes cyberGlowMove {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(35px, -25px) scale(1.12);
+  }
+}
+
+/* typo plus futuriste sur titres */
+h1, h2, .sidebar h3, .kanban-header, .chat-header {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* sidebar ultra néon */
+.sidebar {
+  background:
+    linear-gradient(180deg, rgba(9, 18, 44, 0.92), rgba(7, 12, 28, 0.96)) !important;
+  border: 1px solid rgba(0, 255, 255, 0.18) !important;
+  box-shadow:
+    0 0 0 1px rgba(0,255,255,0.08),
+    0 0 24px rgba(0,255,255,0.08),
+    0 0 60px rgba(128,0,255,0.08),
+    0 20px 50px rgba(0, 0, 0, 0.45) !important;
+}
+
+.sidebar::before {
+  background: linear-gradient(
+    180deg,
+    rgba(0,255,255,0.45),
+    transparent 18%,
+    transparent 82%,
+    rgba(180,0,255,0.35)
+  ) !important;
+}
+
+/* boutons sidebar animés */
+.sidebar button {
+  background: rgba(255,255,255,0.035) !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease !important;
+}
+
+.sidebar button:hover {
+  background: rgba(0,255,255,0.08) !important;
+  border-color: rgba(0,255,255,0.25) !important;
+  box-shadow:
+    inset 0 0 12px rgba(0,255,255,0.06),
+    0 0 18px rgba(0,255,255,0.1) !important;
+  transform: translateX(4px) scale(1.01) !important;
+}
+
+.sidebar button.active,
+.sidebar button:focus-visible {
+  background: linear-gradient(90deg, rgba(0,255,255,0.15), rgba(128,0,255,0.14)) !important;
+  border-color: rgba(0,255,255,0.42) !important;
+  box-shadow:
+    inset 0 0 16px rgba(0,255,255,0.08),
+    0 0 18px rgba(0,255,255,0.14),
+    0 0 32px rgba(128,0,255,0.12) !important;
+  transform: translateX(6px) !important;
+}
+
+/* ligne lumineuse active */
+.sidebar button.active::after,
+.sidebar button:focus-visible::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12%;
+  width: 4px;
+  height: 76%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #00f7ff, #8b5cf6);
+  box-shadow:
+    0 0 12px rgba(0,247,255,0.8),
+    0 0 20px rgba(139,92,246,0.5);
+}
+
+/* profil utilisateur plus lumineux */
+.user-profile-section {
+  border: 1px solid rgba(0,255,255,0.14) !important;
+  box-shadow:
+    inset 0 0 12px rgba(0,255,255,0.03),
+    0 0 18px rgba(0,255,255,0.06) !important;
+}
+
+.user-profile-section img {
+  box-shadow:
+    0 0 0 2px rgba(0,255,255,0.22),
+    0 0 16px rgba(0,255,255,0.25),
+    0 0 30px rgba(139,92,246,0.12) !important;
+}
+
+/* titres avec glow */
+.home-header h1,
+.section h1 {
+  text-shadow:
+    0 0 8px rgba(255,255,255,0.08),
+    0 0 18px rgba(0,255,255,0.08),
+    0 0 28px rgba(139,92,246,0.08) !important;
+}
+
+/* cartes stats ultra futuristes */
+.stat-card {
+  background:
+    linear-gradient(180deg, rgba(8,15,35,0.96), rgba(5,10,24,0.94)) !important;
+  border: 1px solid rgba(0,255,255,0.14) !important;
+  box-shadow:
+    inset 0 0 20px rgba(0,255,255,0.02),
+    0 0 18px rgba(0,255,255,0.05),
+    0 12px 30px rgba(0,0,0,0.28) !important;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(0,255,255,0.05), transparent);
+  transform: translateX(-120%);
+  animation: statSweep 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes statSweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(140%);
+  }
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow:
+    inset 0 0 20px rgba(0,255,255,0.03),
+    0 0 20px rgba(0,255,255,0.12),
+    0 0 40px rgba(139,92,246,0.08),
+    0 18px 36px rgba(0,0,0,0.34) !important;
+}
+
+.stat-card .icon {
+  background: linear-gradient(135deg, rgba(0,255,255,0.12), rgba(128,0,255,0.12)) !important;
+  border: 1px solid rgba(0,255,255,0.22) !important;
+  box-shadow:
+    inset 0 0 10px rgba(255,255,255,0.04),
+    0 0 18px rgba(0,255,255,0.08) !important;
+}
+
+/* widgets et cartes plus cyber */
+.create-user-box,
+.pointage-card,
+.focus-widget,
+.modal-content,
+.invoice-container,
+.doc-card,
+.ann-card,
+.chat-main,
+.chat-sidebar,
+.kanban-column,
+.iframe-container,
+.table-wrapper,
+#nativeTableContainer {
+  border: 1px solid rgba(0,255,255,0.12) !important;
+  box-shadow:
+    inset 0 0 18px rgba(0,255,255,0.015),
+    0 0 20px rgba(0,255,255,0.04),
+    0 14px 34px rgba(0,0,0,0.28) !important;
+}
+
+/* contours lumineux animés */
+.create-user-box::before,
+.pointage-card::before,
+.focus-widget::before,
+.modal-content::before,
+.invoice-container::before,
+.doc-card::before,
+.ann-card::before,
+.chat-main::before,
+.chat-sidebar::before,
+.kanban-column::before,
+.iframe-container::before,
+.table-wrapper::before,
+#nativeTableContainer::before,
+.stat-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(0,255,255,0.28),
+    transparent 35%,
+    transparent 65%,
+    rgba(128,0,255,0.22)
+  ) !important;
+}
+
+/* boutons néon */
+.login-card button,
+.create-user-box button,
+.modal-content button,
+.chat-input-area button,
+.compta-controls button,
+.small-btn {
+  background: linear-gradient(135deg, #00d9ff, #8b5cf6) !important;
+  box-shadow:
+    0 0 12px rgba(0,217,255,0.18),
+    0 0 24px rgba(139,92,246,0.12) !important;
+}
+
+.login-card button:hover,
+.create-user-box button:hover,
+.modal-content button:hover,
+.chat-input-area button:hover,
+.compta-controls button:hover,
+.small-btn:hover {
+  box-shadow:
+    0 0 18px rgba(0,217,255,0.28),
+    0 0 36px rgba(139,92,246,0.18) !important;
+  transform: translateY(-2px) scale(1.03) !important;
+}
+
+/* boutons danger / logout plus cyber */
+.logout-btn {
+  box-shadow: 0 0 18px rgba(255,94,126,0.12) !important;
+}
+
+.danger-btn {
+  box-shadow:
+    0 0 18px rgba(255,94,126,0.18),
+    0 0 28px rgba(244,114,182,0.1) !important;
+}
+
+/* inputs style terminal futuriste */
+.input-group input,
+.input-group textarea,
+.cyber-select,
+.inv-input,
+#chatInput,
+.search-container input,
+.cyber-textarea {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)) !important;
+  border: 1px solid rgba(0,255,255,0.12) !important;
+}
+
+.input-group input:focus,
+.input-group textarea:focus,
+.cyber-select:focus,
+.inv-input:focus,
+#chatInput:focus,
+.search-container input:focus,
+.cyber-textarea:focus {
+  border-color: rgba(0,255,255,0.42) !important;
+  box-shadow:
+    0 0 0 3px rgba(0,255,255,0.08),
+    0 0 18px rgba(0,255,255,0.12) !important;
+}
+
+/* tableaux plus cyber */
+.cyber-table thead th,
+.invoice-table thead th {
+  background: rgba(0,255,255,0.04) !important;
+  border-bottom: 1px solid rgba(0,255,255,0.14) !important;
+}
+
+.cyber-table tbody tr:hover,
+.invoice-table tbody tr:hover {
+  background: rgba(0,255,255,0.035) !important;
+}
+
+.cyber-table tbody td:first-child,
+.invoice-table tbody td:first-child {
+  position: relative;
+}
+
+.cyber-table tbody tr:hover td:first-child::before,
+.invoice-table tbody tr:hover td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  width: 3px;
+  height: 64%;
+  background: linear-gradient(180deg, #00f7ff, #8b5cf6);
+  box-shadow: 0 0 10px rgba(0,247,255,0.8);
+  border-radius: 999px;
+}
+
+/* chat plus animé */
+.chat-contact {
+  transition: 0.18s ease !important;
+}
+
+.chat-contact:hover,
+.chat-contact.active {
+  box-shadow:
+    inset 0 0 10px rgba(0,255,255,0.03),
+    0 0 12px rgba(0,255,255,0.08) !important;
+  transform: translateX(4px);
+}
+
+.chat-bubble {
+  box-shadow: 0 0 12px rgba(0,0,0,0.18) !important;
+}
+
+.chat-row.mine .chat-bubble {
+  box-shadow:
+    0 0 14px rgba(0,255,255,0.08),
+    0 0 20px rgba(139,92,246,0.06) !important;
+}
+
+/* kanban plus vivant */
+.kanban-card:hover {
+  box-shadow:
+    0 0 14px rgba(0,255,255,0.1),
+    0 0 22px rgba(139,92,246,0.08) !important;
+  border-color: rgba(0,255,255,0.2) !important;
+}
+
+/* modales plus futuristes */
+.modal {
+  backdrop-filter: blur(12px) !important;
+}
+
+.modal-content {
+  box-shadow:
+    0 0 20px rgba(0,255,255,0.06),
+    0 0 36px rgba(139,92,246,0.08),
+    0 24px 50px rgba(0,0,0,0.4) !important;
+}
+
+/* horloge plus wow */
+.live-clock {
+  text-shadow:
+    0 0 12px rgba(0,255,255,0.2),
+    0 0 24px rgba(139,92,246,0.12) !important;
+}
+
+/* badge notif plus flashy */
+.nav-badge {
+  box-shadow:
+    0 0 14px rgba(255,94,126,0.25),
+    0 0 24px rgba(255,94,126,0.12) !important;
+}
+
+/* petit pulse sur éléments importants */
+#adminAlertWidget,
+.focus-widget,
+.stat-card {
+  animation: cyberBreath 4.5s ease-in-out infinite;
+}
+
+@keyframes cyberBreath {
+  0% {
+    box-shadow:
+      inset 0 0 18px rgba(0,255,255,0.015),
+      0 0 14px rgba(0,255,255,0.03),
+      0 14px 34px rgba(0,0,0,0.28);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 18px rgba(0,255,255,0.02),
+      0 0 22px rgba(0,255,255,0.05),
+      0 14px 34px rgba(0,0,0,0.28);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 18px rgba(0,255,255,0.015),
+      0 0 14px rgba(0,255,255,0.03),
+      0 14px 34px rgba(0,0,0,0.28);
+  }
+}
+
+/* effet sur clic visuel simple */
+button:active {
+  filter: brightness(1.12);
+}
+
+/* version mobile */
+@media (max-width: 1200px) {
+  .home-widgets-grid,
+  .stats-grid,
+  .hr-top-grid,
+  .chat-layout,
+  .kanban-board,
+  .invoice-footer {
+    grid-template-columns: 1fr !important;
+  }
+}
 }
