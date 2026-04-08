@@ -34,6 +34,15 @@ import {
   deleteSanction
 } from "./sanctions.js";
 
+import {
+  saveNewEmployee,
+  fetchEmployees,
+  openHrEmployeeModal,
+  updateEmployeeDossier,
+  deleteEmployeeDossier,
+  closeHrEmployeeModal
+} from "./employees.js";
+
 // ==================== AUTH ====================
 window.login = login;
 window.loginWithGoogle = loginWithGoogle;
@@ -62,6 +71,14 @@ window.populateSanctionDropdown = populateSanctionDropdown;
 window.submitSanction = submitSanction;
 window.fetchSanctions = fetchSanctions;
 window.deleteSanction = deleteSanction;
+
+// ==================== EMPLOYEES ====================
+window.saveNewEmployee = saveNewEmployee;
+window.fetchEmployees = fetchEmployees;
+window.openHrEmployeeModal = openHrEmployeeModal;
+window.updateEmployeeDossier = updateEmployeeDossier;
+window.deleteEmployeeDossier = deleteEmployeeDossier;
+window.closeHrEmployeeModal = closeHrEmployeeModal;
 
 // ==================== INIT ====================
 initTheme();
