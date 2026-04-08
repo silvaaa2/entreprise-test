@@ -12,14 +12,33 @@ import {
   initTheme
 } from "./dashboard.js";
 
-// rendre accessibles au HTML (onclick)
+import {
+  createNewUser,
+  fetchUsers,
+  updateUserRole,
+  deleteUser,
+  openUserProfile,
+  closeUserProfile
+} from "./users.js";
+
+// ==================== AUTH ====================
 window.login = login;
 window.loginWithGoogle = loginWithGoogle;
 window.resetPassword = resetPassword;
 window.logout = logout;
+
+// ==================== DASHBOARD / UI ====================
 window.showSection = showSection;
 window.toggleTheme = toggleTheme;
 
-// init
-initAuthListener();
+// ==================== USERS ====================
+window.createNewUser = createNewUser;
+window.fetchUsers = fetchUsers;
+window.updateUserRole = updateUserRole;
+window.deleteUser = deleteUser;
+window.openUserProfile = openUserProfile;
+window.closeUserProfile = closeUserProfile;
+
+// ==================== INIT ====================
 initTheme();
+initAuthListener();
