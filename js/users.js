@@ -1,5 +1,5 @@
-import { db } from "./firebase.js";
-import { getCurrentUserName } from "./user.js";
+import { db, firebaseConfig } from "./firebase.js";
+import { registerListener } from "./core.js";
 
 import {
   collection,
@@ -7,37 +7,35 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
-  getDocs,
+  getDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import {
   getAuth,
   createUserWithEmailAndPassword,
   signOut
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-import { firebaseConfig } from "./firebase.js";
-
-let unsubscribeUsers = null;
-
-// ================= CREATE USER =================
 async function createNewUser() {
-  const email = document.getElementById("newEmail").value;
-  const password = document.getElementById("newPassword").value;
-  const role = document.getElementById("newRole").value;
+  const email = document.getElementById("newEmail")?.value.trim();
+  const password = document.getElementById("newPassword")?.value;
+  const role = document.getElementById("newRole")?.value;
   const msg = document.getElementById("userMsg");
 
   if (!email || !password) {
-    msg.innerText = "Remplis tout !";
+    if (msg) {
+      msg.innerText = "Remplis tout !";
+      msg.style.color = "var(--warning)";
+    }
     return;
   }
 
-  msg.innerText = "Création...";
+  if (msg) {
+    msg.innerText = "Création...";
+    msg.style.color = "var(--text)";
+  }
 
   try {
     const secondaryApp = initializeApp(firebaseConfig, "Secondary");
@@ -46,8 +44,8 @@ async function createNewUser() {
     const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
 
     await setDoc(doc(db, "users", cred.user.uid), {
-      email: email,
-      role: role,
+      email,
+      role,
       createdAt: new Date().toISOString().split("T")[0],
       displayName: "En attente",
       photoURL: ""
@@ -55,89 +53,134 @@ async function createNewUser() {
 
     await signOut(secondaryAuth);
 
-    msg.innerText = "✅ Utilisateur ajouté";
-    msg.style.color = "var(--success)";
+    if (msg) {
+      msg.innerText = "✅ Utilisateur ajouté";
+      msg.style.color = "var(--success)";
+    }
 
+    const emailInput = document.getElementById("newEmail");
+    const passInput = document.getElementById("newPassword");
+    const roleInput = document.getElementById("newRole");
+
+    if (emailInput) emailInput.value = "";
+    if (passInput) passInput.value = "";
+    if (roleInput) roleInput.value = "guest";
   } catch (error) {
-    msg.innerText = "Erreur : " + error.message;
+    console.error("Erreur création utilisateur :", error);
+    if (msg) {
+      msg.innerText = "Erreur : " + error.message;
+      msg.style.color = "var(--error)";
+    }
   }
 }
 
-// ================= FETCH USERS =================
 function fetchUsers() {
   const tbody = document.getElementById("userListBody");
-
-  if (!tbody || unsubscribeUsers) return;
+  if (!tbody) return;
 
   tbody.innerHTML = "<tr><td colspan='4'>Chargement...</td></tr>";
 
-  unsubscribeUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+  const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
     let html = "";
 
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const uid = docSnap.id;
 
+      const roleValue = data.role || "guest";
+
+      const safeEmail = (data.email || "").replace(/'/g, "\\'");
       const roleSelect = `
-        <select onchange="updateUserRole('${uid}', this.value, '${data.email}')">
-          <option value="guest" ${data.role === "guest" ? "selected" : ""}>⛔ Aucun</option>
-          <option value="employee" ${data.role === "employee" ? "selected" : ""}>👷 Employé</option>
-          <option value="rh" ${data.role === "rh" ? "selected" : ""}>🤝 RH</option>
-          <option value="compta" ${data.role === "compta" ? "selected" : ""}>📊 Compta</option>
-          <option value="admin" ${data.role === "admin" ? "selected" : ""}>👑 Admin</option>
+        <select onchange="updateUserRole('${uid}', this.value, '${safeEmail}')" style="background:var(--panel); color:var(--text); border:1px solid var(--glass-border); padding:5px; border-radius:5px;">
+          <option value="guest" ${roleValue === "guest" ? "selected" : ""}>⛔ Aucun accès</option>
+          <option value="employee" ${roleValue === "employee" ? "selected" : ""}>👷 Employé</option>
+          <option value="rh" ${roleValue === "rh" ? "selected" : ""}>🤝 RH</option>
+          <option value="compta" ${roleValue === "compta" ? "selected" : ""}>📊 Compta</option>
+          <option value="admin" ${roleValue === "admin" ? "selected" : ""}>👑 Admin</option>
         </select>
       `;
 
       html += `
         <tr>
-          <td onclick="openUserProfile('${uid}')" class="clickable-name">
-            ${data.displayName || "Sans nom"}<br>
-            <small>${data.email}</small>
+          <td>
+            <div onclick="openUserProfile('${uid}')" class="clickable-name">${data.displayName || "Sans nom"}</div>
+            <div style="font-size:0.8em; color:var(--subtext);">${data.email || ""}</div>
           </td>
           <td>${roleSelect}</td>
           <td>${data.createdAt || "-"}</td>
           <td>
-            <button onclick="deleteUser('${uid}', '${data.email}')">🗑️</button>
+            <button onclick="deleteUser('${uid}', '${safeEmail}')" style="background:#ef4444; width:auto; padding:5px 10px; font-size:0.8em; color:white; border:none; border-radius:5px;">
+              🗑️ Exclure
+            </button>
           </td>
         </tr>
       `;
     });
 
-    tbody.innerHTML = html;
+    tbody.innerHTML = html || "<tr><td colspan='4'>Aucun utilisateur</td></tr>";
   });
+
+  registerListener("users", unsubscribe);
 }
 
-// ================= UPDATE ROLE =================
 async function updateUserRole(uid, newRole, email) {
-  await updateDoc(doc(db, "users", uid), { role: newRole });
-}
-
-// ================= DELETE =================
-async function deleteUser(uid, email) {
-  if (confirm("Supprimer cet utilisateur ?")) {
-    await deleteDoc(doc(db, "users", uid));
+  try {
+    await updateDoc(doc(db, "users", uid), { role: newRole });
+  } catch (e) {
+    console.error("Erreur update rôle :", e);
   }
 }
 
-// ================= PROFILE =================
+async function deleteUser(uid, email) {
+  if (confirm(`Supprimer ${email} ?`)) {
+    try {
+      await deleteDoc(doc(db, "users", uid));
+    } catch (e) {
+      console.error("Erreur suppression utilisateur :", e);
+    }
+  }
+}
+
 async function openUserProfile(uid) {
   const modal = document.getElementById("profileModal");
-  modal.classList.remove("hidden");
+  if (modal) modal.classList.remove("hidden");
 
-  const snap = await getDocs(collection(db, "users"));
-  snap.forEach((d) => {
-    if (d.id === uid) {
-      const data = d.data();
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    if (!snap.exists()) return;
 
-      document.getElementById("m_name").innerText = data.displayName;
-      document.getElementById("m_email").innerText = data.email;
-      document.getElementById("m_uid").innerText = uid;
+    const data = snap.data();
+
+    const nameEl = document.getElementById("m_name");
+    const emailEl = document.getElementById("m_email");
+    const uidEl = document.getElementById("m_uid");
+    const roleEl = document.getElementById("m_role");
+    const dateEl = document.getElementById("m_date");
+    const imgEl = document.getElementById("m_photo");
+
+    if (nameEl) nameEl.innerText = data.displayName || "Sans nom";
+    if (emailEl) emailEl.innerText = data.email || "";
+    if (uidEl) uidEl.innerText = uid;
+    if (dateEl) dateEl.innerText = data.createdAt || "-";
+
+    let roleText = "⛔ Invité";
+    if (data.role === "admin") roleText = "👑 Admin";
+    else if (data.role === "rh") roleText = "🤝 RH";
+    else if (data.role === "employee") roleText = "👷 Employé";
+    else if (data.role === "compta") roleText = "📊 Compta";
+
+    if (roleEl) roleEl.innerText = roleText;
+    if (imgEl) {
+      imgEl.src = data.photoURL || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     }
-  });
+  } catch (e) {
+    console.error("Erreur profil utilisateur :", e);
+  }
 }
 
 function closeUserProfile() {
-  document.getElementById("profileModal").classList.add("hidden");
+  const modal = document.getElementById("profileModal");
+  if (modal) modal.classList.add("hidden");
 }
 
 export {
