@@ -89,8 +89,22 @@ async function loadUserProfile(user) {
   }
 }
 
+function hideElements(ids) {
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+}
+
+function showElements(ids) {
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "";
+  });
+}
+
 function applyPermissions(role) {
-  const menusToHide = [
+  const allControlledIds = [
     "btn-users",
     "btn-rh",
     "btn-compta",
@@ -101,68 +115,106 @@ function applyPermissions(role) {
     "btn-sanctions",
     "btn-chat",
     "btn-kanban",
+    "btn-logs",
     "admin-title-menu",
-    "perso-title-menu"
+    "perso-title-menu",
+    "employeeRequestBox",
+    "hrSanctionBox",
+    "thActionsReq",
+    "thActionsSanc",
+    "adminAlertWidget",
+    "mainStatsGrid"
   ];
 
-  menusToHide.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
+  hideElements(allControlledIds);
+
+  const homeMessage = document.querySelector(".home-header p");
 
   if (role === "admin") {
-    menusToHide.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "";
-    });
-  } else if (role === "employee") {
-    [
+    showElements([
+      "btn-users",
+      "btn-rh",
+      "btn-compta",
+      "btn-docs",
+      "btn-factures",
+      "btn-service",
+      "btn-requests",
+      "btn-sanctions",
+      "btn-chat",
+      "btn-kanban",
+      "btn-logs",
+      "admin-title-menu",
+      "perso-title-menu",
+      "thActionsReq",
+      "thActionsSanc",
+      "hrSanctionBox",
+      "mainStatsGrid",
+      "adminAlertWidget"
+    ]);
+
+    const reqBox = document.getElementById("employeeRequestBox");
+    if (reqBox) reqBox.style.display = "none";
+
+    if (homeMessage) {
+      homeMessage.innerText = "Voici l'état actuel de ton entreprise.";
+    }
+  }
+
+  else if (role === "employee") {
+    showElements([
       "btn-service",
       "btn-requests",
       "btn-sanctions",
       "btn-chat",
       "btn-kanban",
       "perso-title-menu"
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "";
-    });
-  } else if (role === "rh") {
-    [
+    ]);
+
+    const reqBox = document.getElementById("employeeRequestBox");
+    if (reqBox) reqBox.style.display = "";
+
+    if (homeMessage) {
+      homeMessage.innerText = "N'oublie pas de pointer pour commencer ta journée.";
+    }
+  }
+
+  else if (role === "rh") {
+    showElements([
       "btn-rh",
       "btn-service",
       "btn-requests",
       "btn-sanctions",
       "btn-chat",
       "btn-kanban",
+      "perso-title-menu",
       "admin-title-menu",
-      "perso-title-menu"
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "";
-    });
-  } else if (role === "compta") {
-    [
+      "employeeRequestBox",
+      "hrSanctionBox",
+      "thActionsReq",
+      "thActionsSanc"
+    ]);
+
+    if (homeMessage) {
+      homeMessage.innerText = "Sélectionne un menu pour travailler.";
+    }
+  }
+
+  else if (role === "compta") {
+    showElements([
       "btn-compta",
       "btn-factures",
       "btn-chat",
       "btn-kanban",
       "admin-title-menu"
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "";
-    });
+    ]);
+
+    if (homeMessage) {
+      homeMessage.innerText = "Sélectionne un menu pour travailler.";
+    }
   }
 
-  const homeMessage = document.querySelector(".home-header p");
-  if (homeMessage) {
-    if (role === "admin") {
-      homeMessage.innerText = "Voici l'état actuel de ton entreprise.";
-    } else if (role === "employee") {
-      homeMessage.innerText = "N'oublie pas de pointer pour commencer ta journée.";
-    } else if (role === "rh" || role === "compta") {
-      homeMessage.innerText = "Sélectionne un menu pour travailler.";
-    } else {
+  else {
+    if (homeMessage) {
       homeMessage.innerText = "⛔ Ton compte n'a pas encore d'accès. Demande à ton Boss.";
     }
   }
