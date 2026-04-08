@@ -35,6 +35,8 @@ import {
 } from "./sanctions.js";
 
 import {
+  openNewEmployeeModal,
+  closeNewEmployeeModal,
   saveNewEmployee,
   fetchEmployees,
   openHrEmployeeModal,
@@ -78,6 +80,8 @@ window.fetchSanctions = fetchSanctions;
 window.deleteSanction = deleteSanction;
 
 // ==================== EMPLOYEES ====================
+window.openNewEmployeeModal = openNewEmployeeModal;
+window.closeNewEmployeeModal = closeNewEmployeeModal;
 window.saveNewEmployee = saveNewEmployee;
 window.fetchEmployees = fetchEmployees;
 window.openHrEmployeeModal = openHrEmployeeModal;
