@@ -5,6 +5,7 @@ import { fetchUsers } from "./users.js";
 import { fetchRequests } from "./requests.js";
 import { fetchSanctions, populateSanctionDropdown } from "./sanctions.js";
 import { fetchEmployees } from "./employees.js";
+import { loadMyService } from "./pointage.js";
 
 let statsInterval = null;
 
@@ -31,6 +32,9 @@ function showSection(id) {
   }
   else if (id === "rh") {
     fetchEmployees();
+  }
+  else if (id === "service") {
+    loadMyService();
   }
 }
 
