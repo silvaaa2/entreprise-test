@@ -1,4 +1,6 @@
 import { db } from "./firebase.js";
+import { registerListener } from "./core.js";
+
 import {
   collection,
   addDoc,
@@ -16,34 +18,39 @@ import {
   getCurrentUserRole
 } from "./user.js";
 
-// ================= DROPDOWN =================
 async function populateSanctionDropdown() {
   const select = document.getElementById("sancEmployee");
   if (!select) return;
 
-  const snap = await getDocs(collection(db, "employees"));
+  try {
+    const snap = await getDocs(collection(db, "employees"));
 
-  let html = `<option value="">-- Sélectionner --</option>`;
+    let html = `<option value="">-- Sélectionner --</option>`;
 
-  snap.forEach((d) => {
-    const data = d.data();
-    html += `<option value="${data.email}|${data.name}">
-      ${data.name} (${data.email})
-    </option>`;
-  });
+    snap.forEach((d) => {
+      const data = d.data();
+      if (data.email) {
+        html += `<option value="${data.email}|${data.name}">${data.name} (${data.email})</option>`;
+      }
+    });
 
-  select.innerHTML = html;
+    select.innerHTML = html;
+  } catch (e) {
+    console.error("Erreur dropdown sanctions :", e);
+  }
 }
 
-// ================= CREATE =================
 async function submitSanction() {
-  const empData = document.getElementById("sancEmployee").value;
-  const type = document.getElementById("sancType").value;
-  const motif = document.getElementById("sancMotif").value;
+  const empData = document.getElementById("sancEmployee")?.value;
+  const type = document.getElementById("sancType")?.value;
+  const motif = document.getElementById("sancMotif")?.value.trim();
   const msg = document.getElementById("sancMsg");
 
   if (!empData || !motif) {
-    msg.innerText = "Remplis tout";
+    if (msg) {
+      msg.innerText = "Remplis tout";
+      msg.style.color = "var(--warning)";
+    }
     return;
   }
 
@@ -59,31 +66,40 @@ async function submitSanction() {
       createdAt: new Date().toISOString()
     });
 
-    msg.innerText = "✅ Sanction ajoutée";
-    msg.style.color = "var(--success)";
+    if (msg) {
+      msg.innerText = "✅ Sanction ajoutée";
+      msg.style.color = "var(--success)";
+    }
 
-    document.getElementById("sancMotif").value = "";
-    document.getElementById("sancEmployee").value = "";
+    const motifInput = document.getElementById("sancMotif");
+    const empInput = document.getElementById("sancEmployee");
 
+    if (motifInput) motifInput.value = "";
+    if (empInput) empInput.value = "";
   } catch (e) {
-    msg.innerText = "Erreur";
+    console.error("Erreur sanction :", e);
+    if (msg) {
+      msg.innerText = "Erreur";
+      msg.style.color = "var(--error)";
+    }
   }
 }
 
-// ================= DELETE =================
 async function deleteSanction(id) {
   if (confirm("Supprimer cette sanction ?")) {
-    await deleteDoc(doc(db, "sanctions", id));
+    try {
+      await deleteDoc(doc(db, "sanctions", id));
+    } catch (e) {
+      console.error("Erreur suppression sanction :", e);
+    }
   }
 }
 
-// ================= FETCH =================
-let unsubSanctions = null;
-
 function fetchSanctions() {
-  if (unsubSanctions) return;
+  const tbody = document.getElementById("sanctionsListBody");
+  if (!tbody) return;
 
-  unsubSanctions = onSnapshot(
+  const unsubscribe = onSnapshot(
     query(collection(db, "sanctions"), orderBy("createdAt", "desc")),
     (snapshot) => {
       let html = "";
@@ -92,7 +108,6 @@ function fetchSanctions() {
         const data = docSnap.data();
         const id = docSnap.id;
 
-        // filtre employé
         if (
           getCurrentUserRole() === "employee" &&
           data.employeeEmail !== getCurrentUserEmail()
@@ -100,23 +115,21 @@ function fetchSanctions() {
           return;
         }
 
-        const dateStr = new Date(data.createdAt).toLocaleDateString("fr-FR");
+        const dateStr = data.createdAt
+          ? new Date(data.createdAt).toLocaleDateString("fr-FR")
+          : "-";
 
         let actions = "-";
-
-        if (
-          getCurrentUserRole() === "admin" ||
-          getCurrentUserRole() === "rh"
-        ) {
-          actions = `<button onclick="deleteSanction('${id}')">🗑️</button>`;
+        if (getCurrentUserRole() === "admin" || getCurrentUserRole() === "rh") {
+          actions = `<button onclick="deleteSanction('${id}')" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">🗑️</button>`;
         }
 
         html += `
           <tr>
             <td>${dateStr}</td>
-            <td><b>${data.employeeName}</b></td>
-            <td>${data.type}</td>
-            <td>${data.motif}</td>
+            <td><b>${data.employeeName || ""}</b></td>
+            <td>${data.type || ""}</td>
+            <td>${data.motif || ""}</td>
             ${
               getCurrentUserRole() !== "employee"
                 ? `<td>${actions}</td>`
@@ -126,13 +139,11 @@ function fetchSanctions() {
         `;
       });
 
-      const tbody = document.getElementById("sanctionsListBody");
-      if (tbody) {
-        tbody.innerHTML =
-          html || "<tr><td colspan='5'>Aucune sanction</td></tr>";
-      }
+      tbody.innerHTML = html || "<tr><td colspan='5'>Aucune sanction</td></tr>";
     }
   );
+
+  registerListener("sanctions", unsubscribe);
 }
 
 export {
