@@ -1,33 +1,14 @@
-Ce que ce patch va faire
-
-Après ça :
-
-la sidebar sera plus vivante
-les stats vont pulser légèrement
-les icônes vont briller
-les boutons vont avoir plus d’impact
-les hover seront plus visibles
-ça fera plus “dashboard du futur”
-Ensuite
-
-Si après ça tu veux aller encore plus loin, je peux te faire un patch spécial animations sci-fi avec :
-
-effet scan vertical
-bruit digital très léger
-lignes HUD
-pulse sur les sections actives
-loader futuriste
-
-Là, ce serait vraiment le niveau au-dessus.@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   --bg-1: #030712;
   --bg-2: #071127;
   --bg-3: #0a1630;
 
-  --panel: rgba(8, 16, 36, 0.76);
+  --panel: rgba(8, 16, 36, 0.78);
   --panel-2: rgba(10, 19, 42, 0.9);
-  --panel-soft: rgba(255, 255, 255, 0.04);
+  --panel-3: rgba(6, 12, 28, 0.92);
+  --surface: rgba(255, 255, 255, 0.045);
 
   --border: rgba(78, 214, 255, 0.14);
   --border-strong: rgba(78, 214, 255, 0.28);
@@ -59,16 +40,17 @@ Là, ce serait vraiment le niveau au-dessus.@import url('https://fonts.googleapi
 }
 
 body.light-mode {
-  --bg-1: #ecf3ff;
-  --bg-2: #dde9ff;
-  --bg-3: #d3e1ff;
+  --bg-1: #eef4ff;
+  --bg-2: #dde8ff;
+  --bg-3: #d6e2ff;
 
   --panel: rgba(255, 255, 255, 0.72);
   --panel-2: rgba(255, 255, 255, 0.88);
-  --panel-soft: rgba(255, 255, 255, 0.5);
+  --panel-3: rgba(246, 249, 255, 0.92);
+  --surface: rgba(255, 255, 255, 0.6);
 
-  --border: rgba(68, 99, 162, 0.14);
-  --border-strong: rgba(68, 99, 162, 0.24);
+  --border: rgba(79, 110, 173, 0.14);
+  --border-strong: rgba(79, 110, 173, 0.24);
 
   --text: #12203d;
   --text-soft: #41557d;
@@ -198,6 +180,7 @@ input,
 textarea,
 select {
   outline: none;
+  color: var(--text);
 }
 
 /* LOGIN */
@@ -283,9 +266,18 @@ select {
   padding: 15px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.025));
+  background: linear-gradient(180deg, var(--surface), rgba(255,255,255,0.02));
   color: var(--text);
   font-size: 0.96rem;
+}
+
+.input-group input::placeholder,
+.input-group textarea::placeholder,
+.inv-input::placeholder,
+#chatInput::placeholder,
+.search-container input::placeholder,
+.cyber-textarea::placeholder {
+  color: var(--text-muted);
 }
 
 .input-group input:focus,
@@ -721,7 +713,7 @@ button,
   min-height: 116px;
   padding: 22px;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(10, 19, 42, 0.95), rgba(6, 12, 28, 0.92));
+  background: linear-gradient(180deg, var(--panel-2), var(--panel-3));
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
