@@ -1,5 +1,6 @@
 import { db, firebaseConfig } from "./firebase.js";
 import { registerListener } from "./core.js";
+import { clearCache } from "./cache.js";
 
 import {
   collection,
@@ -51,6 +52,8 @@ async function createNewUser() {
       photoURL: ""
     });
 
+    clearCache("dashboard_stats");
+
     await signOut(secondaryAuth);
 
     if (msg) {
@@ -88,8 +91,8 @@ function fetchUsers() {
       const uid = docSnap.id;
 
       const roleValue = data.role || "guest";
-
       const safeEmail = (data.email || "").replace(/'/g, "\\'");
+
       const roleSelect = `
         <select onchange="updateUserRole('${uid}', this.value, '${safeEmail}')" style="background:var(--panel); color:var(--text); border:1px solid var(--glass-border); padding:5px; border-radius:5px;">
           <option value="guest" ${roleValue === "guest" ? "selected" : ""}>⛔ Aucun accès</option>
@@ -126,6 +129,7 @@ function fetchUsers() {
 async function updateUserRole(uid, newRole, email) {
   try {
     await updateDoc(doc(db, "users", uid), { role: newRole });
+    clearCache("dashboard_stats");
   } catch (e) {
     console.error("Erreur update rôle :", e);
   }
@@ -135,6 +139,7 @@ async function deleteUser(uid, email) {
   if (confirm(`Supprimer ${email} ?`)) {
     try {
       await deleteDoc(doc(db, "users", uid));
+      clearCache("dashboard_stats");
     } catch (e) {
       console.error("Erreur suppression utilisateur :", e);
     }
