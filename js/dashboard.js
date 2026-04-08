@@ -1,6 +1,7 @@
 import { db } from "./firebase.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { fetchUsers } from "./users.js";
+import { fetchRequests } from "./requests.js";
 
 let statsInterval = null;
 
@@ -16,6 +17,8 @@ function showSection(id) {
     updateDashboardStats();
   } else if (id === "users") {
     fetchUsers();
+  } else if (id === "requests") {
+    fetchRequests();
   }
 }
 
