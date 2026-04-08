@@ -4,6 +4,7 @@ import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/f
 import { fetchUsers } from "./users.js";
 import { fetchRequests } from "./requests.js";
 import { fetchSanctions, populateSanctionDropdown } from "./sanctions.js";
+import { fetchEmployees } from "./employees.js";
 
 let statsInterval = null;
 
@@ -27,6 +28,9 @@ function showSection(id) {
   else if (id === "sanctions") {
     fetchSanctions();
     populateSanctionDropdown();
+  }
+  else if (id === "rh") {
+    fetchEmployees();
   }
 }
 
