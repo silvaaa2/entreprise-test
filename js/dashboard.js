@@ -13,10 +13,16 @@ import {
   registerInterval
 } from "./core.js";
 
-let statsInterval = null;
+import { getCache, setCache } from "./cache.js";
+
+let currentSection = null;
+let statsClockStarted = false;
 
 function showSection(id) {
-  // 🔥 nettoyage avant changement de page
+  if (currentSection === id) return;
+
+  currentSection = id;
+
   clearAllListeners();
   clearIntervals();
 
@@ -49,25 +55,28 @@ function showSection(id) {
 }
 
 function updateDashboardStats() {
-  if (!statsInterval) {
-    const interval = setInterval(() => {
-      const dateEl = document.getElementById("statDate");
-      const timeEl = document.getElementById("statTime");
-
-      if (dateEl) {
-        dateEl.innerText = new Date().toLocaleDateString("fr-FR");
-      }
-
-      if (timeEl) {
-        timeEl.innerText = new Date().toLocaleTimeString("fr-FR");
-      }
-    }, 1000);
-
-    registerInterval(interval);
-    statsInterval = interval;
-  }
-
+  startClock();
   loadStats();
+}
+
+function startClock() {
+  if (statsClockStarted) return;
+
+  const interval = setInterval(() => {
+    const dateEl = document.getElementById("statDate");
+    const timeEl = document.getElementById("statTime");
+
+    if (dateEl) {
+      dateEl.innerText = new Date().toLocaleDateString("fr-FR");
+    }
+
+    if (timeEl) {
+      timeEl.innerText = new Date().toLocaleTimeString("fr-FR");
+    }
+  }, 1000);
+
+  registerInterval(interval);
+  statsClockStarted = true;
 }
 
 async function loadStats() {
@@ -75,15 +84,28 @@ async function loadStats() {
     const empEl = document.getElementById("statEmployees");
     const usrEl = document.getElementById("statUsers");
 
-    if (empEl) {
-      const e = await getDocs(collection(db, "employees"));
-      empEl.innerText = e.size;
+    const cachedStats = getCache("dashboard_stats");
+
+    if (cachedStats) {
+      if (empEl) empEl.innerText = cachedStats.employees;
+      if (usrEl) usrEl.innerText = cachedStats.users;
+      return;
     }
 
-    if (usrEl) {
-      const u = await getDocs(collection(db, "users"));
-      usrEl.innerText = u.size;
-    }
+    const [employeesSnap, usersSnap] = await Promise.all([
+      getDocs(collection(db, "employees")),
+      getDocs(collection(db, "users"))
+    ]);
+
+    const stats = {
+      employees: employeesSnap.size,
+      users: usersSnap.size
+    };
+
+    setCache("dashboard_stats", stats, 20000);
+
+    if (empEl) empEl.innerText = stats.employees;
+    if (usrEl) usrEl.innerText = stats.users;
   } catch (e) {
     console.error("Erreur stats :", e);
   }
