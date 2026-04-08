@@ -21,6 +21,12 @@ import {
   closeUserProfile
 } from "./users.js";
 
+import {
+  submitRequest,
+  fetchRequests,
+  updateRequest
+} from "./requests.js";
+
 // ==================== AUTH ====================
 window.login = login;
 window.loginWithGoogle = loginWithGoogle;
@@ -38,6 +44,11 @@ window.updateUserRole = updateUserRole;
 window.deleteUser = deleteUser;
 window.openUserProfile = openUserProfile;
 window.closeUserProfile = closeUserProfile;
+
+// ==================== REQUESTS ====================
+window.submitRequest = submitRequest;
+window.fetchRequests = fetchRequests;
+window.updateRequest = updateRequest;
 
 // ==================== INIT ====================
 initTheme();
