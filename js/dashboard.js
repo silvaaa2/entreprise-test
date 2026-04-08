@@ -1,7 +1,9 @@
 import { db } from "./firebase.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
 import { fetchUsers } from "./users.js";
 import { fetchRequests } from "./requests.js";
+import { fetchSanctions, populateSanctionDropdown } from "./sanctions.js";
 
 let statsInterval = null;
 
@@ -15,10 +17,16 @@ function showSection(id) {
 
   if (id === "home") {
     updateDashboardStats();
-  } else if (id === "users") {
+  } 
+  else if (id === "users") {
     fetchUsers();
-  } else if (id === "requests") {
+  } 
+  else if (id === "requests") {
     fetchRequests();
+  } 
+  else if (id === "sanctions") {
+    fetchSanctions();
+    populateSanctionDropdown();
   }
 }
 
