@@ -1,5 +1,6 @@
 import { db } from "./firebase.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { fetchUsers } from "./users.js";
 
 let statsInterval = null;
 
@@ -11,14 +12,14 @@ function showSection(id) {
   const target = document.getElementById(id);
   if (target) target.classList.add("active");
 
-  // logique spéciale selon section
   if (id === "home") {
     updateDashboardStats();
+  } else if (id === "users") {
+    fetchUsers();
   }
 }
 
 function updateDashboardStats() {
-  // évite les multiples setInterval (IMPORTANT)
   if (!statsInterval) {
     statsInterval = setInterval(() => {
       const dateEl = document.getElementById("statDate");
