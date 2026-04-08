@@ -43,6 +43,11 @@ import {
   closeHrEmployeeModal
 } from "./employees.js";
 
+import {
+  loadMyService,
+  toggleMyService
+} from "./pointage.js";
+
 // ==================== AUTH ====================
 window.login = login;
 window.loginWithGoogle = loginWithGoogle;
@@ -79,6 +84,10 @@ window.openHrEmployeeModal = openHrEmployeeModal;
 window.updateEmployeeDossier = updateEmployeeDossier;
 window.deleteEmployeeDossier = deleteEmployeeDossier;
 window.closeHrEmployeeModal = closeHrEmployeeModal;
+
+// ==================== POINTAGE ====================
+window.loadMyService = loadMyService;
+window.toggleMyService = toggleMyService;
 
 // ==================== INIT ====================
 initTheme();
