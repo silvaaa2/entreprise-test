@@ -1,28 +1,42 @@
-// ================= LISTENERS GLOBAL =================
 const activeListeners = {};
+const activeIntervals = {};
 
 function registerListener(key, unsubscribe) {
   if (activeListeners[key]) {
-    activeListeners[key](); // stop ancien
+    try {
+      activeListeners[key]();
+    } catch (e) {
+      console.error(`Erreur fermeture listener ${key} :`, e);
+    }
   }
 
   activeListeners[key] = unsubscribe;
 }
 
 function clearAllListeners() {
-  Object.values(activeListeners).forEach(unsub => unsub());
+  Object.keys(activeListeners).forEach((key) => {
+    try {
+      activeListeners[key]?.();
+    } catch (e) {
+      console.error(`Erreur clear listener ${key} :`, e);
+    }
+    delete activeListeners[key];
+  });
 }
 
-// ================= TIMERS =================
-let globalIntervals = [];
+function registerInterval(key, intervalId) {
+  if (activeIntervals[key]) {
+    clearInterval(activeIntervals[key]);
+  }
 
-function registerInterval(interval) {
-  globalIntervals.push(interval);
+  activeIntervals[key] = intervalId;
 }
 
 function clearIntervals() {
-  globalIntervals.forEach(clearInterval);
-  globalIntervals = [];
+  Object.keys(activeIntervals).forEach((key) => {
+    clearInterval(activeIntervals[key]);
+    delete activeIntervals[key];
+  });
 }
 
 export {
