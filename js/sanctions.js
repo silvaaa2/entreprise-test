@@ -1,5 +1,6 @@
 import { db } from "./firebase.js";
 import { registerListener } from "./core.js";
+import { requirePermission } from "./permissions.js";
 
 import {
   collection,
@@ -19,6 +20,8 @@ import {
 } from "./user.js";
 
 async function populateSanctionDropdown() {
+  if (!requirePermission("manage_sanctions", "Tu n'as pas accès aux sanctions.")) return;
+
   const select = document.getElementById("sancEmployee");
   if (!select) return;
 
@@ -41,6 +44,8 @@ async function populateSanctionDropdown() {
 }
 
 async function submitSanction() {
+  if (!requirePermission("manage_sanctions", "Tu n'as pas le droit de créer une sanction.")) return;
+
   const empData = document.getElementById("sancEmployee")?.value;
   const type = document.getElementById("sancType")?.value;
   const motif = document.getElementById("sancMotif")?.value.trim();
@@ -86,6 +91,8 @@ async function submitSanction() {
 }
 
 async function deleteSanction(id) {
+  if (!requirePermission("manage_sanctions", "Tu n'as pas le droit de supprimer une sanction.")) return;
+
   if (confirm("Supprimer cette sanction ?")) {
     try {
       await deleteDoc(doc(db, "sanctions", id));
@@ -96,6 +103,9 @@ async function deleteSanction(id) {
 }
 
 function fetchSanctions() {
+  const role = getCurrentUserRole();
+  if (!(role === "admin" || role === "rh" || role === "employee")) return;
+
   const tbody = document.getElementById("sanctionsListBody");
   if (!tbody) return;
 
@@ -108,10 +118,7 @@ function fetchSanctions() {
         const data = docSnap.data();
         const id = docSnap.id;
 
-        if (
-          getCurrentUserRole() === "employee" &&
-          data.employeeEmail !== getCurrentUserEmail()
-        ) {
+        if (role === "employee" && data.employeeEmail !== getCurrentUserEmail()) {
           return;
         }
 
@@ -120,7 +127,7 @@ function fetchSanctions() {
           : "-";
 
         let actions = "-";
-        if (getCurrentUserRole() === "admin" || getCurrentUserRole() === "rh") {
+        if (role === "admin" || role === "rh") {
           actions = `<button onclick="deleteSanction('${id}')" style="background:var(--error); padding:5px; width:auto; font-size:0.8em; color:white; border:none; border-radius:3px;">🗑️</button>`;
         }
 
@@ -130,11 +137,7 @@ function fetchSanctions() {
             <td><b>${data.employeeName || ""}</b></td>
             <td>${data.type || ""}</td>
             <td>${data.motif || ""}</td>
-            ${
-              getCurrentUserRole() !== "employee"
-                ? `<td>${actions}</td>`
-                : ""
-            }
+            ${role !== "employee" ? `<td>${actions}</td>` : ""}
           </tr>
         `;
       });
