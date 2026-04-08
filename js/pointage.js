@@ -1,4 +1,6 @@
 import { auth, db } from "./firebase.js";
+import { registerListener } from "./core.js";
+
 import {
   collection,
   query,
@@ -13,7 +15,6 @@ import {
 
 let myPersonalTimer = null;
 let myEmployeeDocId = null;
-let unsubMyService = null;
 
 function getIsoWeek() {
   const date = new Date();
@@ -59,17 +60,20 @@ async function loadMyService() {
 
   myEmployeeDocId = snap.docs[0].id;
 
-  if (unsubMyService) unsubMyService();
-
-  unsubMyService = onSnapshot(doc(db, "employees", myEmployeeDocId), (docSnap) => {
+  const unsubscribe = onSnapshot(doc(db, "employees", myEmployeeDocId), (docSnap) => {
     if (docSnap.exists()) {
       renderMyServiceUI(docSnap.data());
     }
   });
+
+  registerListener("pointage", unsubscribe);
 }
 
 function renderMyServiceUI(data) {
-  if (myPersonalTimer) clearInterval(myPersonalTimer);
+  if (myPersonalTimer) {
+    clearInterval(myPersonalTimer);
+    myPersonalTimer = null;
+  }
 
   const isEnService = data.status === "en_service";
 
@@ -137,39 +141,43 @@ function renderMyServiceUI(data) {
 async function toggleMyService(newStatus) {
   if (!myEmployeeDocId) return;
 
-  const docRef = doc(db, "employees", myEmployeeDocId);
-  const docSnap = await getDoc(docRef);
-  const data = docSnap.data();
+  try {
+    const docRef = doc(db, "employees", myEmployeeDocId);
+    const docSnap = await getDoc(docRef);
+    const data = docSnap.data();
 
-  const currentWeekStr = getIsoWeek();
-  const currentWeekly =
-    data.currentWeek === currentWeekStr ? (data.weeklyServiceSeconds || 0) : 0;
+    const currentWeekStr = getIsoWeek();
+    const currentWeekly =
+      data.currentWeek === currentWeekStr ? (data.weeklyServiceSeconds || 0) : 0;
 
-  const updates = {
-    status: newStatus,
-    currentWeek: currentWeekStr
-  };
+    const updates = {
+      status: newStatus,
+      currentWeek: currentWeekStr
+    };
 
-  if (data.status !== "en_service" && newStatus === "en_service") {
-    updates.currentServiceStart = Date.now();
-    updates.weeklyServiceSeconds = currentWeekly;
-  } else if (data.status === "en_service" && newStatus !== "en_service") {
-    const durationSecs = Math.floor((Date.now() - data.currentServiceStart) / 1000);
+    if (data.status !== "en_service" && newStatus === "en_service") {
+      updates.currentServiceStart = Date.now();
+      updates.weeklyServiceSeconds = currentWeekly;
+    } else if (data.status === "en_service" && newStatus !== "en_service") {
+      const durationSecs = Math.floor((Date.now() - data.currentServiceStart) / 1000);
 
-    updates.weeklyServiceSeconds = currentWeekly + durationSecs;
-    updates.lastSessionSeconds = durationSecs;
-    updates.currentServiceStart = null;
+      updates.weeklyServiceSeconds = currentWeekly + durationSecs;
+      updates.lastSessionSeconds = durationSecs;
+      updates.currentServiceStart = null;
 
-    await addDoc(collection(db, "timelogs"), {
-      employeeId: myEmployeeDocId,
-      date: new Date().toLocaleDateString("fr-FR"),
-      startTime: data.currentServiceStart,
-      endTime: Date.now(),
-      durationText: formatTime(durationSecs)
-    });
+      await addDoc(collection(db, "timelogs"), {
+        employeeId: myEmployeeDocId,
+        date: new Date().toLocaleDateString("fr-FR"),
+        startTime: data.currentServiceStart,
+        endTime: Date.now(),
+        durationText: formatTime(durationSecs)
+      });
+    }
+
+    await updateDoc(docRef, updates);
+  } catch (e) {
+    console.error("Erreur pointage :", e);
   }
-
-  await updateDoc(docRef, updates);
 }
 
 export {
