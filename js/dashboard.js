@@ -7,9 +7,19 @@ import { fetchSanctions, populateSanctionDropdown } from "./sanctions.js";
 import { fetchEmployees } from "./employees.js";
 import { loadMyService } from "./pointage.js";
 
+import {
+  clearAllListeners,
+  clearIntervals,
+  registerInterval
+} from "./core.js";
+
 let statsInterval = null;
 
 function showSection(id) {
+  // 🔥 nettoyage avant changement de page
+  clearAllListeners();
+  clearIntervals();
+
   document.querySelectorAll(".section").forEach((section) => {
     section.classList.remove("active");
   });
@@ -40,7 +50,7 @@ function showSection(id) {
 
 function updateDashboardStats() {
   if (!statsInterval) {
-    statsInterval = setInterval(() => {
+    const interval = setInterval(() => {
       const dateEl = document.getElementById("statDate");
       const timeEl = document.getElementById("statTime");
 
@@ -52,6 +62,9 @@ function updateDashboardStats() {
         timeEl.innerText = new Date().toLocaleTimeString("fr-FR");
       }
     }, 1000);
+
+    registerInterval(interval);
+    statsInterval = interval;
   }
 
   loadStats();
