@@ -1,4 +1,24 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+Ce que ce patch va faire
+
+Après ça :
+
+la sidebar sera plus vivante
+les stats vont pulser légèrement
+les icônes vont briller
+les boutons vont avoir plus d’impact
+les hover seront plus visibles
+ça fera plus “dashboard du futur”
+Ensuite
+
+Si après ça tu veux aller encore plus loin, je peux te faire un patch spécial animations sci-fi avec :
+
+effet scan vertical
+bruit digital très léger
+lignes HUD
+pulse sur les sections actives
+loader futuriste
+
+Là, ce serait vraiment le niveau au-dessus.@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
   --bg-1: #030712;
@@ -86,6 +106,12 @@ body {
   background-attachment: fixed;
   color: var(--text);
   overflow-x: hidden;
+  position: relative;
+}
+
+body::selection {
+  background: rgba(78, 214, 255, 0.22);
+  color: #fff;
 }
 
 body::before,
@@ -133,8 +159,12 @@ h1, h2, h3, h4 {
   letter-spacing: -0.03em;
 }
 
-h1, h2 {
+h1, h2,
+.sidebar h3,
+.kanban-header,
+.chat-header {
   font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase;
 }
 
 p {
@@ -160,7 +190,7 @@ button:hover {
 }
 
 button:active {
-  transform: translateY(0);
+  transform: scale(0.97);
   filter: brightness(1.05);
 }
 
@@ -232,7 +262,9 @@ select {
   font-size: 2rem;
   margin-bottom: 24px;
   color: var(--text);
-  text-shadow: 0 0 18px rgba(78, 214, 255, 0.12);
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.06),
+    0 0 18px rgba(78, 214, 255, 0.12);
 }
 
 .input-group {
@@ -251,7 +283,7 @@ select {
   padding: 15px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.045);
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.025));
   color: var(--text);
   font-size: 0.96rem;
 }
@@ -400,7 +432,10 @@ button,
   border-radius: var(--radius-xl);
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-main), var(--glow-violet);
+  box-shadow:
+    var(--shadow-main),
+    0 0 16px rgba(78, 214, 255, 0.08),
+    0 0 28px rgba(139, 92, 246, 0.06);
   position: sticky;
   top: 16px;
   height: calc(100vh - 32px);
@@ -429,6 +464,11 @@ button,
   font-weight: 700;
   position: relative;
   overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .sidebar button::after {
@@ -447,14 +487,19 @@ button,
 .sidebar button:hover {
   background: rgba(78, 214, 255, 0.08);
   border-color: rgba(78, 214, 255, 0.18);
-  box-shadow: 0 0 16px rgba(78, 214, 255, 0.08);
+  box-shadow:
+    0 0 12px rgba(78, 214, 255, 0.14),
+    0 0 22px rgba(139, 92, 246, 0.08);
+  transform: translateX(6px) scale(1.01);
 }
 
 .sidebar button.active,
 .sidebar button:focus-visible {
   background: linear-gradient(135deg, rgba(78, 214, 255, 0.16), rgba(139, 92, 246, 0.14));
   border-color: var(--border-strong);
-  box-shadow: 0 0 18px rgba(78, 214, 255, 0.1), 0 0 26px rgba(139, 92, 246, 0.08);
+  box-shadow:
+    0 0 16px rgba(78, 214, 255, 0.18),
+    0 0 30px rgba(139, 92, 246, 0.12);
   transform: translateX(4px);
 }
 
@@ -499,6 +544,14 @@ button,
   border-radius: 18px;
   background: rgba(255,255,255,0.045);
   border: 1px solid var(--border);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.user-profile-section:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 16px rgba(78, 214, 255, 0.1),
+    0 0 24px rgba(139, 92, 246, 0.06);
 }
 
 .user-profile-section img {
@@ -520,6 +573,12 @@ button,
   color: #ff9db0 !important;
   border: 1px solid rgba(255, 91, 127, 0.18) !important;
   box-shadow: none !important;
+}
+
+.logout-btn:hover {
+  box-shadow:
+    0 0 16px rgba(255, 91, 127, 0.16),
+    0 0 28px rgba(255, 91, 127, 0.08) !important;
 }
 
 .secondary-btn {
@@ -570,7 +629,10 @@ button,
 .home-header h1 {
   font-size: 2.7rem;
   margin-bottom: 8px;
-  text-shadow: 0 0 16px rgba(78, 214, 255, 0.08);
+  text-shadow:
+    0 0 10px rgba(255,255,255,0.06),
+    0 0 22px rgba(78, 214, 255, 0.12),
+    0 0 34px rgba(139, 92, 246, 0.08);
 }
 
 .home-widgets-grid,
@@ -638,9 +700,12 @@ button,
 }
 
 .ann-card:hover,
-.doc-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--glow-violet);
+.doc-card:hover,
+.kanban-card:hover,
+.chat-contact:hover {
+  box-shadow:
+    0 0 14px rgba(78, 214, 255, 0.08),
+    0 0 20px rgba(139, 92, 246, 0.06);
 }
 
 /* STATS */
@@ -665,25 +730,50 @@ button,
   position: relative;
   overflow: hidden;
   transition: 0.22s ease;
+  animation: statPulse 4.5s ease-in-out infinite;
+}
+
+@keyframes statPulse {
+  0% {
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.24),
+      0 0 0 rgba(78, 214, 255, 0);
+  }
+  50% {
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.24),
+      0 0 18px rgba(78, 214, 255, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 12px 30px rgba(0, 0, 0, 0.24),
+      0 0 0 rgba(78, 214, 255, 0);
+  }
 }
 
 .stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-soft), var(--glow-cyan);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow:
+    0 0 16px rgba(78, 214, 255, 0.16),
+    0 0 28px rgba(139, 92, 246, 0.12),
+    0 18px 34px rgba(0, 0, 0, 0.3);
 }
 
-.stat-card::after {
+.stat-card::after,
+.create-user-box::after,
+.pointage-card::after,
+.focus-widget::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(78,214,255,0.045), transparent);
-  transform: translateX(-120%);
-  animation: statSweep 5s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(78,214,255,0.04), transparent);
+  transform: translateX(-130%);
+  animation: panelSweep 6s linear infinite;
   pointer-events: none;
 }
 
-@keyframes statSweep {
-  0% { transform: translateX(-120%); }
+@keyframes panelSweep {
+  0% { transform: translateX(-130%); }
   100% { transform: translateX(140%); }
 }
 
@@ -697,6 +787,18 @@ button,
   background: linear-gradient(135deg, rgba(78, 214, 255, 0.12), rgba(139, 92, 246, 0.12));
   border: 1px solid rgba(78, 214, 255, 0.18);
   box-shadow: var(--glow-cyan);
+  animation: iconGlow 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes iconGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(78, 214, 255, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 18px rgba(78, 214, 255, 0.18),
+      0 0 28px rgba(139, 92, 246, 0.08);
+  }
 }
 
 .stat-card .info h3 {
@@ -707,9 +809,27 @@ button,
 
 .stat-card .info p {
   margin: 0;
-  font-size: 1.7rem;
+  font-size: 1.85rem;
   font-weight: 800;
   color: var(--text);
+}
+
+/* WIDGET HOVERS */
+
+.focus-widget,
+.create-user-box,
+.pointage-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.focus-widget:hover,
+.create-user-box:hover,
+.pointage-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 14px rgba(78, 214, 255, 0.12),
+    0 0 24px rgba(139, 92, 246, 0.08),
+    0 16px 30px rgba(0, 0, 0, 0.26);
 }
 
 /* TABLES */
@@ -749,6 +869,24 @@ button,
 .cyber-table tbody tr:hover,
 .invoice-table tbody tr:hover {
   background: rgba(78, 214, 255, 0.03);
+}
+
+.cyber-table tbody td:first-child,
+.invoice-table tbody td:first-child {
+  position: relative;
+}
+
+.cyber-table tbody tr:hover td:first-child::before,
+.invoice-table tbody tr:hover td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  width: 3px;
+  height: 64%;
+  background: linear-gradient(180deg, var(--cyan), var(--violet));
+  box-shadow: 0 0 10px rgba(78,214,255,0.8);
+  border-radius: 999px;
 }
 
 .clickable-name {
@@ -842,6 +980,7 @@ button,
   cursor: pointer;
   background: rgba(255,255,255,0.04);
   border: 1px solid transparent;
+  transition: 0.18s ease;
 }
 
 .chat-contact:hover,
@@ -905,12 +1044,15 @@ button,
   border-radius: 16px;
   background: rgba(255,255,255,0.06);
   border: 1px solid var(--border);
+  box-shadow: 0 0 12px rgba(0,0,0,0.18);
 }
 
 .chat-row.mine .chat-bubble {
   background: rgba(78, 214, 255, 0.12);
   border-color: rgba(78, 214, 255, 0.2);
-  box-shadow: 0 0 14px rgba(78, 214, 255, 0.06);
+  box-shadow:
+    0 0 14px rgba(78, 214, 255, 0.06),
+    0 0 20px rgba(139, 92, 246, 0.04);
 }
 
 .chat-input-area {
