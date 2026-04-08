@@ -27,13 +27,20 @@ import {
   updateRequest
 } from "./requests.js";
 
+import {
+  populateSanctionDropdown,
+  submitSanction,
+  fetchSanctions,
+  deleteSanction
+} from "./sanctions.js";
+
 // ==================== AUTH ====================
 window.login = login;
 window.loginWithGoogle = loginWithGoogle;
 window.resetPassword = resetPassword;
 window.logout = logout;
 
-// ==================== DASHBOARD / UI ====================
+// ==================== DASHBOARD ====================
 window.showSection = showSection;
 window.toggleTheme = toggleTheme;
 
@@ -49,6 +56,12 @@ window.closeUserProfile = closeUserProfile;
 window.submitRequest = submitRequest;
 window.fetchRequests = fetchRequests;
 window.updateRequest = updateRequest;
+
+// ==================== SANCTIONS ====================
+window.populateSanctionDropdown = populateSanctionDropdown;
+window.submitSanction = submitSanction;
+window.fetchSanctions = fetchSanctions;
+window.deleteSanction = deleteSanction;
 
 // ==================== INIT ====================
 initTheme();
